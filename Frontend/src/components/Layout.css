@@ -1,0 +1,157 @@
+.layout {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: relative;
+}
+
+/* No desktop, essas linhas "somem" e os filhos entram direto no flex do
+   header, preservando a ordem original: marca, nav, usuário, adicionar. */
+.header-row {
+  display: contents;
+}
+
+.header-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.header-title {
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+
+.botao-hamburguer {
+  display: none;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 8px;
+  border-radius: var(--radius);
+  align-items: center;
+  justify-content: center;
+}
+
+.header-nav {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.nav-item {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.nav-item:hover {
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: var(--accent);
+  color: #0a0a0a;
+  font-weight: 700;
+}
+
+.header-usuario {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.botao-sair {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.botao-sair:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.content {
+  flex: 1;
+  max-width: 1120px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 32px 56px;
+}
+
+@media (max-width: 780px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 16px 20px;
+  }
+
+  .header-row {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .botao-hamburguer {
+    display: flex;
+  }
+
+  .header-nav {
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px;
+  }
+
+  .header-nav.aberto {
+    display: flex;
+  }
+
+  .nav-item {
+    padding: 12px 14px;
+    text-align: left;
+  }
+
+  .header-add {
+    flex-shrink: 0;
+  }
+
+  .content {
+    padding: 16px 16px 48px;
+  }
+}
+
+@media (max-width: 420px) {
+  .header-usuario .label {
+    display: none;
+  }
+}

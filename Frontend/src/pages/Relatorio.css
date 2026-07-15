@@ -1,0 +1,66 @@
+.relatorio {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.relatorio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.seletor-mes {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.cards-relatorio {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.card-relatorio {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bloco-despesas-mes {
+  padding: 20px;
+}
+
+.lista-despesas-mes {
+  list-style: none;
+  margin-top: 12px;
+}
+
+.item-despesa-mes {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.item-despesa-mes:first-child {
+  border-top: none;
+}
+
+@media (max-width: 700px) {
+  .cards-relatorio {
+    grid-template-columns: 1fr;
+  }
+  .relatorio-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}

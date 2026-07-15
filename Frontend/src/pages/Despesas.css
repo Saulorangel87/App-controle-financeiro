@@ -1,0 +1,78 @@
+.despesas-panel {
+  padding: 20px 24px;
+}
+
+.despesas-header {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.linha {
+  display: grid;
+  grid-template-columns: 90px 1fr 160px 130px 28px 28px;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.linha-cabecalho {
+  border-top: none;
+  padding-bottom: 8px;
+}
+
+.celula-data {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.celula-categoria {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.linha strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.celula-valor {
+  text-align: right;
+  font-weight: 600;
+}
+
+.botao-excluir {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px;
+  transition: color 0.15s ease;
+}
+
+.botao-excluir:hover {
+  color: var(--danger);
+}
+
+@media (max-width: 700px) {
+  .linha {
+    grid-template-columns: 1fr auto auto;
+    grid-template-areas:
+      "desc valor valor"
+      "data cat cat";
+    row-gap: 4px;
+  }
+  .celula-data { grid-area: data; }
+  .celula-categoria { grid-area: cat; }
+  .celula-valor { grid-area: valor; }
+  .linha-cabecalho { display: none; }
+  .botao-icone, .botao-excluir { display: none; }
+}

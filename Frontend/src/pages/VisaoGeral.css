@@ -1,0 +1,117 @@
+.visao-geral {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cards-resumo {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.card-resumo {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card-resumo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.botao-editar-inline {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.15s ease;
+}
+
+.botao-editar-inline:hover {
+  color: var(--accent);
+}
+
+.edicao-orcamento {
+  display: flex;
+  gap: 8px;
+}
+
+.edicao-orcamento .input-limite {
+  font-size: 16px;
+}
+
+.valor {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.bloco-orcamento,
+.bloco-grafico,
+.bloco-despesas {
+  padding: 20px;
+}
+
+.bloco-orcamento-header,
+.bloco-orcamento-footer,
+.bloco-despesas-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.bloco-orcamento-footer {
+  margin-top: 6px;
+}
+
+.barra-fundo {
+  margin-top: 14px;
+  height: 6px;
+  background: var(--panel-alt);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.barra-preenchida {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.bloco-despesas-header {
+  margin-bottom: 8px;
+}
+
+.lista-despesas {
+  list-style: none;
+}
+
+.item-despesa {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.item-despesa:first-child {
+  border-top: none;
+}
+
+@media (max-width: 860px) {
+  .cards-resumo {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .cards-resumo {
+    grid-template-columns: 1fr;
+  }
+  .valor {
+    font-size: 20px;
+  }
+}

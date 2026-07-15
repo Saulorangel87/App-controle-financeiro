@@ -1,0 +1,14 @@
+node_modules
+
+# Arquivos locais sensíveis
+.env
+.env.*
+!.env.example
+
+# Banco SQLite local e dados de execução
+Backend/data/
+Backend/data/*.db*
+
+# Dependências instaladas localmente
+Backend/node_modules/
+Frontend/node_modules/

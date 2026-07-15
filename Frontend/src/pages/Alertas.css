@@ -1,0 +1,72 @@
+.alertas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.card-alerta {
+  padding: 24px;
+  border-color: var(--danger) !important;
+}
+
+.card-alerta-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.card-alerta-nome {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.alerta-valores {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 4px;
+}
+
+.lista-despesas-alerta {
+  list-style: none;
+  margin-top: 8px;
+}
+
+.lista-despesas-alerta li {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.botao-ajustar {
+  margin-top: 16px;
+  display: inline-block;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.botao-ajustar:hover {
+  background: var(--danger);
+  color: #0a0a0a;
+}
+
+@media (max-width: 600px) {
+  .alerta-valores {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}

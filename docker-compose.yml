@@ -1,0 +1,28 @@
+services:
+  backend:
+    build: ./backend
+    container_name: despesas-backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - PORT=3001
+    volumes:
+      # Persiste o banco SQLite fora do container, senão os dados somem
+      # a cada rebuild da imagem.
+      - ./backend/data:/app/data
+    ports:
+      - "3011:3001"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+    container_name: despesas-frontend
+    restart: unless-stopped
+    ports:
+      - "8091:80"
+    depends_on:
+      - backend

@@ -1,0 +1,35 @@
+.rodape-fixo {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  z-index: 10;
+}
+
+.rodape-icones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rodape-icones a {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
+}
+
+.rodape-icones a:hover {
+  color: var(--accent);
+}
