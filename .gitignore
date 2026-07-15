@@ -12,3 +12,6 @@ Backend/data/*.db*
 # Dependências instaladas localmente
 Backend/node_modules/
 Frontend/node_modules/
+
+# Notas de Deploy
+NOTAS-DEPLOY.md
