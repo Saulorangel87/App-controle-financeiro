@@ -11,12 +11,9 @@ Aplicação full-stack de gerenciamento de finanças pessoais, com autenticaçã
 
 🔗 **[Acesse o app em produção](https://despesas.devsaulo.com.br)**
 
-<!-- 
-  Sugestão: adicione aqui um screenshot ou GIF do app em uso.
-  Exemplo: ![Dashboard do app](./docs/screenshot-dashboard.png)
--->
+  <img width="1917" height="852" alt="image" src="https://github.com/user-attachments/assets/afed5417-0258-4e48-a40b-66185fab5f83" />
+  <img width="1917" height="865" alt="image" src="https://github.com/user-attachments/assets/68ba646d-40b9-48c0-b60c-798cbd809307" />
 
----
 
 ## 📋 Sobre o projeto
 
