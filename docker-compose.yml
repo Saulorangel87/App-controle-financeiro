@@ -1,6 +1,6 @@
 services:
   backend:
-    build: ./backend
+    build: ./Backend
     container_name: despesas-backend
     restart: unless-stopped
     environment:
@@ -11,13 +11,13 @@ services:
     volumes:
       # Persiste o banco SQLite fora do container, senão os dados somem
       # a cada rebuild da imagem.
-      - ./backend/data:/app/data
+      - ./Backend/data:/app/data
     ports:
       - "3011:3001"
 
   frontend:
     build:
-      context: ./frontend
+      context: ./Frontend
       args:
         VITE_API_URL: ${VITE_API_URL}
     container_name: despesas-frontend
