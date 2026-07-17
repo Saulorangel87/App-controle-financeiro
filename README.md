@@ -101,7 +101,10 @@ docker compose up -d --build
 - [x] Autenticação multiusuário
 - [x] Relatório mensal comparativo
 - [x] Deploy em produção
-- [ ] Verificação de email no cadastro
+- [ ] Recuperação de senha e validação de email no cadastro (evitar cadastro com email inexistente)
+- [ ] Corrigir exibição do gráfico "Gastos por Categoria" em telas de celular (rótulos sobrepostos)
+- [ ] Opção de imprimir o Relatório Mensal
+- [ ] Registro independente de VA/VR (vale alimentação/refeição), sem misturar com o orçamento e gastos atuais — interface ainda em definição
 - [ ] Versão PWA (instalável no celular)
 - [ ] Migração para PostgreSQL (caso o uso simultâneo cresça)
 
