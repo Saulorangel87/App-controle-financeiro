@@ -47,8 +47,9 @@ export default function Relatorio() {
   return (
     <div className="relatorio">
       <div className="relatorio-header">
-        <span className="label">Relatório Mensal</span>
+        <label className="label" htmlFor="seletor-mes-relatorio">Relatório Mensal</label>
         <select
+          id="seletor-mes-relatorio"
           className="seletor-mes"
           value={mesSelecionado}
           onChange={(e) => setMesSelecionado(e.target.value)}

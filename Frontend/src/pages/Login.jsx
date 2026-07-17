@@ -31,31 +31,35 @@ export default function Login() {
       <form className="panel auth-card" onSubmit={enviar}>
         <div className="auth-header">
           <span className="label">Sistema</span>
-          <strong>Controle de Despesas</strong>
+          <h1>Controle de Despesas</h1>
         </div>
 
         <div className="campo">
-          <span className="label">Email</span>
+          <label className="label" htmlFor="login-email">Email</label>
           <input
+            id="login-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="voce@email.com"
+            autoComplete="email"
             autoFocus
           />
         </div>
 
         <div className="campo">
-          <span className="label">Senha</span>
+          <label className="label" htmlFor="login-senha">Senha</label>
           <input
+            id="login-senha"
             type="password"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             placeholder="••••••"
+            autoComplete="current-password"
           />
         </div>
 
-        {erro && <p className="erro-form">{erro}</p>}
+        {erro && <p className="erro-form" role="alert">{erro}</p>}
 
         <button type="submit" className="btn-primary" disabled={enviando} style={{ width: '100%', padding: 14 }}>
           {enviando ? 'Entrando...' : 'Entrar'}

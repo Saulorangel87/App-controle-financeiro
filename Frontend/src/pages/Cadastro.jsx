@@ -38,41 +38,47 @@ export default function Cadastro() {
       <form className="panel auth-card" onSubmit={enviar}>
         <div className="auth-header">
           <span className="label">Sistema</span>
-          <strong>Controle de Despesas</strong>
+          <h1>Controle de Despesas</h1>
         </div>
 
         <div className="campo">
-          <span className="label">Nome</span>
+          <label className="label" htmlFor="cadastro-nome">Nome</label>
           <input
+            id="cadastro-nome"
             type="text"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             placeholder="Seu nome"
+            autoComplete="name"
             autoFocus
           />
         </div>
 
         <div className="campo">
-          <span className="label">Email</span>
+          <label className="label" htmlFor="cadastro-email">Email</label>
           <input
+            id="cadastro-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="voce@email.com"
+            autoComplete="email"
           />
         </div>
 
         <div className="campo">
-          <span className="label">Senha</span>
+          <label className="label" htmlFor="cadastro-senha">Senha</label>
           <input
+            id="cadastro-senha"
             type="password"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             placeholder="mínimo 6 caracteres"
+            autoComplete="new-password"
           />
         </div>
 
-        {erro && <p className="erro-form">{erro}</p>}
+        {erro && <p className="erro-form" role="alert">{erro}</p>}
 
         <button type="submit" className="btn-primary" disabled={enviando} style={{ width: '100%', padding: 14 }}>
           {enviando ? 'Criando conta...' : 'Criar Conta'}

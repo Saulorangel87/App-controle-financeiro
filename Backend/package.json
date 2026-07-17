@@ -1,11 +1,12 @@
 {
   "name": "controle-despesas-backend",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "src/server.js",
   "scripts": {
     "seed": "node src/db/seed.js",
     "dev": "node --watch src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "migrar-categorias": "node src/db/adicionarCategoriasFaltantes.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -20,6 +20,8 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
 
+  const dataEhFutura = data > hoje();
+
   useEffect(() => {
     if (!aberto) return;
 
@@ -51,6 +53,10 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
 
     if (!descricao.trim() || !valor || !categoriaId || !data) {
       setErro('Preencha todos os campos.');
+      return;
+    }
+    if (data > hoje()) {
+      setErro('Não é possível cadastrar uma despesa com data futura.');
       return;
     }
 
@@ -88,8 +94,9 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
 
         <form onSubmit={enviar} className="modal-form">
           <div className="campo">
-            <span className="label">Descrição</span>
+            <label className="label" htmlFor="campo-descricao-despesa">Descrição</label>
             <input
+              id="campo-descricao-despesa"
               type="text"
               placeholder="ex: Supermercado"
               value={descricao}
@@ -100,8 +107,9 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
           </div>
 
           <div className="campo">
-            <span className="label">Valor (R$)</span>
+            <label className="label" htmlFor="campo-valor-despesa">Valor (R$)</label>
             <input
+              id="campo-valor-despesa"
               type="number"
               step="0.01"
               placeholder="0.00"
@@ -111,8 +119,8 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
           </div>
 
           <div className="campo">
-            <span className="label">Categoria</span>
-            <select value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
+            <label className="label" htmlFor="campo-categoria-despesa">Categoria</label>
+            <select id="campo-categoria-despesa" value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
               {categorias.map((c) => (
                 <option key={c.id} value={c.id}>{c.nome}</option>
               ))}
@@ -120,13 +128,26 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
           </div>
 
           <div className="campo">
-            <span className="label">Data</span>
-            <input type="date" value={data} onChange={(e) => setData(e.target.value)} />
+            <label className="label" htmlFor="campo-data-despesa">Data</label>
+            <input
+              id="campo-data-despesa"
+              type="date"
+              value={data}
+              max={hoje()}
+              aria-invalid={dataEhFutura}
+              aria-describedby={dataEhFutura ? 'aviso-data-futura' : undefined}
+              onChange={(e) => setData(e.target.value)}
+            />
+            {dataEhFutura && (
+              <p className="erro-form" id="aviso-data-futura" role="alert">
+                ⚠ Data futura não é permitida — despesas só podem ser cadastradas até hoje.
+              </p>
+            )}
           </div>
 
-          {erro && <p className="erro-form">{erro}</p>}
+          {erro && <p className="erro-form" role="alert">{erro}</p>}
 
-          <button type="submit" className="btn-primary" disabled={enviando} style={{ width: '100%', padding: 14 }}>
+          <button type="submit" className="btn-primary" disabled={enviando || dataEhFutura} style={{ width: '100%', padding: 14 }}>
             {enviando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Adicionar Despesa'}
           </button>
         </form>
