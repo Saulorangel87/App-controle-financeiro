@@ -1,7 +1,7 @@
 import { Mail } from "lucide-react";
 import "./Footer.css";
 
-const VERSAO = 'v1.0.0';
+const VERSAO = 'v1.1.0';
 
 function IconeLinkedin(props) {
   return (

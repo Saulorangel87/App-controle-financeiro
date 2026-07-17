@@ -5,6 +5,9 @@ const router = express.Router();
 
 // GET /api/categorias
 // Lista todas as categorias do usuário, já com total gasto, disponível e status.
+// O "gasto" considera apenas despesas do mês corrente (o filtro vai dentro do
+// ON do LEFT JOIN, não no WHERE, pra categoria sem despesa no mês continuar
+// aparecendo com gasto = 0 em vez de sumir da lista).
 router.get('/', (req, res) => {
   const categorias = db.prepare(`
     SELECT
@@ -15,7 +18,9 @@ router.get('/', (req, res) => {
       c.limite,
       COALESCE(SUM(d.valor), 0) AS gasto
     FROM categorias c
-    LEFT JOIN despesas d ON d.categoria_id = c.id
+    LEFT JOIN despesas d
+      ON d.categoria_id = c.id
+      AND strftime('%Y-%m', d.data) = strftime('%Y-%m', 'now')
     WHERE c.usuario_id = ?
     GROUP BY c.id
     ORDER BY c.id

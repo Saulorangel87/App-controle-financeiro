@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Pencil } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
@@ -6,6 +6,7 @@ import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
 import { useDespesaModal } from '../contexts/DespesaModalContext';
 import { formatarMoeda, formatarData } from '../utils/formatters';
+import { useRecarregarAoVirarMes } from '../utils/useRecarregarAoVirarMes';
 import './VisaoGeral.css';
 
 export default function VisaoGeral() {
@@ -22,20 +23,25 @@ export default function VisaoGeral() {
     setResumo(res.data);
   }
 
-  useEffect(() => {
-    async function carregar() {
-      const [resResumo, resCategorias, resDespesas] = await Promise.all([
-        api.get('/resumo'),
-        api.get('/categorias'),
-        api.get('/despesas'),
-      ]);
-      setResumo(resResumo.data);
-      setCategorias(resCategorias.data);
-      setDespesas(resDespesas.data.slice(0, 4));
-      setCarregando(false);
-    }
-    carregar();
+  const carregarTudo = useCallback(async () => {
+    const [resResumo, resCategorias, resDespesas] = await Promise.all([
+      api.get('/resumo'),
+      api.get('/categorias'),
+      api.get('/despesas'),
+    ]);
+    setResumo(resResumo.data);
+    setCategorias(resCategorias.data);
+    setDespesas(resDespesas.data.slice(0, 4));
+    setCarregando(false);
   }, []);
+
+  useEffect(() => {
+    carregarTudo();
+  }, [carregarTudo]);
+
+  // Se o mês virar com a aba aberta, recarrega tudo — o dashboard não fica
+  // "preso" mostrando os totais do mês que já passou.
+  useRecarregarAoVirarMes(carregarTudo);
 
   function abrirEdicaoOrcamento() {
     setNovoOrcamento(String(resumo.orcamentoTotal));
@@ -84,7 +90,9 @@ export default function VisaoGeral() {
           </div>
           {editandoOrcamento ? (
             <div className="edicao-orcamento">
+              <label className="sr-only" htmlFor="input-orcamento-total">Novo orçamento total</label>
               <input
+                id="input-orcamento-total"
                 type="number"
                 step="0.01"
                 value={novoOrcamento}

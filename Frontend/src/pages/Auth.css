@@ -22,8 +22,9 @@
   margin-bottom: 8px;
 }
 
-.auth-header strong {
+.auth-header h1 {
   font-size: 17px;
+  font-weight: 700;
 }
 
 .auth-rodape {

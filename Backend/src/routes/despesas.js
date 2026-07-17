@@ -3,6 +3,14 @@ const db = require('../db');
 
 const router = express.Router();
 
+// Data de hoje no formato YYYY-MM-DD (mesmo formato salvo no banco), usada
+// pra bloquear datas futuras. Comparação é feita por string porque o campo
+// "data" é sempre YYYY-MM-DD (comparação lexicográfica funciona igual a
+// comparação cronológica nesse formato).
+function hojeISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 // GET /api/despesas
 // Lista todas as despesas do usuário, mais recentes primeiro, com dados da categoria.
 router.get('/', (req, res) => {
@@ -38,6 +46,9 @@ router.post('/', (req, res) => {
   if (descricao.length > 80) {
     return res.status(400).json({ erro: 'descrição muito longa (máximo 80 caracteres)' });
   }
+  if (data > hojeISO()) {
+    return res.status(400).json({ erro: 'não é possível cadastrar uma despesa com data futura' });
+  }
 
   // Garante que a categoria pertence ao usuário atual
   const categoria = db.prepare(
@@ -72,6 +83,9 @@ router.put('/:id', (req, res) => {
   }
   if (descricao !== undefined && descricao.length > 80) {
     return res.status(400).json({ erro: 'descrição muito longa (máximo 80 caracteres)' });
+  }
+  if (data !== undefined && data > hojeISO()) {
+    return res.status(400).json({ erro: 'não é possível cadastrar uma despesa com data futura' });
   }
 
   if (categoria_id !== undefined) {

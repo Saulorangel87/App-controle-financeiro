@@ -1,27 +1,39 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
 import { formatarMoeda } from '../utils/formatters';
+import { useRecarregarAoVirarMes } from '../utils/useRecarregarAoVirarMes';
 import './Alertas.css';
+
+function mesAtualISO() {
+  return new Date().toISOString().slice(0, 7);
+}
 
 export default function Alertas() {
   const [categorias, setCategorias] = useState([]);
   const [despesas, setDespesas] = useState([]);
   const [carregando, setCarregando] = useState(true);
 
-  useEffect(() => {
-    async function carregar() {
-      const [resCategorias, resDespesas] = await Promise.all([
-        api.get('/categorias'),
-        api.get('/despesas'),
-      ]);
-      setCategorias(resCategorias.data.filter((c) => c.status === 'EXCEDIDO'));
-      setDespesas(resDespesas.data);
-      setCarregando(false);
-    }
-    carregar();
+  const carregar = useCallback(async () => {
+    const [resCategorias, resDespesas] = await Promise.all([
+      api.get('/categorias'),
+      api.get('/despesas'),
+    ]);
+    setCategorias(resCategorias.data.filter((c) => c.status === 'EXCEDIDO'));
+    // "gasto" da categoria já é só do mês corrente, então a lista de despesas
+    // mostrada aqui embaixo também precisa ser só do mês corrente — senão os
+    // números não batem (mostraria despesa de mês passado numa categoria cujo
+    // "excesso" já é só referente ao mês atual).
+    setDespesas(resDespesas.data.filter((d) => d.data.slice(0, 7) === mesAtualISO()));
+    setCarregando(false);
   }, []);
+
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
+
+  useRecarregarAoVirarMes(carregar);
 
   if (carregando) return <p className="label">Carregando...</p>;
 

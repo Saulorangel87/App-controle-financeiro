@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
 import { formatarMoeda } from '../utils/formatters';
+import { useRecarregarAoVirarMes } from '../utils/useRecarregarAoVirarMes';
 import './Categorias.css';
 
 export default function Categorias() {
@@ -10,15 +11,17 @@ export default function Categorias() {
   const [editandoId, setEditandoId] = useState(null);
   const [novoLimite, setNovoLimite] = useState('');
 
-  async function carregar() {
+  const carregar = useCallback(async () => {
     const res = await api.get('/categorias');
     setCategorias(res.data);
     setCarregando(false);
-  }
+  }, []);
 
   useEffect(() => {
     carregar();
-  }, []);
+  }, [carregar]);
+
+  useRecarregarAoVirarMes(carregar);
 
   function abrirEdicao(cat) {
     setEditandoId(cat.id);
@@ -77,7 +80,11 @@ export default function Categorias() {
 
             {editandoId === c.id ? (
               <div className="edicao-limite">
+                <label className="sr-only" htmlFor={`limite-categoria-${c.id}`}>
+                  Novo limite para {c.nome}
+                </label>
                 <input
+                  id={`limite-categoria-${c.id}`}
                   type="number"
                   value={novoLimite}
                   onChange={(e) => setNovoLimite(e.target.value)}

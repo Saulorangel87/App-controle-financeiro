@@ -23,7 +23,7 @@ export default function Layout({ alertasCount }) {
         <div className="header-row header-row-top">
           <div className="header-brand">
             <span className="label">Sistema</span>
-            <strong className="header-title">Controle de Despesas</strong>
+            <h1 className="header-title">Controle de Despesas</h1>
           </div>
           <button
             className="botao-hamburguer"
@@ -35,7 +35,7 @@ export default function Layout({ alertasCount }) {
           </button>
         </div>
 
-        <nav className={`header-nav ${menuAberto ? "aberto" : ""}`}>
+        <nav className={`header-nav ${menuAberto ? "aberto" : ""}`} aria-label="Navegação principal">
           <NavLink to="/" end className={itemNav} onClick={fecharMenu}>
             Visão Geral
           </NavLink>

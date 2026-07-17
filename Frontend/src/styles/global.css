@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
 :root {
   /* Base */
   --bg: #0a0a0a;
@@ -11,7 +9,7 @@
   /* Texto */
   --text-primary: #f2f2f2;
   --text-secondary: #8a8a8a;
-  --text-muted: #555555;
+  --text-muted: #7a7a7a;
 
   /* Acento */
   --accent: #c6ff2e;
@@ -29,6 +27,8 @@
   --cat-saude: #ec4899;
   --cat-lazer: #a855f7;
   --cat-compras: #eab308;
+  --cat-educacao: #3b82f6;
+  --cat-outros: #6b7280;
 
   --radius: 2px;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
@@ -72,6 +72,20 @@ input, select {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-secondary);
+}
+
+/* Label acessível pra leitor de tela, sem aparecer visualmente (usado quando
+   o rótulo visual já existe em outro lugar, ex: título do card). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .panel {
