@@ -18,14 +18,14 @@ export default function Alertas() {
   const carregar = useCallback(async () => {
     const [resCategorias, resDespesas] = await Promise.all([
       api.get('/categorias'),
-      api.get('/despesas'),
+      // "gasto" da categoria já é só do mês corrente, então a lista de despesas
+      // mostrada aqui embaixo também precisa ser só do mês corrente — senão os
+      // números não batem. Filtra direto no banco (?mes=), em vez de baixar
+      // a tabela inteira e filtrar no navegador.
+      api.get('/despesas', { params: { mes: mesAtualISO() } }),
     ]);
     setCategorias(resCategorias.data.filter((c) => c.status === 'EXCEDIDO'));
-    // "gasto" da categoria já é só do mês corrente, então a lista de despesas
-    // mostrada aqui embaixo também precisa ser só do mês corrente — senão os
-    // números não batem (mostraria despesa de mês passado numa categoria cujo
-    // "excesso" já é só referente ao mês atual).
-    setDespesas(resDespesas.data.filter((d) => d.data.slice(0, 7) === mesAtualISO()));
+    setDespesas(resDespesas.data);
     setCarregando(false);
   }, []);
 

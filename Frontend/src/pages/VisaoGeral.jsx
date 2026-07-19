@@ -1,13 +1,37 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Pencil } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import {
+  BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip,
+  PieChart, Pie, Cell, Legend,
+} from 'recharts';
 import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
 import { useDespesaModal } from '../contexts/DespesaModalContext';
 import { formatarMoeda, formatarData } from '../utils/formatters';
 import { useRecarregarAoVirarMes } from '../utils/useRecarregarAoVirarMes';
 import './VisaoGeral.css';
+
+// Mesmo corte usado no resto do app pra "tela de celular" (Alertas.css usa o
+// mesmo valor). Abaixo disso, a barra com 8 categorias fica ilegível — os
+// rótulos espremem e uma categoria com valor muito maior que as outras faz
+// as demais desaparecerem no gráfico (eixo linear).
+const LARGURA_MOBILE = 600;
+
+function useEhMobile() {
+  const [mobile, setMobile] = useState(
+    typeof window !== 'undefined' && window.innerWidth <= LARGURA_MOBILE
+  );
+
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${LARGURA_MOBILE}px)`);
+    const atualizar = () => setMobile(mql.matches);
+    mql.addEventListener('change', atualizar);
+    return () => mql.removeEventListener('change', atualizar);
+  }, []);
+
+  return mobile;
+}
 
 export default function VisaoGeral() {
   const [resumo, setResumo] = useState(null);
@@ -17,6 +41,7 @@ export default function VisaoGeral() {
   const [editandoOrcamento, setEditandoOrcamento] = useState(false);
   const [novoOrcamento, setNovoOrcamento] = useState('');
   const { abrirEdicao } = useDespesaModal();
+  const ehMobile = useEhMobile();
 
   async function carregarResumo() {
     const res = await api.get('/resumo');
@@ -27,11 +52,11 @@ export default function VisaoGeral() {
     const [resResumo, resCategorias, resDespesas] = await Promise.all([
       api.get('/resumo'),
       api.get('/categorias'),
-      api.get('/despesas'),
+      api.get('/despesas', { params: { pagina: 1, porPagina: 4 } }),
     ]);
     setResumo(resResumo.data);
     setCategorias(resCategorias.data);
-    setDespesas(resDespesas.data.slice(0, 4));
+    setDespesas(resDespesas.data.despesas);
     setCarregando(false);
   }, []);
 
@@ -60,7 +85,9 @@ export default function VisaoGeral() {
     nome: c.nome,
     gasto: c.gasto,
     limite: c.limite,
+    cor: categorias.find((cat) => cat.nome === c.nome)?.cor || 'var(--accent)',
   }));
+  const dadosComGasto = dadosGrafico.filter((c) => c.gasto > 0);
 
   const percentual = Math.min(resumo.percentualUtilizado, 100);
   const corBarra =
@@ -139,40 +166,77 @@ export default function VisaoGeral() {
       <div className="panel bloco-grafico">
         <span className="label">Gastos por Categoria</span>
         <div style={{ width: '100%', height: 260, marginTop: 16 }}>
-          <ResponsiveContainer>
-            <BarChart data={dadosGrafico} barGap={4}>
-              <XAxis
-                dataKey="nome"
-                tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
-                axisLine={{ stroke: 'var(--border)' }}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
-                axisLine={{ stroke: 'var(--border)' }}
-                tickLine={false}
-              />
-              <Tooltip
-                cursor={{ fill: 'var(--panel-alt)' }}
-                contentStyle={{
-                  background: 'var(--panel)',
-                  border: '1px solid var(--border)',
-                  fontSize: 12,
-                  fontFamily: 'var(--font-mono)',
-                }}
-                formatter={(valor) => formatarMoeda(valor)}
-              />
-              <Bar dataKey="gasto" fill="var(--accent)" radius={[2, 2, 0, 0]} />
-              <Bar dataKey="limite" fill="#2a2a2a" radius={[2, 2, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {ehMobile ? (
+            dadosComGasto.length === 0 ? (
+              <p className="label" style={{ padding: '90px 0', textAlign: 'center' }}>
+                Nenhum gasto registrado neste mês ainda.
+              </p>
+            ) : (
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie
+                    data={dadosComGasto}
+                    dataKey="gasto"
+                    nameKey="nome"
+                    innerRadius="55%"
+                    outerRadius="80%"
+                    paddingAngle={2}
+                  >
+                    {dadosComGasto.map((entrada) => (
+                      <Cell key={entrada.nome} fill={entrada.cor} stroke="var(--bg)" />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      background: 'var(--panel)',
+                      border: '1px solid var(--border)',
+                      fontSize: 12,
+                      fontFamily: 'var(--font-mono)',
+                    }}
+                    formatter={(valor) => formatarMoeda(valor)}
+                  />
+                  <Legend
+                    wrapperStyle={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )
+          ) : (
+            <ResponsiveContainer>
+              <BarChart data={dadosGrafico} barGap={4}>
+                <XAxis
+                  dataKey="nome"
+                  tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
+                  axisLine={{ stroke: 'var(--border)' }}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
+                  axisLine={{ stroke: 'var(--border)' }}
+                  tickLine={false}
+                />
+                <Tooltip
+                  cursor={{ fill: 'var(--panel-alt)' }}
+                  contentStyle={{
+                    background: 'var(--panel)',
+                    border: '1px solid var(--border)',
+                    fontSize: 12,
+                    fontFamily: 'var(--font-mono)',
+                  }}
+                  formatter={(valor) => formatarMoeda(valor)}
+                />
+                <Bar dataKey="gasto" fill="var(--accent)" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="limite" fill="#2a2a2a" radius={[2, 2, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 
       <div className="panel bloco-despesas">
         <div className="bloco-despesas-header">
           <span className="label">Últimas Despesas</span>
-          <Link to="/despesas" className="label" style={{ color: 'var(--accent)' }}>
+          <Link to="/despesas" className="label link-destacado">
             Ver Todas →
           </Link>
         </div>

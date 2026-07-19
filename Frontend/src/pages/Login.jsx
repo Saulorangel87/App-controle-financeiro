@@ -27,7 +27,7 @@ export default function Login() {
   }
 
   return (
-    <div className="auth-container">
+    <main className="auth-container">
       <form className="panel auth-card" onSubmit={enviar}>
         <div className="auth-header">
           <span className="label">Sistema</span>
@@ -66,10 +66,10 @@ export default function Login() {
         </button>
 
         <p className="auth-rodape label">
-          Não tem conta? <Link to="/cadastro" style={{ color: 'var(--accent)' }}>Cadastre-se</Link>
+          Não tem conta? <Link to="/cadastro" className="link-destacado">Cadastre-se</Link>
         </p>
       </form>
       <Footer />
-    </div>
+    </main>
   );
 }

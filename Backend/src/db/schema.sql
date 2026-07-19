@@ -49,3 +49,6 @@ CREATE INDEX IF NOT EXISTS idx_categorias_usuario ON categorias(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_despesas_usuario ON despesas(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_despesas_categoria ON despesas(categoria_id);
 CREATE INDEX IF NOT EXISTS idx_despesas_data ON despesas(data);
+-- Índice composto: cobre a consulta mais comum do sistema (filtrar despesas
+-- de um usuário e ordenar por data), usada em quase toda tela do app.
+CREATE INDEX IF NOT EXISTS idx_despesas_usuario_data ON despesas(usuario_id, data DESC);

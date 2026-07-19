@@ -1,7 +1,8 @@
 import { Mail } from "lucide-react";
 import "./Footer.css";
 
-const VERSAO = 'v1.1.0';
+const VERSAO = 'v1.2.0';
+const ANO = new Date().getFullYear();
 
 function IconeLinkedin(props) {
   return (
@@ -33,8 +34,8 @@ function IconeGithub(props) {
 
 export default function Footer() {
   return (
-    <footer className="rodape-fixo">
-      <span>Desenvolvido por Saulo Rangel - {VERSAO}</span>
+    <footer className="rodape-fixo ocultar-impressao">
+      <span>&copy; {ANO} Desenvolvido por Saulo Rangel - {VERSAO}</span>
       <div className="rodape-icones">
         <a
           href="https://www.linkedin.com/in/saulorangel87"

@@ -8,7 +8,7 @@ const CATEGORIAS_PADRAO = [
   { nome: 'Lazer', icone: 'popcorn', cor: '#a855f7', limite: 250 },
   { nome: 'Compras', icone: 'shopping-bag', cor: '#eab308', limite: 350 },
   { nome: 'Educação', icone: 'graduation-cap', cor: '#3b82f6', limite: 300 },
-  { nome: 'Outros', icone: 'more-horizontal', cor: '#6b7280', limite: 200 },
+  { nome: 'Outros', icone: 'more-horizontal', cor: '#868c94', limite: 200 },
 ];
 
 module.exports = CATEGORIAS_PADRAO;

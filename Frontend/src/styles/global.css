@@ -9,7 +9,7 @@
   /* Texto */
   --text-primary: #f2f2f2;
   --text-secondary: #8a8a8a;
-  --text-muted: #7a7a7a;
+  --text-muted: #858585;
 
   /* Acento */
   --accent: #c6ff2e;
@@ -28,7 +28,7 @@
   --cat-lazer: #a855f7;
   --cat-compras: #eab308;
   --cat-educacao: #3b82f6;
-  --cat-outros: #6b7280;
+  --cat-outros: #868c94;
 
   --radius: 2px;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
@@ -86,6 +86,51 @@ input, select {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Link de texto dentro de frase (ex: "Não tem conta? Cadastre-se"). Sublinhado
+   junto com a cor — o Lighthouse reprova link que só muda de cor, porque quem
+   não distingue bem cores não percebe que aquele texto é clicável. */
+.link-destacado {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Utilitários de impressão. .ocultar-impressao esconde menu/rodapé/botões que
+   não fazem sentido no papel; .somente-impressao mostra algo só na impressão
+   (ex: data de geração do relatório). O tema escuro vira claro só na
+   impressão, porque imprimir fundo preto desperdiça tinta e fica ilegível. */
+.somente-impressao {
+  display: none;
+}
+
+@media print {
+  :root {
+    --bg: #ffffff;
+    --panel: #ffffff;
+    --panel-alt: #f7f7f7;
+    --border: #d0d0d0;
+    --border-soft: #e5e5e5;
+    --text-primary: #111111;
+    --text-secondary: #444444;
+    --text-muted: #666666;
+    --accent: #3f6f00;
+    --danger: #c1121f;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .ocultar-impressao {
+    display: none !important;
+  }
+
+  .somente-impressao {
+    display: block;
+  }
 }
 
 .panel {
@@ -210,6 +255,34 @@ input, select {
 
 .botao-icone:hover {
   color: var(--accent);
+}
+
+/* Paginação reutilizável (Despesas e Relatório usam a mesma) */
+.paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding-top: 16px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.paginacao .botao-icone:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Item escondido por paginação client-side (dados continuam no DOM — a
+   impressão força tudo visível de novo, ver @media print mais abaixo). */
+.oculto-paginacao {
+  display: none !important;
+}
+
+@media print {
+  .oculto-paginacao {
+    display: flex !important;
+  }
 }
 
 /* Foco visível para acessibilidade */
