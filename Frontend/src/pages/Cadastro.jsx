@@ -34,7 +34,7 @@ export default function Cadastro() {
   }
 
   return (
-    <div className="auth-container">
+    <main className="auth-container">
       <form className="panel auth-card" onSubmit={enviar}>
         <div className="auth-header">
           <span className="label">Sistema</span>
@@ -85,9 +85,9 @@ export default function Cadastro() {
         </button>
 
         <p className="auth-rodape label">
-          Já tem conta? <Link to="/login" style={{ color: 'var(--accent)' }}>Entrar</Link>
+          Já tem conta? <Link to="/login" className="link-destacado">Entrar</Link>
         </p>
       </form>
-    </div>
+    </main>
   );
 }

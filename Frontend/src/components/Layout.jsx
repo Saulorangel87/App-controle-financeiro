@@ -19,7 +19,7 @@ export default function Layout({ alertasCount }) {
 
   return (
     <div className="layout">
-      <header className="header">
+      <header className="header ocultar-impressao">
         <div className="header-row header-row-top">
           <div className="header-brand">
             <span className="label">Sistema</span>

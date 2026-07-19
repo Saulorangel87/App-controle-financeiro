@@ -12,25 +12,72 @@ function hojeISO() {
 }
 
 // GET /api/despesas
-// Lista todas as despesas do usuário, mais recentes primeiro, com dados da categoria.
+// Sem parâmetros: mantém o comportamento antigo (lista tudo, mais recentes
+// primeiro) — usado onde a lista precisa ser filtrada/consumida por inteiro.
+//
+// Com ?pagina e/ou ?porPagina: pagina de verdade no banco (LIMIT/OFFSET),
+// pra telas com muitos registros não precisarem baixar a tabela inteira.
+// Retorna um objeto com metadados de paginação em vez do array puro.
+//
+// Com ?mes=YYYY-MM (em qualquer um dos dois modos): filtra só as despesas
+// daquele mês.
 router.get('/', (req, res) => {
-  const despesas = db.prepare(`
-    SELECT
-      d.id,
-      d.descricao,
-      d.valor,
-      d.data,
-      c.id AS categoria_id,
-      c.nome AS categoria_nome,
-      c.icone AS categoria_icone,
-      c.cor AS categoria_cor
+  const { mes, pagina, porPagina } = req.query;
+
+  const filtros = ['d.usuario_id = ?'];
+  const params = [req.usuarioId];
+  if (mes) {
+    filtros.push("strftime('%Y-%m', d.data) = ?");
+    params.push(mes);
+  }
+  const whereSql = filtros.join(' AND ');
+
+  const baseSql = `
     FROM despesas d
     JOIN categorias c ON c.id = d.categoria_id
-    WHERE d.usuario_id = ?
-    ORDER BY d.data DESC, d.id DESC
-  `).all(req.usuarioId);
+    WHERE ${whereSql}
+  `;
 
-  res.json(despesas);
+  const paginando = pagina !== undefined || porPagina !== undefined;
+
+  if (!paginando) {
+    const despesas = db.prepare(`
+      SELECT d.id, d.descricao, d.valor, d.data,
+             c.id AS categoria_id, c.nome AS categoria_nome,
+             c.icone AS categoria_icone, c.cor AS categoria_cor
+      ${baseSql}
+      ORDER BY d.data DESC, d.id DESC
+    `).all(...params);
+
+    return res.json(despesas);
+  }
+
+  const paginaAtual = Math.max(1, parseInt(pagina, 10) || 1);
+  const itensPorPagina = Math.min(100, Math.max(1, parseInt(porPagina, 10) || 20));
+  const offset = (paginaAtual - 1) * itensPorPagina;
+
+  const { total } = db.prepare(`SELECT COUNT(*) AS total ${baseSql}`).get(...params);
+  const { totalGeral } = db.prepare(`
+    SELECT COALESCE(SUM(d.valor), 0) AS totalGeral ${baseSql}
+  `).get(...params);
+
+  const despesas = db.prepare(`
+    SELECT d.id, d.descricao, d.valor, d.data,
+           c.id AS categoria_id, c.nome AS categoria_nome,
+           c.icone AS categoria_icone, c.cor AS categoria_cor
+    ${baseSql}
+    ORDER BY d.data DESC, d.id DESC
+    LIMIT ? OFFSET ?
+  `).all(...params, itensPorPagina, offset);
+
+  res.json({
+    despesas,
+    pagina: paginaAtual,
+    porPagina: itensPorPagina,
+    total,
+    totalGeral,
+    totalPaginas: Math.max(1, Math.ceil(total / itensPorPagina)),
+  });
 });
 
 // POST /api/despesas

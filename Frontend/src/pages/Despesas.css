@@ -74,5 +74,5 @@
   .celula-categoria { grid-area: cat; }
   .celula-valor { grid-area: valor; }
   .linha-cabecalho { display: none; }
-  .botao-icone, .botao-excluir { display: none; }
+  .linha .botao-icone, .linha .botao-excluir { display: none; }
 }
