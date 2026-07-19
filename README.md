@@ -110,18 +110,10 @@ docker compose up -d --build
 - [x] Autenticação multiusuário
 - [x] Relatório mensal comparativo, com paginação e impressão
 - [x] Deploy em produção
-<<<<<<< HEAD
 - [x] Melhorias de performance, acessibilidade e SEO (Lighthouse)
 - [ ] Recuperação de senha e validação de email no cadastro (Resend já configurado, falta implementar)
 - [ ] Registro independente de VA/VR (vale alimentação/refeição), sem misturar com o orçamento e gastos atuais
 - [ ] Versão mobile (app nativo/PWA)
-=======
-- [ ] Recuperação de senha e validação de email no cadastro (evitar cadastro com email inexistente)
-- [ ] Corrigir exibição do gráfico "Gastos por Categoria" em telas de celular (rótulos sobrepostos)
-- [ ] Opção de imprimir o Relatório Mensal
-- [ ] Registro independente de VA/VR (vale alimentação/refeição), sem misturar com o orçamento e gastos atuais — interface ainda em definição
-- [ ] Versão PWA (instalável no celular)
->>>>>>> 48c355d51b88ea61255de4660f600db05e419775
 - [ ] Migração para PostgreSQL (caso o uso simultâneo cresça)
 
 ## 👤 Autor
