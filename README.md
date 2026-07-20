@@ -24,19 +24,18 @@ Cada usuário tem seus próprios dados isolados (despesas, categorias e orçamen
 ## ✨ Funcionalidades
 
 - 🔐 **Cadastro e login** com senha criptografada (bcrypt) e sessão via JWT
-- 📊 **Dashboard** com total gasto, orçamento, disponível e gráfico de gastos por categoria (pizza no mobile, barra no desktop)
+- 📊 **Dashboard** com total gasto, orçamento, disponível e gráfico de gastos por categoria
 - 🏷️ **Categorias** com limite individual editável e indicador visual de status (OK / Excedido)
-- 💸 **CRUD completo de despesas** — criar, editar e excluir, com paginação e bloqueio de data futura
+- 💸 **CRUD completo de despesas** — criar, editar e excluir
 - 🚨 **Alertas automáticos** para categorias que ultrapassaram o limite
-- 📅 **Relatório mensal** com comparação de gastos entre o mês atual e o anterior, paginação, e opção de **imprimir**
+- 📅 **Relatório mensal** com comparação de gastos entre o mês atual e o anterior
 - 💰 **Orçamento total editável**, definido manualmente pelo usuário
-- 🔄 **Dashboard sempre atualizado** ao mês corrente, mesmo com a aba aberta na virada do mês
-- 📱 **Totalmente responsivo**, com menu hambúrguer e gráficos adaptados para telas menores
+- 📱 **Totalmente responsivo**, com menu hambúrguer em telas menores
 
 ## 🛠️ Tecnologias utilizadas
 
 **Frontend**
-- React 19 + Vite (com code-splitting por rota)
+- React 19 + Vite
 - React Router
 - Recharts (gráficos)
 - Lucide React (ícones)
@@ -44,13 +43,13 @@ Cada usuário tem seus próprios dados isolados (despesas, categorias e orçamen
 
 **Backend**
 - Node.js + Express
-- SQLite (better-sqlite3, modo WAL, índices otimizados)
+- SQLite (better-sqlite3, modo WAL)
 - JWT (jsonwebtoken) para autenticação
 - bcryptjs para hash de senha
 - express-rate-limit para proteção contra força bruta
 
 **Infraestrutura**
-- Docker + Docker Compose (build multi-estágio, Nginx servindo o frontend com cache de assets)
+- Docker + Docker Compose (build multi-estágio, Nginx servindo o frontend)
 - Deploy self-hosted em Oracle Cloud
 - Cloudflare Tunnel (HTTPS automático, sem exposição direta de portas)
 
@@ -64,15 +63,7 @@ Alguns cuidados aplicados antes de colocar o app em produção:
 - CORS restrito por domínio, não aberto para qualquer origem
 - Todas as queries SQL parametrizadas (proteção contra SQL Injection)
 - Isolamento de dados por usuário em todas as rotas autenticadas
-- Validação de data futura em despesas (frontend + backend)
 - Segredos e dados sensíveis nunca versionados (`.gitignore` cobrindo `.env` e banco de dados local)
-
-## ♿ Qualidade e acessibilidade
-
-Auditado com Lighthouse e ajustado continuamente:
-- **Performance**: code-splitting por rota, cache de assets estáticos, fontes não-bloqueantes
-- **Acessibilidade**: labels de formulário associados corretamente, contraste de cores validado (WCAG AA), links não dependem só de cor, estrutura semântica (`<main>`, `<h1>`)
-- **SEO**: meta description, `robots.txt` válido
 
 ## 🚀 Como rodar localmente
 
@@ -108,12 +99,13 @@ docker compose up -d --build
 
 - [x] CRUD de despesas e categorias
 - [x] Autenticação multiusuário
-- [x] Relatório mensal comparativo, com paginação e impressão
+- [x] Relatório mensal comparativo
 - [x] Deploy em produção
-- [x] Melhorias de performance, acessibilidade e SEO (Lighthouse)
-- [ ] Recuperação de senha e validação de email no cadastro (Resend já configurado, falta implementar)
-- [ ] Registro independente de VA/VR (vale alimentação/refeição), sem misturar com o orçamento e gastos atuais
-- [ ] Versão mobile (app nativo/PWA)
+- [ ] Recuperação de senha e validação de email no cadastro (evitar cadastro com email inexistente)
+- [ ] Corrigir exibição do gráfico "Gastos por Categoria" em telas de celular (rótulos sobrepostos)
+- [ ] Opção de imprimir o Relatório Mensal
+- [ ] Registro independente de VA/VR (vale alimentação/refeição), sem misturar com o orçamento e gastos atuais — interface ainda em definição
+- [ ] Versão PWA (instalável no celular)
 - [ ] Migração para PostgreSQL (caso o uso simultâneo cresça)
 
 ## 👤 Autor
