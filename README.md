@@ -117,6 +117,8 @@ docker compose up -d --build
 - [x] Deploy em produção
 - [x] Melhorias de performance, acessibilidade e SEO (Lighthouse)
 - [x] Recuperação de senha e validação de email no cadastro
+- [ ] Opção de excluir a própria conta
+- [ ] Exclusão automática de usuários inativos há mais de 90 dias
 - [ ] Registro independente de VA/VR (vale alimentação/refeição), sem misturar com o orçamento e gastos atuais
 - [ ] Versão mobile (app nativo/PWA)
 - [ ] Migração para PostgreSQL (caso o uso simultâneo cresça)
