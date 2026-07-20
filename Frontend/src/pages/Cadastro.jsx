@@ -1,17 +1,17 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import './Auth.css';
 import Footer from '../components/Footer';
 
 export default function Cadastro() {
   const { registrar } = useAuth();
-  const navigate = useNavigate();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [cadastroFeito, setCadastroFeito] = useState(false);
 
   async function enviar(e) {
     e.preventDefault();
@@ -25,12 +25,34 @@ export default function Cadastro() {
     setEnviando(true);
     try {
       await registrar(nome, email, senha);
-      navigate('/');
+      setCadastroFeito(true);
     } catch (err) {
       setErro(err.response?.data?.erro || 'Não foi possível criar a conta. Tente novamente.');
     } finally {
       setEnviando(false);
     }
+  }
+
+  if (cadastroFeito) {
+    return (
+      <main className="auth-container">
+        <div className="panel auth-card">
+          <div className="auth-header">
+            <span className="label">Sistema</span>
+            <h1>Controle de Despesas</h1>
+          </div>
+          <p style={{ lineHeight: 1.6 }}>
+            Conta criada! Mandamos um link de confirmação para <strong>{email}</strong>.
+            Verifique sua caixa de entrada (e o spam, por garantia) e clique no link
+            para ativar sua conta.
+          </p>
+          <p className="auth-rodape label">
+            <Link to="/login" className="link-destacado">Ir para o login</Link>
+          </p>
+        </div>
+        <Footer />
+      </main>
+    );
   }
 
   return (

@@ -1,3 +1,9 @@
+// Carrega o .env pra dentro de process.env — só tem efeito rodando fora do
+// Docker (`npm run dev`). No Docker, as variáveis já chegam prontas via
+// docker-compose, e o dotenv nunca sobrescreve uma variável que já existe,
+// então é seguro deixar essa chamada aqui incondicionalmente.
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 
