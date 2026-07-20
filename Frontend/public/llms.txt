@@ -1,0 +1,14 @@
+# Controle de Despesas
+
+> Aplicação full-stack de gerenciamento de finanças pessoais, com autenticação multiusuário, categorização de gastos, orçamento mensal editável, alertas de limite e relatórios comparativos entre meses.
+
+Controle de Despesas é um projeto pessoal de código aberto construído com React, Node.js/Express e SQLite, com deploy self-hosted em Oracle Cloud. Cada usuário autenticado tem seus próprios dados isolados (despesas, categorias e orçamento).
+
+## Docs
+
+- [Repositório no GitHub](https://github.com/Saulorangel87/App-controle-financeiro): código-fonte completo, README com stack técnica e instruções de instalação
+- [Aplicação em produção](https://despesas.devsaulo.com.br): app funcionando, requer cadastro/login
+
+## Autor
+
+- [LinkedIn](https://www.linkedin.com/in/saulorangel87): perfil profissional de Saulo Rangel, autor do projeto
