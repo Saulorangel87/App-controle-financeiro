@@ -7,6 +7,8 @@ services:
       - NODE_ENV=production
       - JWT_SECRET=${JWT_SECRET}
       - FRONTEND_URL=${FRONTEND_URL}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - EMAIL_REMETENTE=${EMAIL_REMETENTE}
       - PORT=3001
     volumes:
       # Persiste o banco SQLite fora do container, senão os dados somem

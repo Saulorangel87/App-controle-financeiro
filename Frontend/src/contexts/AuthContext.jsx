@@ -31,10 +31,10 @@ export function AuthProvider({ children }) {
   }
 
   async function registrar(nome, email, senha) {
-    const res = await api.post("/auth/registrar", { nome, email, senha });
-    window.sessionStorage.setItem("token", res.data.token);
-    window.sessionStorage.setItem("usuario", JSON.stringify(res.data.usuario));
-    setUsuario(res.data.usuario);
+    // Não guarda token nem loga automaticamente — o backend não libera a
+    // conta até o email ser confirmado. A tela de Cadastro trata a resposta
+    // (mensagem de sucesso) e manda a pessoa pra tela de login.
+    await api.post("/auth/registrar", { nome, email, senha });
   }
 
   function logout() {

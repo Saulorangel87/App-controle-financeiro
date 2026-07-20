@@ -52,3 +52,19 @@ CREATE INDEX IF NOT EXISTS idx_despesas_data ON despesas(data);
 -- Índice composto: cobre a consulta mais comum do sistema (filtrar despesas
 -- de um usuário e ordenar por data), usada em quase toda tela do app.
 CREATE INDEX IF NOT EXISTS idx_despesas_usuario_data ON despesas(usuario_id, data DESC);
+
+-- Tokens temporários de uso único: confirmação de email no cadastro e
+-- recuperação de senha esquecida. Cada token vale só pra um propósito
+-- (coluna "tipo"), expira sozinho e não pode ser reutilizado (coluna "usado").
+CREATE TABLE IF NOT EXISTS tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  usuario_id INTEGER NOT NULL,
+  token TEXT NOT NULL UNIQUE,
+  tipo TEXT NOT NULL CHECK (tipo IN ('verificacao_email', 'recuperacao_senha')),
+  expira_em TEXT NOT NULL,
+  usado INTEGER NOT NULL DEFAULT 0,
+  criado_em TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_tokens_token ON tokens(token);
+CREATE INDEX IF NOT EXISTS idx_tokens_usuario ON tokens(usuario_id);

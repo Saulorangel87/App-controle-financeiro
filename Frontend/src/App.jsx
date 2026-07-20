@@ -16,6 +16,9 @@ const Alertas = lazy(() => import('./pages/Alertas'));
 const Relatorio = lazy(() => import('./pages/Relatorio'));
 const Login = lazy(() => import('./pages/Login'));
 const Cadastro = lazy(() => import('./pages/Cadastro'));
+const VerificarEmail = lazy(() => import('./pages/VerificarEmail'));
+const EsqueciSenha = lazy(() => import('./pages/EsqueciSenha'));
+const RedefinirSenha = lazy(() => import('./pages/RedefinirSenha'));
 
 function AreaLogada() {
   const [alertasCount, setAlertasCount] = useState(null);
@@ -58,6 +61,9 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
+        <Route path="/verificar-email" element={<VerificarEmail />} />
+        <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+        <Route path="/redefinir-senha" element={<RedefinirSenha />} />
         <Route
           path="/*"
           element={

@@ -1,6 +1,6 @@
 {
   "name": "controle-despesas-backend",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "main": "src/server.js",
   "scripts": {
     "seed": "node src/db/seed.js",
@@ -13,6 +13,7 @@
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^11.3.0",
     "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
     "express": "^4.21.1",
     "express-rate-limit": "^8.5.2",
     "jsonwebtoken": "^9.0.3"
