@@ -1,7 +1,7 @@
 import { Mail } from "lucide-react";
 import "./Footer.css";
 
-const VERSAO = 'v1.3.0';
+const VERSAO = 'v1.4.0';
 const ANO = new Date().getFullYear();
 
 function IconeLinkedin(props) {
