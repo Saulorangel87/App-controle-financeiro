@@ -9,17 +9,30 @@ Aplicação full-stack de gerenciamento de finanças pessoais, com autenticaçã
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com)
 [![License](https://img.shields.io/badge/license-MIT-green)](#licença)
 
-🔗 **[Acesse o app em produção](https://despesas.devsaulo.com.br)**
+🔗 **[Acesse o app em produção](https://despesas.devsaulo.com.br)** — instalável como app no celular/desktop (veja a seção PWA abaixo)
 
   <img width="1917" height="852" alt="image" src="https://github.com/user-attachments/assets/afed5417-0258-4e48-a40b-66185fab5f83" />
   <img width="1917" height="865" alt="image" src="https://github.com/user-attachments/assets/68ba646d-40b9-48c0-b60c-798cbd809307" />
-
 
 ## 📋 Sobre o projeto
 
 O **Controle de Despesas** nasceu a partir da análise de um design no Figma e evoluiu para uma aplicação completa, construída do zero: modelagem de banco de dados, API REST autenticada, frontend React consumindo a API, e deploy real em infraestrutura self-hosted (Docker + Oracle Cloud + Cloudflare Tunnel).
 
 Cada usuário tem seus próprios dados isolados (despesas, categorias e orçamento), protegidos por autenticação JWT.
+
+## 📲 Instalável como app (PWA)
+
+O site pode ser instalado no celular ou no computador como um aplicativo de
+verdade, sem barra de endereço — não é só um atalho de navegador.
+
+- **Android/Chrome:** abra o menu (⋮) e toque em **"Instalar app"**, ou use o
+  ícone de instalação (⊕) na barra de endereço no desktop.
+- **iOS/Safari:** toque em compartilhar → **"Adicionar à Tela de Início"**.
+
+Isso é possível graças a `manifest.json`, ícones em duas resoluções e um
+service worker mínimo (`Frontend/public/sw.js`), que também cacheia o "shell"
+do app para abrir mais rápido numa segunda visita — sem nunca cachear dados
+financeiros, que sempre vêm direto da API.
 
 ## ✨ Funcionalidades
 
@@ -31,7 +44,7 @@ Cada usuário tem seus próprios dados isolados (despesas, categorias e orçamen
 - 📅 **Relatório mensal** com comparação de gastos entre o mês atual e o anterior, paginação, e opção de **imprimir**
 - 💰 **Orçamento total editável**, definido manualmente pelo usuário
 - 🔄 **Dashboard sempre atualizado** ao mês corrente, mesmo com a aba aberta na virada do mês
-- 📱 **Totalmente responsivo**, com menu hambúrguer e gráficos adaptados para telas menores
+- 📱 **Totalmente responsivo e instalável (PWA)**, com menu hambúrguer e gráficos adaptados para telas menores
 
 ## 🛠️ Tecnologias utilizadas
 
@@ -70,12 +83,13 @@ Alguns cuidados aplicados antes de colocar o app em produção:
 - Validação de data futura em despesas (frontend + backend)
 - Segredos e dados sensíveis nunca versionados (`.gitignore` cobrindo `.env` e banco de dados local)
 
-## ♿ Qualidade e acessibilidade
+## ♿ Qualidade, acessibilidade e SEO
 
-Auditado com Lighthouse e ajustado continuamente:
+Auditado com Lighthouse/PageSpeed Insights e ajustado continuamente:
 - **Performance**: code-splitting por rota, cache de assets estáticos, fontes não-bloqueantes
 - **Acessibilidade**: labels de formulário associados corretamente, contraste de cores validado (WCAG AA), links não dependem só de cor, estrutura semântica (`<main>`, `<h1>`)
-- **SEO**: meta description, `robots.txt` e `llms.txt` válidos
+- **SEO**: meta description, `robots.txt` e `llms.txt` válidos (app público, indexação liberada — está linkado no LinkedIn como peça de portfólio)
+- **PWA**: manifest.json, ícones e service worker — instalação confiável como app completo
 
 ## 🚀 Como rodar localmente
 
@@ -100,6 +114,8 @@ npm run dev    # roda em http://localhost:5173
 
 > Sem uma `RESEND_API_KEY` configurada, o backend não trava — ele só imprime o link de verificação/recuperação de senha no console em vez de mandar o email de verdade, o que já é suficiente pra testar o fluxo localmente.
 
+> Service worker (PWA) só funciona em `localhost` ou em produção (HTTPS) — em outro IP da rede local sem HTTPS, o navegador bloqueia o registro por segurança.
+
 ### Via Docker
 
 ```bash
@@ -117,10 +133,10 @@ docker compose up -d --build
 - [x] Deploy em produção
 - [x] Melhorias de performance, acessibilidade e SEO (Lighthouse)
 - [x] Recuperação de senha e validação de email no cadastro
+- [x] Versão instalável (PWA)
 - [ ] Opção de excluir a própria conta
 - [ ] Exclusão automática de usuários inativos há mais de 90 dias
 - [ ] Registro independente de VA/VR (vale alimentação/refeição), sem misturar com o orçamento e gastos atuais
-- [ ] Versão mobile (app nativo/PWA)
 - [ ] Migração para PostgreSQL (caso o uso simultâneo cresça)
 
 ## 👤 Autor
