@@ -8,6 +8,13 @@
     <meta name="theme-color" content="#0a0a0a" />
     <title>Controle de Despesas</title>
 
+    <!-- Manifesto PWA: nome, ícones e display "standalone" são o que faz o
+         Chrome oferecer "Instalar app" de verdade, em vez de só um atalho. -->
+    <link rel="manifest" href="/manifest.json" />
+    <!-- iOS/Safari não lê manifest.json para o ícone da tela inicial — precisa
+         desse link específico. -->
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+
     <!-- Preconnect + carregamento não-bloqueante da fonte (evita que o
          @import no CSS segure a renderização da página). -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
