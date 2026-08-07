@@ -45,6 +45,9 @@ export default function Layout({ alertasCount }) {
           <NavLink to="/categorias" className={itemNav} onClick={fecharMenu}>
             Categorias
           </NavLink>
+          <NavLink to="/recorrentes" className={itemNav} onClick={fecharMenu}>
+            Recorrentes
+          </NavLink>
           <NavLink to="/alertas" className={itemNav} onClick={fecharMenu}>
             Alertas {alertasCount != null ? `[${alertasCount}]` : ""}
           </NavLink>

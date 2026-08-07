@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Pencil } from 'lucide-react';
+import { Pencil, Plus, X } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
+import ModalEntrada from '../components/ModalEntrada';
 import { useDespesaModal } from '../contexts/DespesaModalContext';
 import { formatarMoeda, formatarData } from '../utils/formatters';
 import { useRecarregarAoVirarMes } from '../utils/useRecarregarAoVirarMes';
@@ -37,9 +38,11 @@ export default function VisaoGeral() {
   const [resumo, setResumo] = useState(null);
   const [categorias, setCategorias] = useState([]);
   const [despesas, setDespesas] = useState([]);
+  const [entradas, setEntradas] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [editandoOrcamento, setEditandoOrcamento] = useState(false);
   const [novoOrcamento, setNovoOrcamento] = useState('');
+  const [modalEntradaAberto, setModalEntradaAberto] = useState(false);
   const { abrirEdicao } = useDespesaModal();
   const ehMobile = useEhMobile();
 
@@ -48,17 +51,35 @@ export default function VisaoGeral() {
     setResumo(res.data);
   }
 
+  async function carregarEntradas() {
+    const res = await api.get('/entradas');
+    setEntradas(res.data);
+  }
+
   const carregarTudo = useCallback(async () => {
-    const [resResumo, resCategorias, resDespesas] = await Promise.all([
+    const [resResumo, resCategorias, resDespesas, resEntradas] = await Promise.all([
       api.get('/resumo'),
       api.get('/categorias'),
       api.get('/despesas', { params: { pagina: 1, porPagina: 4 } }),
+      api.get('/entradas'),
     ]);
     setResumo(resResumo.data);
     setCategorias(resCategorias.data);
     setDespesas(resDespesas.data.despesas);
+    setEntradas(resEntradas.data);
     setCarregando(false);
   }, []);
+
+  async function excluirEntrada(id) {
+    await api.delete(`/entradas/${id}`);
+    carregarEntradas();
+    carregarResumo();
+  }
+
+  function entradaSalva() {
+    carregarEntradas();
+    carregarResumo();
+  }
 
   useEffect(() => {
     carregarTudo();
@@ -110,9 +131,19 @@ export default function VisaoGeral() {
           <div className="card-resumo-header">
             <span className="label">Orçamento Total</span>
             {!editandoOrcamento && (
-              <button className="botao-editar-inline" onClick={abrirEdicaoOrcamento} aria-label="Editar orçamento total">
-                editar
-              </button>
+              <div className="acoes-orcamento">
+                <button
+                  className="botao-icone botao-adicionar-valor"
+                  onClick={() => setModalEntradaAberto(true)}
+                  aria-label="Adicionar valor ao orçamento"
+                  title="Adicionar valor"
+                >
+                  <Plus size={14} />
+                </button>
+                <button className="botao-editar-inline" onClick={abrirEdicaoOrcamento} aria-label="Editar orçamento total">
+                  editar
+                </button>
+              </div>
             )}
           </div>
           {editandoOrcamento ? (
@@ -162,6 +193,32 @@ export default function VisaoGeral() {
           <span className="label">limite {formatarMoeda(resumo.orcamentoTotal)}</span>
         </div>
       </div>
+
+      {entradas.length > 0 && (
+        <div className="panel bloco-entradas">
+          <span className="label">Entradas do Mês</span>
+          <ul className="lista-entradas">
+            {entradas.map((e) => (
+              <li key={e.id} className="item-entrada">
+                <div className="item-info">
+                  <strong title={e.origem}>{e.origem}</strong>
+                  <span className="label">
+                    {e.descricao ? `${e.descricao} · ` : ''}{formatarData(e.data)}
+                  </span>
+                </div>
+                <span className="item-valor-entrada">+{formatarMoeda(e.valor)}</span>
+                <button
+                  className="botao-icone"
+                  onClick={() => excluirEntrada(e.id)}
+                  aria-label={`Excluir entrada ${e.origem}`}
+                >
+                  <X size={14} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="panel bloco-grafico">
         <span className="label">Gastos por Categoria</span>
@@ -258,6 +315,12 @@ export default function VisaoGeral() {
           ))}
         </ul>
       </div>
+
+      <ModalEntrada
+        aberto={modalEntradaAberto}
+        onFechar={() => setModalEntradaAberto(false)}
+        onSalvo={entradaSalva}
+      />
     </div>
   );
 }

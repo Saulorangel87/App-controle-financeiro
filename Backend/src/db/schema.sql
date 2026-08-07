@@ -37,12 +37,60 @@ CREATE TABLE IF NOT EXISTS despesas (
 
 -- Orçamento total definido manualmente pelo usuário (independente da soma
 -- dos limites de categoria — o usuário decide quanto tem pra gastar no mês)
+-- Tabela antiga, mantida só pra migração automática pro orcamento_mensal
+-- (ver db/index.js). Não é mais lida nem escrita por nenhuma rota.
 CREATE TABLE IF NOT EXISTS orcamento (
   usuario_id INTEGER PRIMARY KEY,
   valor REAL NOT NULL DEFAULT 0,
   atualizado_em TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
+
+-- Orçamento total por mês. A chave inclui o mês, então um mês novo sempre
+-- começa sem linha (valor 0 na prática, via garantirOrcamento) — resolve o
+-- problema do valor "disponível" ficar preso no valor do mês anterior.
+CREATE TABLE IF NOT EXISTS orcamento_mensal (
+  usuario_id INTEGER NOT NULL,
+  mes TEXT NOT NULL,
+  valor REAL NOT NULL DEFAULT 0,
+  atualizado_em TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (usuario_id, mes),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+
+-- Entradas de dinheiro extra além do orçamento base do mês (ex: bônus,
+-- freela, reembolso). Cada entrada soma automaticamente no orçamento do
+-- mês da sua data e fica guardada com origem/descrição pra consulta.
+CREATE TABLE IF NOT EXISTS entradas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  usuario_id INTEGER NOT NULL,
+  origem TEXT NOT NULL,
+  descricao TEXT,
+  valor REAL NOT NULL,
+  data TEXT NOT NULL,
+  criado_em TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_entradas_usuario_data ON entradas(usuario_id, data DESC);
+
+-- Despesas recorrentes/fixas (luz, água, internet...): funciona como uma
+-- anotação permanente pra não esquecer contas fixas — não fica presa a
+-- nenhum mês e não é apagada sozinha. O campo pago_mes guarda em qual mês
+-- (YYYY-MM) ela foi marcada como paga, então o checkbox "paga este mês"
+-- reseta sozinho quando o mês vira, sem precisar de nenhum job/migração.
+CREATE TABLE IF NOT EXISTS despesas_recorrentes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  usuario_id INTEGER NOT NULL,
+  descricao TEXT NOT NULL,
+  valor REAL,
+  dia_vencimento INTEGER,
+  observacao TEXT,
+  pago_mes TEXT,
+  pago_em TEXT,
+  criado_em TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_recorrentes_usuario ON despesas_recorrentes(usuario_id);
 
 -- Índices para consultas mais rápidas filtrando por usuário
 CREATE INDEX IF NOT EXISTS idx_categorias_usuario ON categorias(usuario_id);
