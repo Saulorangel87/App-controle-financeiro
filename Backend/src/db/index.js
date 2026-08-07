@@ -29,4 +29,23 @@ if (!temColunaVerificado) {
   db.exec('ALTER TABLE usuarios ADD COLUMN email_verificado INTEGER NOT NULL DEFAULT 1');
 }
 
+// Migração idempotente: a tabela "orcamento" (um valor fixo por usuário,
+// sem mês) foi substituída por "orcamento_mensal" (um valor por usuário
+// POR MÊS, pra resetar sozinha quando o mês vira). Pra quem já tinha um
+// valor definido na tabela antiga, essa migração carrega esse valor pro
+// mês corrente em orcamento_mensal, preservando o que a pessoa já via na
+// tela — só não se repete nos meses seguintes, que é justamente o objetivo.
+// Roda só uma vez: se orcamento_mensal já tem qualquer linha, não faz nada.
+const jaMigrado = db.prepare('SELECT 1 FROM orcamento_mensal LIMIT 1').get();
+if (!jaMigrado) {
+  const mesAtual = db.prepare(`SELECT strftime('%Y-%m', 'now') AS mes`).get().mes;
+  const antigos = db.prepare('SELECT usuario_id, valor FROM orcamento WHERE valor > 0').all();
+  const inserir = db.prepare(`
+    INSERT OR IGNORE INTO orcamento_mensal (usuario_id, mes, valor) VALUES (?, ?, ?)
+  `);
+  for (const { usuario_id, valor } of antigos) {
+    inserir.run(usuario_id, mesAtual, valor);
+  }
+}
+
 module.exports = db;

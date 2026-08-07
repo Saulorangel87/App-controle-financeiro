@@ -37,6 +37,28 @@
   color: var(--accent);
 }
 
+.acoes-orcamento {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.botao-adicionar-valor {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--accent);
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.botao-adicionar-valor:hover {
+  border-color: var(--accent);
+}
+
 .edicao-orcamento {
   display: flex;
   gap: 8px;
@@ -53,8 +75,46 @@
 
 .bloco-orcamento,
 .bloco-grafico,
-.bloco-despesas {
+.bloco-despesas,
+.bloco-entradas {
   padding: 20px;
+}
+
+.lista-entradas {
+  list-style: none;
+  margin-top: 8px;
+}
+
+.item-entrada {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.item-entrada:first-child {
+  border-top: none;
+}
+
+.item-entrada .item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item-entrada .item-info strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-valor-entrada {
+  font-weight: 600;
+  color: var(--ok);
+  white-space: nowrap;
 }
 
 .bloco-orcamento-header,

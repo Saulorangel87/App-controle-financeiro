@@ -33,3 +33,24 @@
 .rodape-icones a:hover {
   color: var(--accent);
 }
+
+@media (max-width: 480px) {
+  .rodape-fixo {
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px 12px;
+    text-align: center;
+  }
+
+  .rodape-fixo span {
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* O rodapé fica mais alto empilhado (texto quebra em 2 linhas + ícones
+     embaixo) — reserva mais espaço no conteúdo pra nada ficar escondido
+     atrás dele, sobrescrevendo o padding-bottom definido em Layout.css. */
+  .content {
+    padding-bottom: 88px;
+  }
+}

@@ -25,18 +25,20 @@ router.get('/', (req, res) => {
 
   const totalGasto = categorias.reduce((soma, c) => soma + c.gasto, 0);
 
-  // Orçamento total é definido manualmente pelo usuário (tabela orcamento),
-  // não é mais calculado como soma dos limites das categorias.
-  db.prepare(`INSERT OR IGNORE INTO orcamento (usuario_id, valor) VALUES (?, 0)`).run(req.usuarioId);
+  // Orçamento total é definido manualmente pelo usuário, por mês (tabela
+  // orcamento_mensal) — não é mais calculado como soma dos limites das
+  // categorias, e não carrega o valor do mês anterior pro mês novo.
+  const mesAtual = db.prepare(`SELECT strftime('%Y-%m', 'now') AS mes`).get().mes;
+  db.prepare(`
+    INSERT OR IGNORE INTO orcamento_mensal (usuario_id, mes, valor) VALUES (?, ?, 0)
+  `).run(req.usuarioId, mesAtual);
   const { valor: orcamentoTotal } = db.prepare(
-    'SELECT valor FROM orcamento WHERE usuario_id = ?'
-  ).get(req.usuarioId);
+    'SELECT valor FROM orcamento_mensal WHERE usuario_id = ? AND mes = ?'
+  ).get(req.usuarioId, mesAtual);
 
   const disponivel = orcamentoTotal - totalGasto;
   const categoriasComAlerta = categorias.filter((c) => c.gasto > c.limite).length;
   const percentualUtilizado = orcamentoTotal > 0 ? (totalGasto / orcamentoTotal) * 100 : 0;
-
-  const mesAtual = db.prepare(`SELECT strftime('%Y-%m', 'now') AS mes`).get().mes;
 
   res.json({
     mes: mesAtual,
