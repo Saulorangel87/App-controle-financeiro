@@ -4,10 +4,11 @@ import api from '../services/api';
 import { formatarMoeda } from '../utils/formatters';
 import './DespesasRecorrentes.css';
 
-const VAZIO = { descricao: '', valor: '', dia_vencimento: '', observacao: '' };
+const VAZIO = { descricao: '', valor: '', dia_vencimento: '', observacao: '', parcelada: false, parcela_total: '' };
 
 export default function DespesasRecorrentes() {
   const [itens, setItens] = useState([]);
+  const [total, setTotal] = useState(0);
   const [carregando, setCarregando] = useState(true);
   const [formAberto, setFormAberto] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
@@ -17,7 +18,8 @@ export default function DespesasRecorrentes() {
 
   const carregar = useCallback(async () => {
     const res = await api.get('/recorrentes');
-    setItens(res.data);
+    setItens(res.data.itens);
+    setTotal(res.data.total);
     setCarregando(false);
   }, []);
 
@@ -34,11 +36,15 @@ export default function DespesasRecorrentes() {
 
   function abrirEdicao(item) {
     setEditandoId(item.id);
+    // Número de parcelas não é editável (ver nota no backend) — o campo
+    // parcelada/parcela_total só existe no formulário de criação.
     setForm({
       descricao: item.descricao,
       valor: item.valor != null ? String(item.valor) : '',
       dia_vencimento: item.dia_vencimento != null ? String(item.dia_vencimento) : '',
       observacao: item.observacao || '',
+      parcelada: false,
+      parcela_total: '',
     });
     setErro('');
     setFormAberto(true);
@@ -58,12 +64,21 @@ export default function DespesasRecorrentes() {
       setErro('Preencha a descrição (ex: Conta de luz).');
       return;
     }
+    if (form.parcelada && (!form.parcela_total || Number(form.parcela_total) < 2)) {
+      setErro('Informe em quantas parcelas (mínimo 2).');
+      return;
+    }
+    if (form.parcelada && (!form.valor || Number(form.valor) <= 0)) {
+      setErro('Informe o valor de cada parcela.');
+      return;
+    }
 
     const payload = {
       descricao: form.descricao.trim(),
       valor: form.valor ? Number(form.valor) : null,
       dia_vencimento: form.dia_vencimento ? Number(form.dia_vencimento) : null,
       observacao: form.observacao.trim() || null,
+      ...(!editandoId && form.parcelada ? { parcela_total: Number(form.parcela_total) } : {}),
     };
 
     setEnviando(true);
@@ -88,8 +103,8 @@ export default function DespesasRecorrentes() {
   }
 
   async function alternarPago(item) {
-    const res = await api.patch(`/recorrentes/${item.id}/pago`, { pago: !item.pago });
-    setItens((atual) => atual.map((i) => (i.id === item.id ? res.data : i)));
+    await api.patch(`/recorrentes/${item.id}/pago`, { pago: !item.pago });
+    carregar();
   }
 
   if (carregando) return <p className="label">Carregando...</p>;
@@ -97,7 +112,10 @@ export default function DespesasRecorrentes() {
   return (
     <div className="panel recorrentes-panel">
       <div className="recorrentes-header">
-        <span className="label">Despesas Recorrentes — contas fixas do dia a dia</span>
+        <div>
+          <span className="label">Despesas Recorrentes — contas fixas e prestações do mês</span>
+          <strong className="total-recorrentes">{formatarMoeda(total)}</strong>
+        </div>
         {!formAberto && (
           <button className="btn-primary botao-nova-recorrente" onClick={abrirNovo}>
             <Plus size={14} /> Nova
@@ -112,7 +130,7 @@ export default function DespesasRecorrentes() {
             <input
               id="rec-descricao"
               type="text"
-              placeholder="ex: Conta de luz"
+              placeholder="ex: Conta de luz, Geladeira"
               value={form.descricao}
               onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))}
               autoFocus
@@ -120,7 +138,9 @@ export default function DespesasRecorrentes() {
           </div>
           <div className="linha-campos">
             <div className="campo">
-              <label className="label" htmlFor="rec-valor">Valor aproximado (R$)</label>
+              <label className="label" htmlFor="rec-valor">
+                {form.parcelada ? 'Valor de cada parcela (R$)' : 'Valor aproximado (R$)'}
+              </label>
               <input
                 id="rec-valor"
                 type="number"
@@ -143,6 +163,37 @@ export default function DespesasRecorrentes() {
               />
             </div>
           </div>
+
+          {!editandoId && (
+            <div className="campo campo-parcelamento">
+              <label className="checkbox-linha">
+                <input
+                  type="checkbox"
+                  checked={form.parcelada}
+                  onChange={(e) => setForm((f) => ({ ...f, parcelada: e.target.checked }))}
+                />
+                É uma compra parcelada (ex: geladeira em 12x)
+              </label>
+              {form.parcelada && (
+                <div className="campo" style={{ marginTop: 10 }}>
+                  <label className="label" htmlFor="rec-parcelas">Total de parcelas</label>
+                  <input
+                    id="rec-parcelas"
+                    type="number"
+                    min="2"
+                    max="999"
+                    placeholder="ex: 12"
+                    value={form.parcela_total}
+                    onChange={(e) => setForm((f) => ({ ...f, parcela_total: e.target.value }))}
+                  />
+                  <span className="contador-caracteres">
+                    Começa em 1/{form.parcela_total || '?'} este mês e avança sozinha todo mês.
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="campo">
             <label className="label" htmlFor="rec-obs">Observação (opcional)</label>
             <input
@@ -176,7 +227,14 @@ export default function DespesasRecorrentes() {
             </button>
 
             <div className="item-info">
-              <strong>{item.descricao}</strong>
+              <strong>
+                {item.descricao}
+                {item.parcela_total && (
+                  <span className={`badge-parcela ${item.parcela_concluida ? 'concluida' : ''}`}>
+                    {item.parcela_concluida ? 'quitada' : `${item.parcela_atual}/${item.parcela_total}`}
+                  </span>
+                )}
+              </strong>
               <span className="label">
                 {item.dia_vencimento ? `vence dia ${item.dia_vencimento}` : 'sem dia fixo'}
                 {item.observacao ? ` · ${item.observacao}` : ''}

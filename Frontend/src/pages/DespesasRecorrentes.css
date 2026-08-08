@@ -4,11 +4,58 @@
 
 .recorrentes-header {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 4px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.total-recorrentes {
+  display: block;
+  font-size: 22px;
+  margin-top: 6px;
+}
+
+.checkbox-linha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.checkbox-linha input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.campo-parcelamento {
+  padding: 12px;
+  background: var(--panel-alt);
+  border-radius: 8px;
+}
+
+.badge-parcela {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.badge-parcela.concluida {
+  color: var(--text-muted);
+  border-color: var(--border-soft);
 }
 
 .botao-nova-recorrente {
