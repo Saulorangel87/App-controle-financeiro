@@ -1,6 +1,6 @@
 {
   "name": "controle-despesas-backend",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "main": "src/server.js",
   "scripts": {
     "seed": "node src/db/seed.js",

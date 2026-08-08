@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Pencil, Plus, X } from 'lucide-react';
+import { Pencil, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip,
   PieChart, Pie, Cell, Legend,
@@ -18,6 +18,11 @@ import './VisaoGeral.css';
 // rótulos espremem e uma categoria com valor muito maior que as outras faz
 // as demais desaparecerem no gráfico (eixo linear).
 const LARGURA_MOBILE = 600;
+
+// A partir de 3 lançamentos, o painel "Entradas do Mês" pagina — evita que
+// a Visão Geral fique gigante no celular quando a pessoa registra várias
+// entradas no mesmo mês.
+const POR_PAGINA_ENTRADAS = 3;
 
 function useEhMobile() {
   const [mobile, setMobile] = useState(
@@ -43,6 +48,7 @@ export default function VisaoGeral() {
   const [editandoOrcamento, setEditandoOrcamento] = useState(false);
   const [novoOrcamento, setNovoOrcamento] = useState('');
   const [modalEntradaAberto, setModalEntradaAberto] = useState(false);
+  const [paginaEntradas, setPaginaEntradas] = useState(1);
   const { abrirEdicao } = useDespesaModal();
   const ehMobile = useEhMobile();
 
@@ -74,11 +80,13 @@ export default function VisaoGeral() {
     await api.delete(`/entradas/${id}`);
     carregarEntradas();
     carregarResumo();
+    setPaginaEntradas(1);
   }
 
   function entradaSalva() {
     carregarEntradas();
     carregarResumo();
+    setPaginaEntradas(1);
   }
 
   useEffect(() => {
@@ -117,6 +125,7 @@ export default function VisaoGeral() {
       : resumo.percentualUtilizado >= 90
       ? 'var(--warning)'
       : 'var(--accent)';
+  const totalPaginasEntradas = Math.max(1, Math.ceil(entradas.length / POR_PAGINA_ENTRADAS));
 
   return (
     <div className="visao-geral">
@@ -196,27 +205,55 @@ export default function VisaoGeral() {
 
       {entradas.length > 0 && (
         <div className="panel bloco-entradas">
-          <span className="label">Entradas do Mês</span>
+          <span className="label">Entradas do Mês — {entradas.length} registro{entradas.length > 1 ? 's' : ''}</span>
           <ul className="lista-entradas">
-            {entradas.map((e) => (
-              <li key={e.id} className="item-entrada">
-                <div className="item-info">
-                  <strong title={e.origem}>{e.origem}</strong>
-                  <span className="label">
-                    {e.descricao ? `${e.descricao} · ` : ''}{formatarData(e.data)}
-                  </span>
-                </div>
-                <span className="item-valor-entrada">+{formatarMoeda(e.valor)}</span>
-                <button
-                  className="botao-icone"
-                  onClick={() => excluirEntrada(e.id)}
-                  aria-label={`Excluir entrada ${e.origem}`}
+            {entradas.map((e, i) => {
+              const paginaDoItem = Math.floor(i / POR_PAGINA_ENTRADAS) + 1;
+              return (
+                <li
+                  key={e.id}
+                  className={`item-entrada ${paginaDoItem !== paginaEntradas ? 'oculto-paginacao' : ''}`}
                 >
-                  <X size={14} />
-                </button>
-              </li>
-            ))}
+                  <div className="item-info">
+                    <strong title={e.origem}>{e.origem}</strong>
+                    <span className="label">
+                      {e.descricao ? `${e.descricao} · ` : ''}{formatarData(e.data)}
+                    </span>
+                  </div>
+                  <span className="item-valor-entrada">+{formatarMoeda(e.valor)}</span>
+                  <button
+                    className="botao-icone"
+                    onClick={() => excluirEntrada(e.id)}
+                    aria-label={`Excluir entrada ${e.origem}`}
+                  >
+                    <X size={14} />
+                  </button>
+                </li>
+              );
+            })}
           </ul>
+
+          {totalPaginasEntradas > 1 && (
+            <div className="paginacao">
+              <button
+                className="botao-icone"
+                onClick={() => setPaginaEntradas((p) => p - 1)}
+                disabled={paginaEntradas <= 1}
+                aria-label="Página anterior de entradas"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span className="label">Página {paginaEntradas} de {totalPaginasEntradas}</span>
+              <button
+                className="botao-icone"
+                onClick={() => setPaginaEntradas((p) => p + 1)}
+                disabled={paginaEntradas >= totalPaginasEntradas}
+                aria-label="Próxima página de entradas"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
       )}
 

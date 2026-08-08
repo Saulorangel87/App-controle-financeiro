@@ -1,5 +1,27 @@
+.despesas-e-entradas {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .despesas-panel {
   padding: 20px 24px;
+}
+
+.entradas-registro .celula-valor {
+  color: var(--ok);
+}
+
+.linha-entrada {
+  grid-template-columns: 90px 1fr 1fr 130px 28px;
+}
+
+.celula-descricao-entrada {
+  color: var(--text-secondary);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .despesas-header {
@@ -75,4 +97,12 @@
   .celula-valor { grid-area: valor; }
   .linha-cabecalho { display: none; }
   .linha .botao-icone, .linha .botao-excluir { display: none; }
+
+  .linha-entrada {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "desc valor"
+      "data data";
+  }
+  .linha-entrada .celula-descricao-entrada { display: none; }
 }
