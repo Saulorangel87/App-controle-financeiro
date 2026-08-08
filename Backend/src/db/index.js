@@ -48,4 +48,17 @@ if (!jaMigrado) {
   }
 }
 
+// Migração idempotente: adiciona as colunas de parcelamento (prestações,
+// ex: "geladeira 1/12") em despesas_recorrentes, pra quem instalou o app
+// antes dessa funcionalidade existir. NULL nas duas colunas = despesa
+// recorrente comum (sem parcelas), então nada muda pra quem já tinha
+// cadastrado contas fixas antes.
+const colunasRecorrentes = db.prepare('PRAGMA table_info(despesas_recorrentes)').all();
+if (!colunasRecorrentes.some((c) => c.name === 'parcela_total')) {
+  db.exec('ALTER TABLE despesas_recorrentes ADD COLUMN parcela_total INTEGER');
+}
+if (!colunasRecorrentes.some((c) => c.name === 'parcela_mes_inicio')) {
+  db.exec('ALTER TABLE despesas_recorrentes ADD COLUMN parcela_mes_inicio TEXT');
+}
+
 module.exports = db;

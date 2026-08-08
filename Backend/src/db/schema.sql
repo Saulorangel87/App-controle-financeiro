@@ -78,6 +78,15 @@ CREATE INDEX IF NOT EXISTS idx_entradas_usuario_data ON entradas(usuario_id, dat
 -- nenhum mês e não é apagada sozinha. O campo pago_mes guarda em qual mês
 -- (YYYY-MM) ela foi marcada como paga, então o checkbox "paga este mês"
 -- reseta sozinho quando o mês vira, sem precisar de nenhum job/migração.
+-- pago_mes guarda em qual mês (YYYY-MM) foi marcada como paga, então o
+-- checkbox "paga este mês" reseta sozinho quando o mês vira, sem precisar
+-- de nenhum job/migração.
+--
+-- parcela_total + parcela_mes_inicio controlam prestações (ex: geladeira em
+-- 12x): quando parcela_total é definido, "valor" é o valor de CADA parcela,
+-- e a parcela atual (1/12, 2/12...) é CALCULADA a partir da diferença entre
+-- o mês corrente e parcela_mes_inicio — não é um contador salvo, então
+-- avança sozinha quando o mês vira, do mesmo jeito que pago_mes.
 CREATE TABLE IF NOT EXISTS despesas_recorrentes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   usuario_id INTEGER NOT NULL,
@@ -87,6 +96,8 @@ CREATE TABLE IF NOT EXISTS despesas_recorrentes (
   observacao TEXT,
   pago_mes TEXT,
   pago_em TEXT,
+  parcela_total INTEGER,
+  parcela_mes_inicio TEXT,
   criado_em TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
