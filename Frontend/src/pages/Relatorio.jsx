@@ -10,6 +10,7 @@ const NOMES_MES = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 const POR_PAGINA = 20;
+const POR_PAGINA_ENTRADAS = 10;
 
 function rotuloMes(mesISO) {
   const [ano, mes] = mesISO.split('-').map(Number);
@@ -22,6 +23,7 @@ export default function Relatorio() {
   const [dados, setDados] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [pagina, setPagina] = useState(1);
+  const [paginaEntradas, setPaginaEntradas] = useState(1);
 
   useEffect(() => {
     async function carregarMeses() {
@@ -39,6 +41,7 @@ export default function Relatorio() {
       setDados(res.data);
       setCarregando(false);
       setPagina(1); // troca de mês sempre volta pra primeira página
+      setPaginaEntradas(1);
     });
   }, [mesSelecionado]);
 
@@ -48,6 +51,7 @@ export default function Relatorio() {
   const corVariacao = aumentou ? 'var(--danger)' : 'var(--accent)';
   const setaVariacao = aumentou ? '↑' : '↓';
   const totalPaginas = Math.max(1, Math.ceil(dados.despesas.length / POR_PAGINA));
+  const totalPaginasEntradas = Math.max(1, Math.ceil((dados.entradas?.length || 0) / POR_PAGINA_ENTRADAS));
 
   return (
     <div className="relatorio">
@@ -107,6 +111,13 @@ export default function Relatorio() {
             )}
           </strong>
         </div>
+
+        <div className="panel card-relatorio">
+          <span className="label">Entradas em {rotuloMes(mesSelecionado)}</span>
+          <strong className="valor" style={{ color: 'var(--ok)' }}>
+            +{formatarMoeda(dados.totalEntradas || 0)}
+          </strong>
+        </div>
       </div>
 
       <div className="panel bloco-despesas-mes">
@@ -151,6 +162,56 @@ export default function Relatorio() {
               onClick={() => setPagina((p) => p + 1)}
               disabled={pagina >= totalPaginas}
               aria-label="Próxima página"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Entradas ficam num bloco à parte — são dinheiro que entrou, não
+          dinheiro gasto, então não fazem sentido misturadas com despesas. */}
+      <div className="panel bloco-despesas-mes">
+        <span className="label">
+          Entradas de {rotuloMes(mesSelecionado)} — {(dados.entradas || []).length} registros
+        </span>
+        <ul className="lista-despesas-mes">
+          {(dados.entradas || []).map((e, i) => {
+            const paginaDoItem = Math.floor(i / POR_PAGINA_ENTRADAS) + 1;
+            return (
+              <li
+                key={e.id}
+                className={`item-despesa-mes ${paginaDoItem !== paginaEntradas ? 'oculto-paginacao' : ''}`}
+              >
+                <div className="item-info">
+                  <strong>{e.origem}</strong>
+                  <span className="label">{e.descricao ? `${e.descricao} · ` : ''}{formatarData(e.data)}</span>
+                </div>
+                <span className="item-valor" style={{ color: 'var(--ok)' }}>+{formatarMoeda(e.valor)}</span>
+              </li>
+            );
+          })}
+          {(dados.entradas || []).length === 0 && (
+            <p className="label" style={{ padding: '20px 0' }}>Nenhuma entrada registrada nesse mês.</p>
+          )}
+        </ul>
+
+        {totalPaginasEntradas > 1 && (
+          <div className="paginacao ocultar-impressao">
+            <button
+              className="botao-icone"
+              onClick={() => setPaginaEntradas((p) => p - 1)}
+              disabled={paginaEntradas <= 1}
+              aria-label="Página anterior de entradas"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="label">Página {paginaEntradas} de {totalPaginasEntradas}</span>
+            <button
+              className="botao-icone"
+              onClick={() => setPaginaEntradas((p) => p + 1)}
+              disabled={paginaEntradas >= totalPaginasEntradas}
+              aria-label="Próxima página de entradas"
             >
               <ChevronRight size={16} />
             </button>

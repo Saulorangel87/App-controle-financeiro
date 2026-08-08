@@ -16,15 +16,66 @@ function ajustarOrcamentoDoMes(usuarioId, data, delta) {
   `).run(usuarioId, mes, delta);
 }
 
-// GET /api/entradas — lista as entradas do mês corrente (mais recentes primeiro)
+// GET /api/entradas
+// Sem parâmetros: mantém o comportamento antigo (lista o mês corrente
+// inteiro, mais recentes primeiro) — usado no painel da Visão Geral.
+//
+// Com ?pagina e/ou ?porPagina: pagina de verdade no banco (LIMIT/OFFSET),
+// mesmo padrão de /despesas — usado na aba Despesas pra listar o histórico
+// completo de entradas sem baixar tudo de uma vez.
+//
+// Com ?mes=YYYY-MM (em qualquer um dos dois modos): filtra só as entradas
+// daquele mês — usado no Relatório Mensal.
 router.get('/', (req, res) => {
+  const { mes, pagina, porPagina } = req.query;
+
+  const filtros = ['usuario_id = ?'];
+  const params = [req.usuarioId];
+  if (mes) {
+    filtros.push("strftime('%Y-%m', data) = ?");
+    params.push(mes);
+  } else if (pagina === undefined && porPagina === undefined) {
+    // Comportamento antigo, sem nenhum parâmetro: só o mês corrente.
+    filtros.push("strftime('%Y-%m', data) = strftime('%Y-%m', 'now')");
+  }
+  const whereSql = filtros.join(' AND ');
+  const baseSql = `FROM entradas WHERE ${whereSql}`;
+
+  const paginando = pagina !== undefined || porPagina !== undefined;
+
+  if (!paginando) {
+    const entradas = db.prepare(`
+      SELECT id, origem, descricao, valor, data
+      ${baseSql}
+      ORDER BY data DESC, id DESC
+    `).all(...params);
+    return res.json(entradas);
+  }
+
+  const paginaAtual = Math.max(1, parseInt(pagina, 10) || 1);
+  const itensPorPagina = Math.min(100, Math.max(1, parseInt(porPagina, 10) || 20));
+  const offset = (paginaAtual - 1) * itensPorPagina;
+
+  const { total } = db.prepare(`SELECT COUNT(*) AS total ${baseSql}`).get(...params);
+  const { totalGeral } = db.prepare(`
+    SELECT COALESCE(SUM(valor), 0) AS totalGeral ${baseSql}
+  `).get(...params);
+
   const entradas = db.prepare(`
     SELECT id, origem, descricao, valor, data
-    FROM entradas
-    WHERE usuario_id = ? AND strftime('%Y-%m', data) = strftime('%Y-%m', 'now')
+    ${baseSql}
     ORDER BY data DESC, id DESC
-  `).all(req.usuarioId);
-  res.json(entradas);
+    LIMIT ? OFFSET ?
+  `).all(...params, itensPorPagina, offset);
+
+  res.json({
+    entradas,
+    pagina: paginaAtual,
+    porPagina: itensPorPagina,
+    total,
+    totalGeral,
+    totalPaginas: Math.max(1, Math.ceil(total / itensPorPagina)),
+  });
 });
 
 // POST /api/entradas — registra uma entrada de dinheiro e soma no orçamento

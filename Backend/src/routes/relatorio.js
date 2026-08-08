@@ -65,6 +65,16 @@ router.get('/', (req, res) => {
     ORDER BY d.data DESC, d.id DESC
   `).all(req.usuarioId, mes);
 
+  // Entradas (adições ao orçamento) do mesmo mês — mostradas separadas das
+  // despesas no relatório, não somadas junto com o total de gastos.
+  const entradas = db.prepare(`
+    SELECT id, origem, descricao, valor, data
+    FROM entradas
+    WHERE usuario_id = ? AND strftime('%Y-%m', data) = ?
+    ORDER BY data DESC, id DESC
+  `).all(req.usuarioId, mes);
+  const totalEntradas = entradas.reduce((soma, e) => soma + e.valor, 0);
+
   res.json({
     mes,
     totalAtual,
@@ -72,6 +82,8 @@ router.get('/', (req, res) => {
     variacaoAbsoluta,
     variacaoPercentual,
     despesas,
+    entradas,
+    totalEntradas,
   });
 });
 
