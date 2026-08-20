@@ -89,7 +89,7 @@ export default function ModalEntrada({ aberto, onFechar, onSalvo }) {
             <input
               id="campo-descricao-entrada"
               type="text"
-              placeholder="ex: Projeto do site do meu irmão"
+              placeholder="ex: Informações adicionais do pagamento"
               value={descricao}
               maxLength={LIMITE_DESCRICAO}
               onChange={(e) => setDescricao(e.target.value)}
