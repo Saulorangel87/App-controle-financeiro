@@ -49,6 +49,9 @@ financeiros, que sempre vêm direto da API.
 
 ## 🛠️ Tecnologias utilizadas
 
+O projeto possui CI no GitHub Actions: cada push ou pull request para `main`
+executa os testes do backend, o lint do frontend e o build de produção.
+
 **Frontend**
 - React 19 + Vite (com code-splitting por rota)
 - React Router
