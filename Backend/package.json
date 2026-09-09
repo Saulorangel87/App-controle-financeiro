@@ -6,6 +6,8 @@
     "seed": "node src/db/seed.js",
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
+    "backup": "node src/db/backup.js",
+    "test": "node --test",
     "migrar-categorias": "node src/db/adicionarCategoriasFaltantes.js",
     "corrigir-cor-outros": "node src/db/corrigirCorOutros.js"
   },

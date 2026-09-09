@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db');
+const { numeroMonetarioValido } = require('../utils/validacao');
 
 const router = express.Router();
 
@@ -31,7 +32,7 @@ router.get('/', (req, res) => {
 router.put('/', (req, res) => {
   const { valor } = req.body;
 
-  if (valor === undefined || valor < 0) {
+  if (!numeroMonetarioValido(valor, true)) {
     return res.status(400).json({ erro: 'valor inválido' });
   }
 

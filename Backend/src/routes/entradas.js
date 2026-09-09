@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db');
+const { numeroMonetarioValido, dataISOValida } = require('../utils/validacao');
 
 const router = express.Router();
 
@@ -83,7 +84,7 @@ router.get('/', (req, res) => {
 router.post('/', (req, res) => {
   const { origem, descricao, valor, data } = req.body;
 
-  if (!origem || !String(origem).trim() || !valor || valor <= 0 || !data) {
+  if (!origem || !String(origem).trim() || !numeroMonetarioValido(valor) || !dataISOValida(data)) {
     return res.status(400).json({ erro: 'origem, valor e data são obrigatórios' });
   }
   const hoje = db.prepare(`SELECT date('now') AS hoje`).get().hoje;
@@ -91,12 +92,16 @@ router.post('/', (req, res) => {
     return res.status(400).json({ erro: 'não é possível registrar uma entrada com data futura' });
   }
 
-  const info = db.prepare(`
-    INSERT INTO entradas (usuario_id, origem, descricao, valor, data)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(req.usuarioId, String(origem).trim(), descricao ? String(descricao).trim() : null, valor, data);
+  const registrar = db.transaction(() => {
+    const info = db.prepare(`
+      INSERT INTO entradas (usuario_id, origem, descricao, valor, data)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(req.usuarioId, String(origem).trim(), descricao ? String(descricao).trim() : null, valor, data);
 
-  ajustarOrcamentoDoMes(req.usuarioId, data, valor);
+    ajustarOrcamentoDoMes(req.usuarioId, data, valor);
+    return info;
+  });
+  const info = registrar();
 
   res.status(201).json({ id: info.lastInsertRowid, origem, descricao, valor, data });
 });
@@ -112,8 +117,11 @@ router.delete('/:id', (req, res) => {
     return res.status(404).json({ erro: 'entrada não encontrada' });
   }
 
-  db.prepare('DELETE FROM entradas WHERE id = ? AND usuario_id = ?').run(req.params.id, req.usuarioId);
-  ajustarOrcamentoDoMes(req.usuarioId, entrada.data, -entrada.valor);
+  const excluir = db.transaction(() => {
+    db.prepare('DELETE FROM entradas WHERE id = ? AND usuario_id = ?').run(req.params.id, req.usuarioId);
+    ajustarOrcamentoDoMes(req.usuarioId, entrada.data, -entrada.valor);
+  });
+  excluir();
 
   res.status(204).send();
 });

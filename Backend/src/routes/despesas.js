@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db');
+const { numeroMonetarioValido, dataISOValida } = require('../utils/validacao');
 
 const router = express.Router();
 
@@ -85,7 +86,7 @@ router.get('/', (req, res) => {
 router.post('/', (req, res) => {
   const { descricao, valor, categoria_id, data } = req.body;
 
-  if (!descricao || valor === undefined || !categoria_id || !data) {
+  if (!descricao || !numeroMonetarioValido(valor) || !categoria_id || !dataISOValida(data)) {
     return res.status(400).json({
       erro: 'descricao, valor, categoria_id e data são obrigatórios',
     });
@@ -131,7 +132,7 @@ router.put('/:id', (req, res) => {
   if (descricao !== undefined && descricao.length > 80) {
     return res.status(400).json({ erro: 'descrição muito longa (máximo 80 caracteres)' });
   }
-  if (data !== undefined && data > hojeISO()) {
+  if (data !== undefined && (!dataISOValida(data) || data > hojeISO())) {
     return res.status(400).json({ erro: 'não é possível cadastrar uma despesa com data futura' });
   }
 
@@ -142,6 +143,10 @@ router.put('/:id', (req, res) => {
     if (!categoria) {
       return res.status(400).json({ erro: 'categoria inválida' });
     }
+  }
+
+  if (valor !== undefined && !numeroMonetarioValido(valor)) {
+    return res.status(400).json({ erro: 'valor inválido' });
   }
 
   db.prepare(`
