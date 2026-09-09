@@ -42,7 +42,7 @@ financeiros, que sempre vêm direto da API.
 - 💸 **CRUD completo de despesas** — criar, editar e excluir, com paginação e bloqueio de data futura
 - 🚨 **Alertas automáticos** para categorias que ultrapassaram o limite
 - 📅 **Relatório mensal** com comparação de gastos entre o mês atual e o anterior, paginação, e opção de **imprimir**
-- 📤 **Exportação CSV** do relatório mensal, com despesas e entradas separadas
+- 📤 **Exportação Excel** do relatório mensal, com resumo financeiro, totais, despesas, entradas e formatação profissional
 - 💰 **Orçamento total editável**, definido manualmente pelo usuário
 - 🔄 **Dashboard sempre atualizado** ao mês corrente, mesmo com a aba aberta na virada do mês
 - 📱 **Totalmente responsivo e instalável (PWA)**, com menu hambúrguer e gráficos adaptados para telas menores
