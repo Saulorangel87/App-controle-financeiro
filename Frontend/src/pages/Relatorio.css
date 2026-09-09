@@ -26,6 +26,10 @@
   font-size: 13px;
 }
 
+.seletor-categoria {
+  min-width: 170px;
+}
+
 .botao-imprimir {
   display: flex;
   align-items: center;
@@ -54,7 +58,7 @@
 
 .cards-relatorio {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 20px;
 }
 
@@ -88,7 +92,7 @@
 
 @media (max-width: 900px) {
   .cards-relatorio {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -106,5 +110,9 @@
   }
   .seletor-mes {
     flex: 1;
+  }
+
+  .seletor-categoria {
+    min-width: 0;
   }
 }

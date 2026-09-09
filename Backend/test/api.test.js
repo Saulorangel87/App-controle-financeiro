@@ -52,10 +52,33 @@ test('fluxo financeiro autenticado mantém orçamento e recorrentes consistentes
   const token = resultado.corpo.token;
   const autenticado = { Authorization: `Bearer ${token}` };
 
+  resultado = await jsonFetch(baseUrl, '/api/categorias', { headers: autenticado });
+  assert.equal(resultado.resposta.status, 200);
+  const categoriaId = resultado.corpo[0].id;
+
   resultado = await jsonFetch(baseUrl, '/api/despesas');
   assert.equal(resultado.resposta.status, 401);
 
   const hoje = new Date().toISOString().slice(0, 10);
+  resultado = await jsonFetch(baseUrl, '/api/despesas', {
+    method: 'POST',
+    headers: autenticado,
+    body: JSON.stringify({ descricao: 'Teste de relatório', valor: 50, categoria_id: categoriaId, data: hoje }),
+  });
+  assert.equal(resultado.resposta.status, 201);
+
+  resultado = await jsonFetch(baseUrl, `/api/relatorio?mes=${hoje.slice(0, 7)}&categoria_id=${categoriaId}`, {
+    headers: autenticado,
+  });
+  assert.equal(resultado.resposta.status, 200);
+  assert.equal(resultado.corpo.totalAtual, 50);
+  assert.equal(resultado.corpo.despesas.length, 1);
+
+  resultado = await jsonFetch(baseUrl, '/api/relatorio?mes=2026-09&categoria_id=999999', {
+    headers: autenticado,
+  });
+  assert.equal(resultado.resposta.status, 400);
+
   resultado = await jsonFetch(baseUrl, '/api/entradas', {
     method: 'POST',
     headers: autenticado,
