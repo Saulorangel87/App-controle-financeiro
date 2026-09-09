@@ -95,7 +95,9 @@ O backend cria backups consistentes com `npm run backup`. Em produção, defina
 para manter somente a janela necessária. Depois, valide o backup mais recente
 com `npm run backup:verify`. O script `ops/backup-despesas.sh` executa o
 backup e verifica sua integridade; recomenda-se agendá-lo diariamente na VM e
-copiar os arquivos criptografados para um armazenamento separado.
+copiar os arquivos criptografados para um armazenamento separado. Os arquivos
+`ops/controle-despesas-backup.service` e `ops/controle-despesas-backup.timer`
+podem ser instalados em `/etc/systemd/system/` na VM.
 - Segredos e dados sensíveis nunca versionados (`.gitignore` cobrindo `.env` e banco de dados local)
 
 ## ♿ Qualidade, acessibilidade e SEO
