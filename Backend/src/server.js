@@ -21,6 +21,19 @@ const relatorioRouter = require('./routes/relatorio');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Headers básicos de segurança. O HSTS é aplicado somente em produção,
+// quando o acesso público acontece exclusivamente por HTTPS.
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  next();
+});
+
 // Em produção, só aceita chamadas vindas do domínio do próprio frontend.
 // Defina FRONTEND_URL (ex: https://despesas.devsaulo.com.br) na Oracle Cloud.
 // Em dev, sem essa variável, libera o Vite local.
@@ -29,10 +42,16 @@ const origensPermitidas = process.env.FRONTEND_URL
   : ['http://localhost:5173'];
 
 app.use(cors({ origin: origensPermitidas }));
-app.use(express.json());
+app.use(express.json({ limit: '32kb' }));
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
+  try {
+    const banco = require('./db');
+    banco.prepare('SELECT 1 AS ok').get();
+    res.json({ status: 'ok', banco: 'ok' });
+  } catch {
+    res.status(503).json({ status: 'degradado', banco: 'indisponível' });
+  }
 });
 
 // Rotas públicas (cadastro/login não exigem token), com limite de tentativas
@@ -47,6 +66,11 @@ app.use('/api/entradas', autenticar, entradasRouter);
 app.use('/api/recorrentes', autenticar, recorrentesRouter);
 app.use('/api/relatorio', autenticar, relatorioRouter);
 
-app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
-});
+// Exportar o app permite testes HTTP sem abrir uma porta fixa.
+module.exports = app;
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando em http://localhost:${PORT}`);
+  });
+}
