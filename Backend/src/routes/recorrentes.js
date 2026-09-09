@@ -40,8 +40,10 @@ function comCamposCalculados(linha, mes) {
 
 // GET /api/recorrentes — lista todas as despesas fixas do usuário, com a
 // flag "pago" e a parcela atual calculadas em cima do mês corrente, mais o
-// total dos valores lançados (soma de "valor", ignorando parcelamentos já
-// concluídos — eles não pesam mais no mês).
+// total dos valores lançados. "total" representa o saldo restante do mês:
+// parcelas concluídas e contas marcadas como pagas no mês corrente não pesam
+// mais nessa soma. "totalCheio" e "totalPago" permitem ao frontend explicar
+// de onde veio o saldo exibido.
 router.get('/', (req, res) => {
   const mes = mesAtual();
   const linhas = db.prepare(`
@@ -53,9 +55,12 @@ router.get('/', (req, res) => {
   `).all(req.usuarioId);
 
   const itens = linhas.map((l) => comCamposCalculados(l, mes));
-  const total = itens.reduce((soma, i) => soma + (i.parcela_concluida ? 0 : (i.valor || 0)), 0);
+  const ativos = itens.filter((i) => !i.parcela_concluida);
+  const totalCheio = ativos.reduce((soma, i) => soma + (i.valor || 0), 0);
+  const totalPago = ativos.reduce((soma, i) => soma + (i.pago ? (i.valor || 0) : 0), 0);
+  const total = totalCheio - totalPago;
 
-  res.json({ itens, total });
+  res.json({ itens, total, totalCheio, totalPago });
 });
 
 // POST /api/recorrentes — cadastra uma nova despesa fixa (conta de luz, etc)

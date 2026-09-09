@@ -19,6 +19,13 @@
   margin-top: 6px;
 }
 
+.total-recorrentes-legenda {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
 .checkbox-linha {
   display: flex;
   align-items: center;

@@ -9,6 +9,8 @@ const VAZIO = { descricao: '', valor: '', dia_vencimento: '', observacao: '', pa
 export default function DespesasRecorrentes() {
   const [itens, setItens] = useState([]);
   const [total, setTotal] = useState(0);
+  const [totalCheio, setTotalCheio] = useState(0);
+  const [totalPago, setTotalPago] = useState(0);
   const [carregando, setCarregando] = useState(true);
   const [formAberto, setFormAberto] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
@@ -20,6 +22,8 @@ export default function DespesasRecorrentes() {
     const res = await api.get('/recorrentes');
     setItens(res.data.itens);
     setTotal(res.data.total);
+    setTotalCheio(res.data.totalCheio ?? res.data.total);
+    setTotalPago(res.data.totalPago ?? 0);
     setCarregando(false);
   }, []);
 
@@ -115,6 +119,11 @@ export default function DespesasRecorrentes() {
         <div>
           <span className="label">Despesas Recorrentes — contas fixas e prestações do mês</span>
           <strong className="total-recorrentes">{formatarMoeda(total)}</strong>
+          <span className="total-recorrentes-legenda">
+            {totalPago > 0
+              ? `${formatarMoeda(totalPago)} pagos de ${formatarMoeda(totalCheio)}`
+              : 'restante previsto para este mês'}
+          </span>
         </div>
         {!formAberto && (
           <button className="btn-primary botao-nova-recorrente" onClick={abrirNovo}>
