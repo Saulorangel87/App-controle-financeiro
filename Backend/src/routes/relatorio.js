@@ -11,12 +11,14 @@ function mesAnterior(mes) {
   return `${anoAnterior}-${mesAnteriorNum}`;
 }
 
-function totalDoMes(usuarioId, mes) {
+function totalDoMes(usuarioId, mes, categoriaId) {
+  const filtroCategoria = categoriaId ? 'AND categoria_id = ?' : '';
+  const parametros = categoriaId ? [usuarioId, mes, categoriaId] : [usuarioId, mes];
   const row = db.prepare(`
     SELECT COALESCE(SUM(valor), 0) AS total
     FROM despesas
-    WHERE usuario_id = ? AND strftime('%Y-%m', data) = ?
-  `).get(usuarioId, mes);
+    WHERE usuario_id = ? AND strftime('%Y-%m', data) = ? ${filtroCategoria}
+  `).get(...parametros);
   return row.total;
 }
 
@@ -43,27 +45,39 @@ router.get('/meses', (req, res) => {
 // GET /api/relatorio?mes=YYYY-MM
 router.get('/', (req, res) => {
   const mes = req.query.mes || new Date().toISOString().slice(0, 7);
+  const categoriaId = req.query.categoria_id ? Number(req.query.categoria_id) : null;
 
   if (!/^\d{4}-\d{2}$/.test(mes)) {
     return res.status(400).json({ erro: 'parâmetro mes inválido, use o formato YYYY-MM' });
   }
+  if (categoriaId !== null && (!Number.isInteger(categoriaId) || categoriaId < 1)) {
+    return res.status(400).json({ erro: 'parâmetro categoria_id inválido' });
+  }
+  if (categoriaId !== null) {
+    const categoria = db.prepare(
+      'SELECT id FROM categorias WHERE id = ? AND usuario_id = ?'
+    ).get(categoriaId, req.usuarioId);
+    if (!categoria) return res.status(400).json({ erro: 'categoria inválida' });
+  }
 
-  const totalAtual = totalDoMes(req.usuarioId, mes);
-  const totalAnterior = totalDoMes(req.usuarioId, mesAnterior(mes));
+  const totalAtual = totalDoMes(req.usuarioId, mes, categoriaId);
+  const totalAnterior = totalDoMes(req.usuarioId, mesAnterior(mes), categoriaId);
 
   const variacaoAbsoluta = totalAtual - totalAnterior;
   const variacaoPercentual =
     totalAnterior > 0 ? Number(((variacaoAbsoluta / totalAnterior) * 100).toFixed(1)) : null;
 
+  const filtroCategoria = categoriaId ? 'AND d.categoria_id = ?' : '';
+  const parametrosDespesas = categoriaId ? [req.usuarioId, mes, categoriaId] : [req.usuarioId, mes];
   const despesas = db.prepare(`
     SELECT
       d.id, d.descricao, d.valor, d.data,
       c.nome AS categoria_nome, c.icone AS categoria_icone, c.cor AS categoria_cor
     FROM despesas d
     JOIN categorias c ON c.id = d.categoria_id
-    WHERE d.usuario_id = ? AND strftime('%Y-%m', d.data) = ?
+    WHERE d.usuario_id = ? AND strftime('%Y-%m', d.data) = ? ${filtroCategoria}
     ORDER BY d.data DESC, d.id DESC
-  `).all(req.usuarioId, mes);
+  `).all(...parametrosDespesas);
 
   // Entradas (adições ao orçamento) do mesmo mês — mostradas separadas das
   // despesas no relatório, não somadas junto com o total de gastos.
@@ -77,6 +91,7 @@ router.get('/', (req, res) => {
 
   res.json({
     mes,
+    categoriaId,
     totalAtual,
     totalAnterior,
     variacaoAbsoluta,

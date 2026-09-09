@@ -19,7 +19,9 @@ function rotuloMes(mesISO) {
 
 export default function Relatorio() {
   const [meses, setMeses] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [mesSelecionado, setMesSelecionado] = useState('');
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState('');
   const [dados, setDados] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [pagina, setPagina] = useState(1);
@@ -27,9 +29,13 @@ export default function Relatorio() {
 
   useEffect(() => {
     async function carregarMeses() {
-      const res = await api.get('/relatorio/meses');
-      setMeses(res.data);
-      setMesSelecionado(res.data[0]);
+      const [resMeses, resCategorias] = await Promise.all([
+        api.get('/relatorio/meses'),
+        api.get('/categorias'),
+      ]);
+      setMeses(resMeses.data);
+      setCategorias(resCategorias.data);
+      setMesSelecionado(resMeses.data[0]);
     }
     carregarMeses();
   }, []);
@@ -37,19 +43,27 @@ export default function Relatorio() {
   useEffect(() => {
     if (!mesSelecionado) return;
     setCarregando(true);
-    api.get('/relatorio', { params: { mes: mesSelecionado } }).then((res) => {
+    api.get('/relatorio', {
+      params: {
+        mes: mesSelecionado,
+        categoria_id: categoriaSelecionada || undefined,
+      },
+    }).then((res) => {
       setDados(res.data);
       setCarregando(false);
       setPagina(1); // troca de mês sempre volta pra primeira página
       setPaginaEntradas(1);
     });
-  }, [mesSelecionado]);
+  }, [mesSelecionado, categoriaSelecionada]);
 
   if (!mesSelecionado || carregando || !dados) return <p className="label">Carregando...</p>;
 
   const aumentou = dados.variacaoAbsoluta > 0;
   const corVariacao = aumentou ? 'var(--danger)' : 'var(--accent)';
   const setaVariacao = aumentou ? '↑' : '↓';
+  const saldoPeriodo = (dados.totalEntradas || 0) - dados.totalAtual;
+  const corSaldo = saldoPeriodo >= 0 ? 'var(--ok)' : 'var(--danger)';
+  const nomeCategoriaSelecionada = categorias.find((c) => String(c.id) === categoriaSelecionada)?.nome;
   const totalPaginas = Math.max(1, Math.ceil(dados.despesas.length / POR_PAGINA));
   const totalPaginasEntradas = Math.max(1, Math.ceil((dados.entradas?.length || 0) / POR_PAGINA_ENTRADAS));
 
@@ -136,6 +150,18 @@ export default function Relatorio() {
               <option key={m} value={m}>{rotuloMes(m)}</option>
             ))}
           </select>
+          <select
+            id="seletor-categoria-relatorio"
+            className="seletor-mes seletor-categoria"
+            value={categoriaSelecionada}
+            aria-label="Filtrar por categoria"
+            onChange={(e) => setCategoriaSelecionada(e.target.value)}
+          >
+            <option value="">Todas as categorias</option>
+            {categorias.map((categoria) => (
+              <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
+            ))}
+          </select>
           <button
             type="button"
             className="btn-primary botao-imprimir"
@@ -181,10 +207,19 @@ export default function Relatorio() {
             +{formatarMoeda(dados.totalEntradas || 0)}
           </strong>
         </div>
+
+        <div className="panel card-relatorio">
+          <span className="label">Saldo do período</span>
+          <strong className="valor" style={{ color: corSaldo }}>
+            {saldoPeriodo >= 0 ? '+' : ''}{formatarMoeda(saldoPeriodo)}
+          </strong>
+        </div>
       </div>
 
       <div className="panel bloco-despesas-mes">
-        <span className="label">Despesas de {rotuloMes(mesSelecionado)} — {dados.despesas.length} registros</span>
+        <span className="label">
+          Despesas de {rotuloMes(mesSelecionado)}{nomeCategoriaSelecionada ? ` · ${nomeCategoriaSelecionada}` : ''} — {dados.despesas.length} registros
+        </span>
         <ul className="lista-despesas-mes">
           {dados.despesas.map((d, i) => {
             const paginaDoItem = Math.floor(i / POR_PAGINA) + 1;
