@@ -41,7 +41,7 @@ const origensPermitidas = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(',')
   : ['http://localhost:5173'];
 
-app.use(cors({ origin: origensPermitidas }));
+app.use(cors({ origin: origensPermitidas, credentials: true }));
 app.use(express.json({ limit: '32kb' }));
 
 app.get('/api/health', (req, res) => {

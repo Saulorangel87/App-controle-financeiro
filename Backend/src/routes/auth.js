@@ -12,10 +12,71 @@ const router = express.Router();
 
 function gerarTokenSessao(usuario) {
   return jwt.sign(
-    { usuarioId: usuario.id },
+    { usuarioId: usuario.id, jti: crypto.randomUUID() },
     JWT_SECRET,
-    { expiresIn: '30d' }
+    { expiresIn: '15m' }
   );
+}
+
+const REFRESH_COOKIE = 'refresh_token';
+const REFRESH_DIAS = 30;
+
+function hashRefreshToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+function cookieSeguro() {
+  return process.env.NODE_ENV === 'production' ? '; Secure' : '';
+}
+
+function definirCookieRefresh(res, token) {
+  res.setHeader(
+    'Set-Cookie',
+    `${REFRESH_COOKIE}=${token}; HttpOnly; Path=/api/auth; SameSite=Strict; Max-Age=${REFRESH_DIAS * 24 * 60 * 60}${cookieSeguro()}`
+  );
+}
+
+function limparCookieRefresh(res) {
+  res.setHeader(
+    'Set-Cookie',
+    `${REFRESH_COOKIE}=; HttpOnly; Path=/api/auth; SameSite=Strict; Max-Age=0${cookieSeguro()}`
+  );
+}
+
+function lerCookie(req, nome) {
+  const cookies = req.headers.cookie?.split(';').map((item) => item.trim()) || [];
+  const cookie = cookies.find((item) => item.startsWith(`${nome}=`));
+  return cookie ? decodeURIComponent(cookie.slice(nome.length + 1)) : null;
+}
+
+function criarRefreshToken(usuarioId) {
+  const token = crypto.randomBytes(48).toString('hex');
+  const expiraEm = new Date(Date.now() + REFRESH_DIAS * 24 * 60 * 60 * 1000).toISOString();
+  db.prepare(`
+    INSERT INTO sessoes (usuario_id, token_hash, expira_em)
+    VALUES (?, ?, ?)
+  `).run(usuarioId, hashRefreshToken(token), expiraEm);
+  return token;
+}
+
+function renovarSessao(req, res) {
+  const tokenAtual = lerCookie(req, REFRESH_COOKIE);
+  if (!tokenAtual) return null;
+
+  const sessao = db.prepare(`
+    SELECT s.*, u.* FROM sessoes s
+    JOIN usuarios u ON u.id = s.usuario_id
+    WHERE s.token_hash = ? AND s.revogada = 0
+  `).get(hashRefreshToken(tokenAtual));
+  if (!sessao || new Date(sessao.expira_em) <= new Date()) return null;
+
+  const rotacionarSessao = db.transaction(() => {
+    db.prepare('UPDATE sessoes SET revogada = 1 WHERE id = ?').run(sessao.id);
+    return criarRefreshToken(sessao.usuario_id);
+  });
+  const novoRefreshToken = rotacionarSessao();
+  definirCookieRefresh(res, novoRefreshToken);
+  return sessao;
 }
 
 function usuarioPublico(usuario) {
@@ -121,7 +182,31 @@ router.post('/login', async (req, res) => {
   }
 
   const token = gerarTokenSessao(usuario);
+  const refreshToken = criarRefreshToken(usuario.id);
+  definirCookieRefresh(res, refreshToken);
   res.json({ token, usuario: usuarioPublico(usuario) });
+});
+
+// POST /api/auth/refresh — troca o refresh token HttpOnly por um access token
+// curto. O refresh anterior é revogado para impedir reutilização.
+router.post('/refresh', (req, res) => {
+  const usuario = renovarSessao(req, res);
+  if (!usuario) {
+    limparCookieRefresh(res);
+    return res.status(401).json({ erro: 'sessão expirada' });
+  }
+  res.json({ token: gerarTokenSessao(usuario), usuario: usuarioPublico(usuario) });
+});
+
+// POST /api/auth/logout — revoga a sessão persistente atual.
+router.post('/logout', (req, res) => {
+  const token = lerCookie(req, REFRESH_COOKIE);
+  if (token) {
+    db.prepare('UPDATE sessoes SET revogada = 1 WHERE token_hash = ?')
+      .run(hashRefreshToken(token));
+  }
+  limparCookieRefresh(res);
+  res.status(204).send();
 });
 
 // GET /api/auth/me — retorna o usuário do token atual (útil pro front
