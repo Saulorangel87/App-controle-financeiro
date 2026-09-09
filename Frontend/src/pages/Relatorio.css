@@ -34,6 +34,24 @@
   font-size: 13px;
 }
 
+.botao-exportar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 13px;
+  color: var(--text-primary);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.botao-exportar:hover {
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
+
 .cards-relatorio {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
