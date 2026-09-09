@@ -45,6 +45,7 @@ financeiros, que sempre vêm direto da API.
 - 💰 **Orçamento total editável**, definido manualmente pelo usuário
 - 🔄 **Dashboard sempre atualizado** ao mês corrente, mesmo com a aba aberta na virada do mês
 - 📱 **Totalmente responsivo e instalável (PWA)**, com menu hambúrguer e gráficos adaptados para telas menores
+- ⬇️ **Instalação pelo rodapé** quando o navegador oferecer a instalação e o app ainda não estiver instalado
 - 🆕 **Notas da versão** em `/novidades`, com as novidades da versão atual e o planejamento da v2.0
 
 ## 🛠️ Tecnologias utilizadas
