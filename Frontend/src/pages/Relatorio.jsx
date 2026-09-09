@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Printer, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Printer, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
 import { formatarMoeda, formatarData } from '../utils/formatters';
@@ -15,6 +15,15 @@ const POR_PAGINA_ENTRADAS = 10;
 function rotuloMes(mesISO) {
   const [ano, mes] = mesISO.split('-').map(Number);
   return `${NOMES_MES[mes - 1]} ${ano}`;
+}
+
+function campoCSV(valor) {
+  const texto = String(valor ?? '').replace(/"/g, '""');
+  return `"${texto}"`;
+}
+
+function valorCSV(valor) {
+  return Number(valor || 0).toFixed(2).replace('.', ',');
 }
 
 export default function Relatorio() {
@@ -53,6 +62,22 @@ export default function Relatorio() {
   const totalPaginas = Math.max(1, Math.ceil(dados.despesas.length / POR_PAGINA));
   const totalPaginasEntradas = Math.max(1, Math.ceil((dados.entradas?.length || 0) / POR_PAGINA_ENTRADAS));
 
+  function exportarCSV() {
+    const linhas = [
+      ['Tipo', 'Data', 'Descrição', 'Categoria / Origem', 'Valor (R$)'],
+      ...dados.despesas.map((d) => ['Despesa', d.data, d.descricao, d.categoria_nome, `-${valorCSV(d.valor)}`]),
+      ...(dados.entradas || []).map((e) => ['Entrada', e.data, e.descricao || '', e.origem, valorCSV(e.valor)]),
+    ];
+    const conteudo = `\ufeff${linhas.map((linha) => linha.map(campoCSV).join(';')).join('\n')}`;
+    const blob = new Blob([conteudo], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `relatorio-${mesSelecionado}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="relatorio">
       <div className="relatorio-header">
@@ -82,6 +107,9 @@ export default function Relatorio() {
             onClick={() => window.print()}
           >
             <Printer size={14} /> Imprimir
+          </button>
+          <button type="button" className="botao-exportar" onClick={exportarCSV}>
+            <Download size={14} /> CSV
           </button>
         </div>
       </div>
