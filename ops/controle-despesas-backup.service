@@ -1,0 +1,9 @@
+[Unit]
+Description=Backup criptografado do Controle de Despesas
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/ubuntu/apps/App-controle-financeiro
+ExecStart=/usr/bin/bash /home/ubuntu/apps/App-controle-financeiro/ops/backup-despesas.sh

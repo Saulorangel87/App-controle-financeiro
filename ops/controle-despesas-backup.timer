@@ -1,0 +1,10 @@
+[Unit]
+Description=Agendamento diário do backup do Controle de Despesas
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+RandomizedDelaySec=10m
+
+[Install]
+WantedBy=timers.target
