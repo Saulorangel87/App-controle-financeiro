@@ -97,7 +97,9 @@ com `npm run backup:verify`. O script `ops/backup-despesas.sh` executa o
 backup e verifica sua integridade; recomenda-se agendá-lo diariamente na VM e
 copiar os arquivos criptografados para um armazenamento separado. Os arquivos
 `ops/controle-despesas-backup.service` e `ops/controle-despesas-backup.timer`
-podem ser instalados em `/etc/systemd/system/` na VM.
+podem ser instalados em `/etc/systemd/system/` na VM. Com `BACKUP_BUCKET`
+configurado no `.env` da VM e o OCI CLI usando Instance Principal, o script
+também envia automaticamente o último arquivo `.db.enc` para o bucket.
 - Segredos e dados sensíveis nunca versionados (`.gitignore` cobrindo `.env` e banco de dados local)
 
 ## ♿ Qualidade, acessibilidade e SEO
