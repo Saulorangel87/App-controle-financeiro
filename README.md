@@ -93,8 +93,9 @@ Alguns cuidados aplicados antes de colocar o app em produção:
 O backend cria backups consistentes com `npm run backup`. Em produção, defina
 `BACKUP_ENCRYPTION_KEY` com 64 caracteres hexadecimais e `BACKUP_RETENTION_DAYS`
 para manter somente a janela necessária. Depois, valide o backup mais recente
-com `npm run backup:verify`. O agendamento e a cópia para armazenamento
-separado devem ser configurados na VM.
+com `npm run backup:verify`. O script `ops/backup-despesas.sh` executa o
+backup e verifica sua integridade; recomenda-se agendá-lo diariamente na VM e
+copiar os arquivos criptografados para um armazenamento separado.
 - Segredos e dados sensíveis nunca versionados (`.gitignore` cobrindo `.env` e banco de dados local)
 
 ## ♿ Qualidade, acessibilidade e SEO
