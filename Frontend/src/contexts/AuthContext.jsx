@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import api from "../services/api";
+import api, { definirToken, renovarSessao } from "../services/api";
 
 const AuthContext = createContext(null);
 
@@ -8,24 +8,31 @@ export function AuthProvider({ children }) {
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
-    const token = window.sessionStorage.getItem("token");
-    if (!token) {
-      setCarregando(false);
-      return;
-    }
-    api
-      .get("/auth/me")
-      .then((res) => setUsuario(res.data.usuario))
+    renovarSessao()
+      .then((res) => setUsuario(res.usuario))
       .catch(() => {
-        window.sessionStorage.removeItem("token");
-        window.sessionStorage.removeItem("usuario");
+        // Compatibilidade temporária com sessões criadas antes da migração
+        // para refresh token. O próximo login já usa somente cookie HttpOnly.
+        const tokenLegado = window.sessionStorage.getItem("token");
+        if (!tokenLegado) {
+          window.sessionStorage.removeItem("usuario");
+          return;
+        }
+        definirToken(tokenLegado);
+        return api.get("/auth/me")
+          .then((res) => setUsuario(res.data.usuario))
+          .catch(() => {
+            window.sessionStorage.removeItem("token");
+            window.sessionStorage.removeItem("usuario");
+          });
       })
       .finally(() => setCarregando(false));
   }, []);
 
   async function login(email, senha) {
     const res = await api.post("/auth/login", { email, senha });
-    window.sessionStorage.setItem("token", res.data.token);
+    definirToken(res.data.token);
+    window.sessionStorage.removeItem("token");
     window.sessionStorage.setItem("usuario", JSON.stringify(res.data.usuario));
     setUsuario(res.data.usuario);
   }
@@ -38,6 +45,7 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    api.post("/auth/logout").catch(() => {}).finally(() => definirToken(null));
     window.sessionStorage.removeItem("token");
     window.sessionStorage.removeItem("usuario");
     setUsuario(null);

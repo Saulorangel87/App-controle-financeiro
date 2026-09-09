@@ -36,7 +36,7 @@ financeiros, que sempre vêm direto da API.
 
 ## ✨ Funcionalidades
 
-- 🔐 **Cadastro e login** com senha criptografada (bcrypt), sessão via JWT, verificação de email obrigatória e recuperação de senha por email
+- 🔐 **Cadastro e login** com senha criptografada (bcrypt), access token JWT curto com refresh token seguro, verificação de email obrigatória e recuperação de senha por email
 - 📊 **Dashboard** com total gasto, orçamento, disponível e gráfico de gastos por categoria (pizza no mobile, barra no desktop)
 - 🏷️ **Categorias** com limite individual editável e indicador visual de status (OK / Excedido)
 - 💸 **CRUD completo de despesas** — criar, editar e excluir, com paginação e bloqueio de data futura

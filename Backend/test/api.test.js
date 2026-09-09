@@ -50,7 +50,18 @@ test('fluxo financeiro autenticado mantém orçamento e recorrentes consistentes
   });
   assert.equal(resultado.resposta.status, 200);
   const token = resultado.corpo.token;
+  let cookieRefresh = resultado.resposta.headers.get('set-cookie')?.split(';')[0];
+  assert.match(cookieRefresh || '', /^refresh_token=/);
   const autenticado = { Authorization: `Bearer ${token}` };
+
+  resultado = await jsonFetch(baseUrl, '/api/auth/refresh', {
+    method: 'POST',
+    headers: { Cookie: cookieRefresh },
+  });
+  assert.equal(resultado.resposta.status, 200);
+  assert.notEqual(resultado.corpo.token, token);
+  cookieRefresh = resultado.resposta.headers.get('set-cookie')?.split(';')[0];
+  assert.match(cookieRefresh || '', /^refresh_token=/);
 
   resultado = await jsonFetch(baseUrl, '/api/categorias', { headers: autenticado });
   assert.equal(resultado.resposta.status, 200);
@@ -139,4 +150,16 @@ test('fluxo financeiro autenticado mantém orçamento e recorrentes consistentes
   assert.equal(resultado.resposta.status, 201);
   assert.equal(resultado.corpo.parcela_atual, 1);
   assert.equal(resultado.corpo.parcela_total, 3);
+
+  resultado = await jsonFetch(baseUrl, '/api/auth/logout', {
+    method: 'POST',
+    headers: { Cookie: cookieRefresh },
+  });
+  assert.equal(resultado.resposta.status, 204);
+
+  resultado = await jsonFetch(baseUrl, '/api/auth/refresh', {
+    method: 'POST',
+    headers: { Cookie: cookieRefresh },
+  });
+  assert.equal(resultado.resposta.status, 401);
 });

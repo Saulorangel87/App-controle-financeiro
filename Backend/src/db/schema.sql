@@ -127,3 +127,18 @@ CREATE TABLE IF NOT EXISTS tokens (
 );
 CREATE INDEX IF NOT EXISTS idx_tokens_token ON tokens(token);
 CREATE INDEX IF NOT EXISTS idx_tokens_usuario ON tokens(usuario_id);
+
+-- Sessões persistentes: o access token JWT é curto e o refresh token bruto
+-- nunca é salvo no banco, apenas seu hash SHA-256. A rotação revoga o token
+-- anterior a cada renovação e permite invalidar sessões no logout.
+CREATE TABLE IF NOT EXISTS sessoes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  usuario_id INTEGER NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  expira_em TEXT NOT NULL,
+  revogada INTEGER NOT NULL DEFAULT 0,
+  criado_em TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_sessoes_token_hash ON sessoes(token_hash);
+CREATE INDEX IF NOT EXISTS idx_sessoes_usuario ON sessoes(usuario_id);
