@@ -1,4 +1,5 @@
 import { Mail } from "lucide-react";
+import { Link } from "react-router-dom";
 import "./Footer.css";
 
 const VERSAO = 'v1.6.0';
@@ -35,7 +36,7 @@ function IconeGithub(props) {
 export default function Footer() {
   return (
     <footer className="rodape-fixo ocultar-impressao">
-      <span>&copy; {ANO} Desenvolvido por Saulo Rangel - {VERSAO}</span>
+      <span>&copy; {ANO} Desenvolvido por Saulo Rangel - <Link to="/novidades" className="rodape-versao">{VERSAO}</Link></span>
       <div className="rodape-icones">
         <a
           href="https://www.linkedin.com/in/saulorangel87"

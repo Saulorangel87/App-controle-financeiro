@@ -23,6 +23,11 @@
   gap: 10px;
 }
 
+.rodape-versao {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .rodape-icones a {
   color: var(--text-muted);
   display: flex;
