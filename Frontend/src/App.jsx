@@ -20,6 +20,7 @@ const Cadastro = lazy(() => import('./pages/Cadastro'));
 const VerificarEmail = lazy(() => import('./pages/VerificarEmail'));
 const EsqueciSenha = lazy(() => import('./pages/EsqueciSenha'));
 const RedefinirSenha = lazy(() => import('./pages/RedefinirSenha'));
+const Novidades = lazy(() => import('./pages/Novidades'));
 
 function AreaLogada() {
   const [alertasCount, setAlertasCount] = useState(null);
@@ -47,6 +48,7 @@ function AreaLogada() {
           <Route path="alertas" element={<Alertas key={versao} />} />
           <Route path="relatorio" element={<Relatorio key={versao} />} />
           <Route path="recorrentes" element={<DespesasRecorrentes key={versao} />} />
+          <Route path="novidades" element={<Novidades />} />
         </Route>
       </Routes>
     </DespesaModalProvider>

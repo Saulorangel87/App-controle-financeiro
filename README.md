@@ -45,6 +45,7 @@ financeiros, que sempre vêm direto da API.
 - 💰 **Orçamento total editável**, definido manualmente pelo usuário
 - 🔄 **Dashboard sempre atualizado** ao mês corrente, mesmo com a aba aberta na virada do mês
 - 📱 **Totalmente responsivo e instalável (PWA)**, com menu hambúrguer e gráficos adaptados para telas menores
+- 🆕 **Notas da versão** em `/novidades`, com as novidades da versão atual e o planejamento da v2.0
 
 ## 🛠️ Tecnologias utilizadas
 
@@ -126,6 +127,13 @@ docker compose up -d --build
 ```
 
 ## 🗺️ Roadmap
+
+### Próxima versão — v2.0: confiabilidade profissional
+- [ ] Backup automático criptografado e teste de restauração
+- [ ] Transações atômicas e validação financeira rigorosa no backend
+- [ ] Testes automatizados, smoke tests e CI
+- [ ] Sessão e headers de segurança reforçados
+- [ ] Fechamento mensal, filtros, exportação e histórico de alterações
 
 - [x] CRUD de despesas e categorias
 - [x] Autenticação multiusuário

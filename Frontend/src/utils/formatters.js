@@ -6,7 +6,7 @@ export function formatarMoeda(valor) {
 }
 
 export function formatarData(dataISO) {
-  const [ano, mes, dia] = dataISO.split('-');
+  const [, mes, dia] = dataISO.split('-');
   const meses = [
     'jan', 'fev', 'mar', 'abr', 'mai', 'jun',
     'jul', 'ago', 'set', 'out', 'nov', 'dez',
