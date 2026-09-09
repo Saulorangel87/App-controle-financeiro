@@ -9,6 +9,9 @@ services:
       - FRONTEND_URL=${FRONTEND_URL}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - EMAIL_REMETENTE=${EMAIL_REMETENTE}
+      - BACKUP_DIR=${BACKUP_DIR:-/app/data/backups}
+      - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
       - PORT=3001
     volumes:
       # Persiste o banco SQLite fora do container, senão os dados somem
