@@ -12,10 +12,14 @@ OCI_REGION="$(sed -n 's/^OCI_REGION=//p' .env 2>/dev/null | head -n 1)"
 OCI_REGION="${OCI_REGION:-sa-vinhedo-1}"
 
 if [[ -n "$BACKUP_BUCKET" ]]; then
-  command -v oci >/dev/null 2>&1 || { echo "OCI CLI não encontrado; backup externo não enviado." >&2; exit 1; }
+  OCI_CLI="${OCI_CLI_PATH:-$(command -v oci || true)}"
+  if [[ -z "$OCI_CLI" && -x /home/ubuntu/bin/oci ]]; then
+    OCI_CLI=/home/ubuntu/bin/oci
+  fi
+  [[ -n "$OCI_CLI" ]] || { echo "OCI CLI não encontrado; backup externo não enviado." >&2; exit 1; }
   ARQUIVO_BACKUP="$(ls -1t Backend/data/backups/*.db.enc 2>/dev/null | head -n 1)"
   [[ -n "$ARQUIVO_BACKUP" ]] || { echo "Nenhum backup criptografado encontrado para envio." >&2; exit 1; }
-  oci os object put --auth instance_principal --region "$OCI_REGION" \
+  "$OCI_CLI" os object put --auth instance_principal --region "$OCI_REGION" \
     --bucket-name "$BACKUP_BUCKET" \
     --name "$(basename "$ARQUIVO_BACKUP")" \
     --file "$ARQUIVO_BACKUP" --force
