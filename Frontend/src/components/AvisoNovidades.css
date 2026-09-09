@@ -1,0 +1,108 @@
+.novidades-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, .78);
+}
+
+.aviso-novidades {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  padding: 30px;
+  border-color: var(--accent-dim);
+  box-shadow: 0 18px 70px rgba(0, 0, 0, .45);
+}
+
+.aviso-novidades-fechar {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+}
+
+.aviso-novidades-fechar:hover { color: var(--text-primary); }
+
+.aviso-novidades-selo {
+  display: inline-flex;
+  margin-bottom: 14px;
+  padding: 4px 8px;
+  color: var(--bg);
+  background: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.aviso-novidades h2 {
+  max-width: 350px;
+  margin: 8px 0 10px;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -.04em;
+}
+
+.aviso-novidades-intro {
+  max-width: 420px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+.aviso-novidades-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin: 22px 0;
+  padding: 16px;
+  list-style: none;
+  background: var(--panel-alt);
+  border: 1px solid var(--border-soft);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.aviso-novidades-lista li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.aviso-novidades-lista svg { flex-shrink: 0; color: var(--ok); margin-top: 2px; }
+
+.aviso-novidades-acoes {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.botao-adiar-novidades {
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  font-size: 11px;
+}
+
+.botao-adiar-novidades:hover { color: var(--text-primary); }
+
+.aviso-novidades-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+@media (max-width: 480px) {
+  .aviso-novidades { padding: 24px 20px; }
+  .aviso-novidades h2 { font-size: 24px; }
+  .aviso-novidades-acoes { align-items: stretch; flex-direction: column-reverse; gap: 12px; }
+  .aviso-novidades-link { justify-content: center; }
+}

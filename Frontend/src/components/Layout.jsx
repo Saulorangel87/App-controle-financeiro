@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useDespesaModal } from "../contexts/DespesaModalContext";
 import "./Layout.css";
 import Footer from "./Footer";
+import AvisoNovidades from "./AvisoNovidades";
 
 export default function Layout({ alertasCount }) {
   const { usuario, logout } = useAuth();
@@ -74,6 +75,7 @@ export default function Layout({ alertasCount }) {
         <Outlet />
       </main>
       <Footer />
+      <AvisoNovidades />
     </div>
   );
 }

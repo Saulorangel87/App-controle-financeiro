@@ -35,6 +35,22 @@
   transition: color 0.15s ease;
 }
 
+.rodape-instalar {
+  padding: 4px 8px;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  font-size: 10px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.rodape-instalar:hover {
+  color: var(--bg);
+  background: var(--accent);
+}
+
 .rodape-icones a:hover {
   color: var(--accent);
 }

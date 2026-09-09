@@ -1,5 +1,6 @@
 import { Mail } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import "./Footer.css";
 
 const VERSAO = 'v1.6.0';
@@ -34,10 +35,45 @@ function IconeGithub(props) {
 }
 
 export default function Footer() {
+  const [promptInstalacao, setPromptInstalacao] = useState(null);
+  const [instalado, setInstalado] = useState(false);
+
+  useEffect(() => {
+    const modoStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    setInstalado(modoStandalone);
+
+    function prepararInstalacao(evento) {
+      evento.preventDefault();
+      setPromptInstalacao(evento);
+    }
+
+    function confirmarInstalacao() {
+      setInstalado(true);
+      setPromptInstalacao(null);
+    }
+
+    window.addEventListener('beforeinstallprompt', prepararInstalacao);
+    window.addEventListener('appinstalled', confirmarInstalacao);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', prepararInstalacao);
+      window.removeEventListener('appinstalled', confirmarInstalacao);
+    };
+  }, []);
+
+  async function instalarApp() {
+    if (!promptInstalacao) return;
+    promptInstalacao.prompt();
+    await promptInstalacao.userChoice;
+    setPromptInstalacao(null);
+  }
+
   return (
     <footer className="rodape-fixo ocultar-impressao">
       <span>&copy; {ANO} Desenvolvido por Saulo Rangel - <Link to="/novidades" className="rodape-versao">{VERSAO}</Link></span>
       <div className="rodape-icones">
+        {promptInstalacao && !instalado && (
+          <button className="rodape-instalar" onClick={instalarApp}>Instalar app</button>
+        )}
         <a
           href="https://www.linkedin.com/in/saulorangel87"
           target="_blank"
