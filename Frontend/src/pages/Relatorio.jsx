@@ -17,15 +17,6 @@ function rotuloMes(mesISO) {
   return `${NOMES_MES[mes - 1]} ${ano}`;
 }
 
-function campoCSV(valor) {
-  const texto = String(valor ?? '').replace(/"/g, '""');
-  return `"${texto}"`;
-}
-
-function valorCSV(valor) {
-  return Number(valor || 0).toFixed(2).replace('.', ',');
-}
-
 export default function Relatorio() {
   const [meses, setMeses] = useState([]);
   const [mesSelecionado, setMesSelecionado] = useState('');
@@ -62,20 +53,64 @@ export default function Relatorio() {
   const totalPaginas = Math.max(1, Math.ceil(dados.despesas.length / POR_PAGINA));
   const totalPaginasEntradas = Math.max(1, Math.ceil((dados.entradas?.length || 0) / POR_PAGINA_ENTRADAS));
 
-  function exportarCSV() {
+  async function exportarExcel() {
+    const moduloXLSX = await import('xlsx-js-style');
+    const XLSX = moduloXLSX.default || moduloXLSX;
+    const totalDespesas = Number(dados.totalAtual || 0);
+    const totalEntradas = Number(dados.totalEntradas || 0);
+    const saldo = totalEntradas - totalDespesas;
     const linhas = [
+      ['RELATÓRIO FINANCEIRO', rotuloMes(mesSelecionado)],
+      ['Gerado em', new Date().toLocaleDateString('pt-BR')],
+      [],
+      ['RESUMO DO PERÍODO'],
+      ['Total de despesas', totalDespesas],
+      ['Total de entradas', totalEntradas],
+      ['Saldo do período', saldo],
+      ['Total de lançamentos', dados.despesas.length + (dados.entradas || []).length],
+      [],
+      ['LANÇAMENTOS'],
       ['Tipo', 'Data', 'Descrição', 'Categoria / Origem', 'Valor (R$)'],
-      ...dados.despesas.map((d) => ['Despesa', d.data, d.descricao, d.categoria_nome, `-${valorCSV(d.valor)}`]),
-      ...(dados.entradas || []).map((e) => ['Entrada', e.data, e.descricao || '', e.origem, valorCSV(e.valor)]),
+      ...dados.despesas.map((d) => ['Despesa', d.data, d.descricao, d.categoria_nome, -Number(d.valor || 0)]),
+      ...(dados.entradas || []).map((e) => ['Entrada', e.data, e.descricao || '', e.origem, Number(e.valor || 0)]),
     ];
-    const conteudo = `\ufeff${linhas.map((linha) => linha.map(campoCSV).join(';')).join('\n')}`;
-    const blob = new Blob([conteudo], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `relatorio-${mesSelecionado}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const planilha = XLSX.utils.aoa_to_sheet(linhas);
+    const corCabecalho = '1F2937';
+    const corAcento = 'C6FF2E';
+    const corEntrada = 'E8F5F0';
+    const corDespesa = 'FFF1F2';
+    const corNeutra = 'F3F4F6';
+    const estiloTitulo = { font: { bold: true, color: 'FFFFFF', sz: 16 }, fill: { fgColor: { rgb: corCabecalho } }, alignment: { vertical: 'center' } };
+    const estiloSecao = { font: { bold: true, color: '111827' }, fill: { fgColor: { rgb: corAcento } } };
+    const estiloColunas = { font: { bold: true, color: 'FFFFFF' }, fill: { fgColor: { rgb: corCabecalho } }, alignment: { horizontal: 'center' } };
+    const estiloValor = { numFmt: 'R$ #,##0.00;[Red]-R$ #,##0.00' };
+
+    planilha['A1'].s = estiloTitulo;
+    planilha['B1'].s = estiloTitulo;
+    planilha['A2'].s = { font: { italic: true, color: '6B7280' } };
+    planilha['B2'].s = { font: { italic: true, color: '6B7280' } };
+    ['A4', 'A10'].forEach((celula) => { planilha[celula].s = estiloSecao; });
+    for (const coluna of ['A', 'B', 'C', 'D', 'E']) planilha[`${coluna}11`].s = estiloColunas;
+    for (const linha of [5, 6, 7]) {
+      planilha[`A${linha}`].s = { font: { bold: true } };
+      planilha[`B${linha}`].s = { ...estiloValor, font: { bold: true } };
+    }
+    planilha.B5.s.fill = { fgColor: { rgb: corDespesa } };
+    planilha.B6.s.fill = { fgColor: { rgb: corEntrada } };
+    planilha.B7.s.fill = { fgColor: { rgb: saldo >= 0 ? corEntrada : corDespesa } };
+    planilha.B8.s = { font: { bold: true }, fill: { fgColor: { rgb: corNeutra } }, alignment: { horizontal: 'center' } };
+    for (let linha = 12; linha <= linhas.length; linha += 1) {
+      const tipo = planilha[`A${linha}`]?.v;
+      planilha[`E${linha}`].s = estiloValor;
+      if (tipo === 'Entrada') planilha[`A${linha}`].s = { fill: { fgColor: { rgb: corEntrada } }, font: { color: '0F766E', bold: true } };
+      if (tipo === 'Despesa') planilha[`A${linha}`].s = { fill: { fgColor: { rgb: corDespesa } }, font: { color: 'BE123C', bold: true } };
+    }
+    planilha['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, { s: { r: 3, c: 0 }, e: { r: 3, c: 4 } }, { s: { r: 9, c: 0 }, e: { r: 9, c: 4 } }];
+    planilha['!cols'] = [{ wch: 22 }, { wch: 15 }, { wch: 32 }, { wch: 24 }, { wch: 17 }];
+    planilha['!rows'] = [{ hpt: 28 }];
+    const livro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(livro, planilha, 'Relatório');
+    XLSX.writeFile(livro, `relatorio-${mesSelecionado}.xlsx`);
   }
 
   return (
@@ -108,8 +143,8 @@ export default function Relatorio() {
           >
             <Printer size={14} /> Imprimir
           </button>
-          <button type="button" className="botao-exportar" onClick={exportarCSV}>
-            <Download size={14} /> CSV
+          <button type="button" className="botao-exportar" onClick={exportarExcel}>
+            <Download size={14} /> Excel
           </button>
         </div>
       </div>
