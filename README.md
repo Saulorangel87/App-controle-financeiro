@@ -87,6 +87,14 @@ Alguns cuidados aplicados antes de colocar o app em produção:
 - Todas as queries SQL parametrizadas (proteção contra SQL Injection)
 - Isolamento de dados por usuário em todas as rotas autenticadas
 - Validação de data futura em despesas (frontend + backend)
+
+### Backup do banco
+
+O backend cria backups consistentes com `npm run backup`. Em produção, defina
+`BACKUP_ENCRYPTION_KEY` com 64 caracteres hexadecimais e `BACKUP_RETENTION_DAYS`
+para manter somente a janela necessária. Depois, valide o backup mais recente
+com `npm run backup:verify`. O agendamento e a cópia para armazenamento
+separado devem ser configurados na VM.
 - Segredos e dados sensíveis nunca versionados (`.gitignore` cobrindo `.env` e banco de dados local)
 
 ## ♿ Qualidade, acessibilidade e SEO
