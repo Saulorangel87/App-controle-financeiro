@@ -60,10 +60,9 @@ autorizar as notificações.
 
 O projeto possui CI no GitHub Actions: cada push ou pull request para `main`
 executa os testes do backend, o lint do frontend e o build de produção. O
-deploy de produção é acionado manualmente pelo **Run workflow**, após a
-validação do CI, usando um runner GitHub-hosted conectado temporariamente à
-VM pela Tailscale. Veja o [runbook de deploy](docs/DEPLOY-GITHUB.md) para a
-configuração da infraestrutura.
+deploy de produção segue o mesmo padrão manual do CDD Campos: **Run workflow**,
+build-check, Tailscale e publicação na VPS. Veja o [runbook de deploy](docs/DEPLOY-GITHUB.md)
+para a configuração da infraestrutura.
 
 **Frontend**
 - React 19 + Vite (com code-splitting por rota)
