@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { numeroMonetarioValido } = require('../utils/validacao');
+const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ function mesAtual() {
 // sozinho: um mês novo simplesmente não tem linha até alguém criar uma.
 function garantirOrcamentoDoMes(usuarioId, mes) {
   db.prepare(`
-    INSERT OR IGNORE INTO orcamento_mensal (usuario_id, mes, valor) VALUES (?, ?, 0)
+    INSERT OR IGNORE INTO orcamento_mensal (usuario_id, mes, valor, valor_centavos) VALUES (?, ?, 0, 0)
   `).run(usuarioId, mes);
 }
 
@@ -22,9 +23,9 @@ router.get('/', (req, res) => {
   const mes = mesAtual();
   garantirOrcamentoDoMes(req.usuarioId, mes);
   const orcamento = db.prepare(
-    'SELECT valor FROM orcamento_mensal WHERE usuario_id = ? AND mes = ?'
+    'SELECT valor, valor_centavos FROM orcamento_mensal WHERE usuario_id = ? AND mes = ?'
   ).get(req.usuarioId, mes);
-  res.json({ valor: orcamento.valor, mes });
+  res.json({ ...comValorEmReais(orcamento), mes });
 });
 
 // PUT /api/orcamento — define (substitui) o valor do orçamento do mês
@@ -39,9 +40,9 @@ router.put('/', (req, res) => {
   const mes = mesAtual();
   garantirOrcamentoDoMes(req.usuarioId, mes);
   db.prepare(`
-    UPDATE orcamento_mensal SET valor = ?, atualizado_em = datetime('now')
+    UPDATE orcamento_mensal SET valor = ?, valor_centavos = ?, atualizado_em = datetime('now')
     WHERE usuario_id = ? AND mes = ?
-  `).run(valor, req.usuarioId, mes);
+  `).run(valor, paraCentavos(valor), req.usuarioId, mes);
 
   res.json({ valor, mes });
 });

@@ -7,6 +7,7 @@ const CATEGORIAS_PADRAO = require('../db/categoriasPadrao');
 const { JWT_SECRET } = require('../config/jwt');
 const limiteEmail = require('../middleware/limiteEmail');
 const { enviarEmailVerificacao, enviarEmailRecuperacaoSenha } = require('../services/email');
+const { paraCentavos } = require('../utils/dinheiro');
 
 const router = express.Router();
 
@@ -133,13 +134,13 @@ router.post('/registrar', async (req, res) => {
 
   // Cria as categorias padrão e o orçamento inicial pro novo usuário
   const insertCategoria = db.prepare(`
-    INSERT INTO categorias (usuario_id, nome, icone, cor, limite)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO categorias (usuario_id, nome, icone, cor, limite, limite_centavos)
+    VALUES (?, ?, ?, ?, ?, ?)
   `);
   for (const cat of CATEGORIAS_PADRAO) {
-    insertCategoria.run(usuarioId, cat.nome, cat.icone, cat.cor, cat.limite);
+    insertCategoria.run(usuarioId, cat.nome, cat.icone, cat.cor, cat.limite, paraCentavos(cat.limite));
   }
-  db.prepare('INSERT INTO orcamento (usuario_id, valor) VALUES (?, 0)').run(usuarioId);
+  db.prepare('INSERT INTO orcamento (usuario_id, valor, valor_centavos) VALUES (?, 0, 0)').run(usuarioId);
 
   const tokenVerificacao = criarTokenTemporario(usuarioId, 'verificacao_email', 24);
   try {

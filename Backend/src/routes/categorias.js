@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db');
+const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
 
 const router = express.Router();
 
@@ -16,7 +17,8 @@ router.get('/', (req, res) => {
       c.icone,
       c.cor,
       c.limite,
-      COALESCE(SUM(d.valor), 0) AS gasto
+      c.limite_centavos,
+      COALESCE(SUM(COALESCE(d.valor_centavos, ROUND(d.valor * 100)) / 100.0), 0) AS gasto
     FROM categorias c
     LEFT JOIN despesas d
       ON d.categoria_id = c.id
@@ -26,7 +28,8 @@ router.get('/', (req, res) => {
     ORDER BY c.id
   `).all(req.usuarioId);
 
-  const resultado = categorias.map((c) => {
+  const resultado = categorias.map((linha) => {
+    const c = comValorEmReais(linha, 'limite');
     const disponivel = c.limite - c.gasto;
     const percentual = c.limite > 0 ? (c.gasto / c.limite) * 100 : 0;
     return {
@@ -50,12 +53,12 @@ router.post('/', (req, res) => {
   }
 
   const info = db.prepare(`
-    INSERT INTO categorias (usuario_id, nome, icone, cor, limite)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(req.usuarioId, nome, icone || 'circle', cor || '#c8f000', limite);
+    INSERT INTO categorias (usuario_id, nome, icone, cor, limite, limite_centavos)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(req.usuarioId, nome, icone || 'circle', cor || '#c8f000', limite, paraCentavos(limite));
 
   const nova = db.prepare('SELECT * FROM categorias WHERE id = ?').get(info.lastInsertRowid);
-  res.status(201).json(nova);
+  res.status(201).json(comValorEmReais(nova, 'limite'));
 });
 
 // PUT /api/categorias/:id
@@ -72,21 +75,23 @@ router.put('/:id', (req, res) => {
     return res.status(404).json({ erro: 'categoria não encontrada' });
   }
 
+  const limiteFinal = limite ?? categoria.limite;
   db.prepare(`
     UPDATE categorias
-    SET nome = ?, icone = ?, cor = ?, limite = ?
+    SET nome = ?, icone = ?, cor = ?, limite = ?, limite_centavos = ?
     WHERE id = ? AND usuario_id = ?
   `).run(
     nome ?? categoria.nome,
     icone ?? categoria.icone,
     cor ?? categoria.cor,
-    limite ?? categoria.limite,
+    limiteFinal,
+    paraCentavos(limiteFinal),
     id,
     req.usuarioId
   );
 
   const atualizada = db.prepare('SELECT * FROM categorias WHERE id = ?').get(id);
-  res.json(atualizada);
+  res.json(comValorEmReais(atualizada, 'limite'));
 });
 
 module.exports = router;

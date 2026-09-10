@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { numeroMonetarioValido, dataISOValida } = require('../utils/validacao');
+const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
 
 const router = express.Router();
 
@@ -9,12 +10,13 @@ const router = express.Router();
 function ajustarOrcamentoDoMes(usuarioId, data, delta) {
   const mes = data.slice(0, 7); // "YYYY-MM-DD" -> "YYYY-MM"
   db.prepare(`
-    INSERT INTO orcamento_mensal (usuario_id, mes, valor)
-    VALUES (?, ?, ?)
+    INSERT INTO orcamento_mensal (usuario_id, mes, valor, valor_centavos)
+    VALUES (?, ?, ?, ?)
     ON CONFLICT (usuario_id, mes) DO UPDATE SET
       valor = valor + excluded.valor,
+      valor_centavos = valor_centavos + excluded.valor_centavos,
       atualizado_em = datetime('now')
-  `).run(usuarioId, mes, delta);
+  `).run(usuarioId, mes, delta, paraCentavos(delta));
 }
 
 // GET /api/entradas
@@ -46,11 +48,11 @@ router.get('/', (req, res) => {
 
   if (!paginando) {
     const entradas = db.prepare(`
-      SELECT id, origem, descricao, valor, data
+      SELECT id, origem, descricao, valor, valor_centavos, data
       ${baseSql}
       ORDER BY data DESC, id DESC
     `).all(...params);
-    return res.json(entradas);
+    return res.json(entradas.map((entrada) => comValorEmReais(entrada)));
   }
 
   const paginaAtual = Math.max(1, parseInt(pagina, 10) || 1);
@@ -59,18 +61,18 @@ router.get('/', (req, res) => {
 
   const { total } = db.prepare(`SELECT COUNT(*) AS total ${baseSql}`).get(...params);
   const { totalGeral } = db.prepare(`
-    SELECT COALESCE(SUM(valor), 0) AS totalGeral ${baseSql}
+    SELECT COALESCE(SUM(COALESCE(valor_centavos, ROUND(valor * 100)) / 100.0), 0) AS totalGeral ${baseSql}
   `).get(...params);
 
   const entradas = db.prepare(`
-    SELECT id, origem, descricao, valor, data
+    SELECT id, origem, descricao, valor, valor_centavos, data
     ${baseSql}
     ORDER BY data DESC, id DESC
     LIMIT ? OFFSET ?
   `).all(...params, itensPorPagina, offset);
 
   res.json({
-    entradas,
+    entradas: entradas.map((entrada) => comValorEmReais(entrada)),
     pagina: paginaAtual,
     porPagina: itensPorPagina,
     total,
@@ -94,9 +96,9 @@ router.post('/', (req, res) => {
 
   const registrar = db.transaction(() => {
     const info = db.prepare(`
-      INSERT INTO entradas (usuario_id, origem, descricao, valor, data)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(req.usuarioId, String(origem).trim(), descricao ? String(descricao).trim() : null, valor, data);
+      INSERT INTO entradas (usuario_id, origem, descricao, valor, valor_centavos, data)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(req.usuarioId, String(origem).trim(), descricao ? String(descricao).trim() : null, valor, paraCentavos(valor), data);
 
     ajustarOrcamentoDoMes(req.usuarioId, data, valor);
     return info;
@@ -119,7 +121,9 @@ router.delete('/:id', (req, res) => {
 
   const excluir = db.transaction(() => {
     db.prepare('DELETE FROM entradas WHERE id = ? AND usuario_id = ?').run(req.params.id, req.usuarioId);
-    ajustarOrcamentoDoMes(req.usuarioId, entrada.data, -entrada.valor);
+    ajustarOrcamentoDoMes(req.usuarioId, entrada.data, -(Number.isInteger(entrada.valor_centavos)
+      ? entrada.valor_centavos / 100
+      : entrada.valor));
   });
   excluir();
 

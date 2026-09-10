@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { numeroMonetarioValido, dataISOValida } = require('../utils/validacao');
+const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
 
 const router = express.Router();
 
@@ -43,14 +44,14 @@ router.get('/', (req, res) => {
 
   if (!paginando) {
     const despesas = db.prepare(`
-      SELECT d.id, d.descricao, d.valor, d.data,
+      SELECT d.id, d.descricao, d.valor, d.valor_centavos, d.data,
              c.id AS categoria_id, c.nome AS categoria_nome,
              c.icone AS categoria_icone, c.cor AS categoria_cor
       ${baseSql}
       ORDER BY d.data DESC, d.id DESC
     `).all(...params);
 
-    return res.json(despesas);
+    return res.json(despesas.map((despesa) => comValorEmReais(despesa)));
   }
 
   const paginaAtual = Math.max(1, parseInt(pagina, 10) || 1);
@@ -59,11 +60,11 @@ router.get('/', (req, res) => {
 
   const { total } = db.prepare(`SELECT COUNT(*) AS total ${baseSql}`).get(...params);
   const { totalGeral } = db.prepare(`
-    SELECT COALESCE(SUM(d.valor), 0) AS totalGeral ${baseSql}
+    SELECT COALESCE(SUM(COALESCE(d.valor_centavos, ROUND(d.valor * 100)) / 100.0), 0) AS totalGeral ${baseSql}
   `).get(...params);
 
   const despesas = db.prepare(`
-    SELECT d.id, d.descricao, d.valor, d.data,
+    SELECT d.id, d.descricao, d.valor, d.valor_centavos, d.data,
            c.id AS categoria_id, c.nome AS categoria_nome,
            c.icone AS categoria_icone, c.cor AS categoria_cor
     ${baseSql}
@@ -72,7 +73,7 @@ router.get('/', (req, res) => {
   `).all(...params, itensPorPagina, offset);
 
   res.json({
-    despesas,
+    despesas: despesas.map((despesa) => comValorEmReais(despesa)),
     pagina: paginaAtual,
     porPagina: itensPorPagina,
     total,
@@ -108,12 +109,12 @@ router.post('/', (req, res) => {
   }
 
   const info = db.prepare(`
-    INSERT INTO despesas (usuario_id, categoria_id, descricao, valor, data)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(req.usuarioId, categoria_id, descricao, valor, data);
+    INSERT INTO despesas (usuario_id, categoria_id, descricao, valor, valor_centavos, data)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(req.usuarioId, categoria_id, descricao, valor, paraCentavos(valor), data);
 
   const nova = db.prepare('SELECT * FROM despesas WHERE id = ?').get(info.lastInsertRowid);
-  res.status(201).json(nova);
+  res.status(201).json(comValorEmReais(nova));
 });
 
 // PUT /api/despesas/:id
@@ -149,13 +150,15 @@ router.put('/:id', (req, res) => {
     return res.status(400).json({ erro: 'valor inválido' });
   }
 
+  const valorFinal = valor ?? despesa.valor;
   db.prepare(`
     UPDATE despesas
-    SET descricao = ?, valor = ?, categoria_id = ?, data = ?
+    SET descricao = ?, valor = ?, valor_centavos = ?, categoria_id = ?, data = ?
     WHERE id = ? AND usuario_id = ?
   `).run(
     descricao ?? despesa.descricao,
-    valor ?? despesa.valor,
+    valorFinal,
+    paraCentavos(valorFinal),
     categoria_id ?? despesa.categoria_id,
     data ?? despesa.data,
     id,
@@ -163,7 +166,7 @@ router.put('/:id', (req, res) => {
   );
 
   const atualizada = db.prepare('SELECT * FROM despesas WHERE id = ?').get(id);
-  res.json(atualizada);
+  res.json(comValorEmReais(atualizada));
 });
 
 // DELETE /api/despesas/:id

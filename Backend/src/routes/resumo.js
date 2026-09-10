@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db');
+const { comValorEmReais } = require('../utils/dinheiro');
 
 const router = express.Router();
 
@@ -14,7 +15,8 @@ router.get('/', (req, res) => {
       c.id,
       c.nome,
       c.limite,
-      COALESCE(SUM(d.valor), 0) AS gasto
+      c.limite_centavos,
+      COALESCE(SUM(COALESCE(d.valor_centavos, ROUND(d.valor * 100)) / 100.0), 0) AS gasto
     FROM categorias c
     LEFT JOIN despesas d
       ON d.categoria_id = c.id
@@ -23,21 +25,23 @@ router.get('/', (req, res) => {
     GROUP BY c.id
   `).all(req.usuarioId);
 
-  const totalGasto = categorias.reduce((soma, c) => soma + c.gasto, 0);
+  const categoriasComValores = categorias.map((linha) => comValorEmReais(linha, 'limite'));
+  const totalGasto = categoriasComValores.reduce((soma, c) => soma + c.gasto, 0);
 
   // Orçamento total é definido manualmente pelo usuário, por mês (tabela
   // orcamento_mensal) — não é mais calculado como soma dos limites das
   // categorias, e não carrega o valor do mês anterior pro mês novo.
   const mesAtual = db.prepare(`SELECT strftime('%Y-%m', 'now') AS mes`).get().mes;
   db.prepare(`
-    INSERT OR IGNORE INTO orcamento_mensal (usuario_id, mes, valor) VALUES (?, ?, 0)
+    INSERT OR IGNORE INTO orcamento_mensal (usuario_id, mes, valor, valor_centavos) VALUES (?, ?, 0, 0)
   `).run(req.usuarioId, mesAtual);
-  const { valor: orcamentoTotal } = db.prepare(
-    'SELECT valor FROM orcamento_mensal WHERE usuario_id = ? AND mes = ?'
+  const orcamento = db.prepare(
+    'SELECT valor, valor_centavos FROM orcamento_mensal WHERE usuario_id = ? AND mes = ?'
   ).get(req.usuarioId, mesAtual);
+  const orcamentoTotal = comValorEmReais({ valor: orcamento.valor, valor_centavos: orcamento.valor_centavos }).valor;
 
   const disponivel = orcamentoTotal - totalGasto;
-  const categoriasComAlerta = categorias.filter((c) => c.gasto > c.limite).length;
+  const categoriasComAlerta = categoriasComValores.filter((c) => c.gasto > c.limite).length;
   const percentualUtilizado = orcamentoTotal > 0 ? (totalGasto / orcamentoTotal) * 100 : 0;
 
   res.json({
@@ -47,7 +51,7 @@ router.get('/', (req, res) => {
     disponivel,
     categoriasComAlerta,
     percentualUtilizado: Number(percentualUtilizado.toFixed(1)),
-    gastoPorCategoria: categorias.map((c) => ({
+    gastoPorCategoria: categoriasComValores.map((c) => ({
       nome: c.nome,
       gasto: c.gasto,
       limite: c.limite,
