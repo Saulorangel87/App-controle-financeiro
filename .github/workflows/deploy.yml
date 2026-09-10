@@ -1,0 +1,66 @@
+name: Deploy produção
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Publicar na VM de produção
+    if: >-
+      (github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main') ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main')
+    runs-on: [self-hosted, linux, ARM64, despesas-production]
+    environment: production
+    timeout-minutes: 20
+    env:
+      EXPECTED_SHA: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.workflow_run.head_sha }}
+      APP_DIR: /home/ubuntu/apps/App-controle-financeiro
+
+    steps:
+      - name: Atualizar código validado
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$APP_DIR"
+
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "A publicação foi interrompida: existem alterações locais na VM."
+            git status --short
+            exit 1
+          fi
+
+          git fetch --prune origin main
+          git pull --ff-only origin main
+
+          ACTUAL_SHA="$(git rev-parse HEAD)"
+          if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+            echo "A publicação foi interrompida: a revisão local ($ACTUAL_SHA) não corresponde à revisão validada ($EXPECTED_SHA)."
+            exit 1
+          fi
+
+      - name: Reconstruir e iniciar containers
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$APP_DIR"
+          docker compose up -d --build
+
+      - name: Verificar frontend e API
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 10 --retry-delay 2 http://127.0.0.1:8091/ >/dev/null
+          curl --fail --silent --show-error --retry 10 --retry-delay 2 http://127.0.0.1:3011/api/health >/dev/null
