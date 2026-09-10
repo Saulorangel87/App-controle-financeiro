@@ -4,6 +4,7 @@
 // categorias automaticamente (ver src/routes/auth.js).
 const db = require('./index');
 const CATEGORIAS_PADRAO = require('./categoriasPadrao');
+const { paraCentavos } = require('../utils/dinheiro');
 
 db.prepare(`
   INSERT OR IGNORE INTO usuarios (id, nome, email, senha_hash)
@@ -11,7 +12,7 @@ db.prepare(`
 `).run();
 
 const insertCategoria = db.prepare(`
-  INSERT INTO categorias (usuario_id, nome, icone, cor, limite)
+  INSERT INTO categorias (usuario_id, nome, icone, cor, limite, limite_centavos)
   SELECT 1, ?, ?, ?, ?
   WHERE NOT EXISTS (
     SELECT 1 FROM categorias WHERE usuario_id = 1 AND nome = ?
@@ -19,12 +20,12 @@ const insertCategoria = db.prepare(`
 `);
 
 for (const cat of CATEGORIAS_PADRAO) {
-  insertCategoria.run(cat.nome, cat.icone, cat.cor, cat.limite, cat.nome);
+  insertCategoria.run(cat.nome, cat.icone, cat.cor, cat.limite, paraCentavos(cat.limite), cat.nome);
 }
 
 db.prepare(`
-  INSERT OR IGNORE INTO orcamento (usuario_id, valor)
-  VALUES (1, 3600)
+  INSERT OR IGNORE INTO orcamento (usuario_id, valor, valor_centavos)
+  VALUES (1, 3600, 360000)
 `).run();
 
 console.log('Seed concluído: usuário mock (id=1) e categorias criadas.');

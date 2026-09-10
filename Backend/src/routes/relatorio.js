@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db');
+const { comValorEmReais } = require('../utils/dinheiro');
 
 const router = express.Router();
 
@@ -15,7 +16,7 @@ function totalDoMes(usuarioId, mes, categoriaId) {
   const filtroCategoria = categoriaId ? 'AND categoria_id = ?' : '';
   const parametros = categoriaId ? [usuarioId, mes, categoriaId] : [usuarioId, mes];
   const row = db.prepare(`
-    SELECT COALESCE(SUM(valor), 0) AS total
+    SELECT COALESCE(SUM(COALESCE(valor_centavos, ROUND(valor * 100)) / 100.0), 0) AS total
     FROM despesas
     WHERE usuario_id = ? AND strftime('%Y-%m', data) = ? ${filtroCategoria}
   `).get(...parametros);
@@ -71,7 +72,7 @@ router.get('/', (req, res) => {
   const parametrosDespesas = categoriaId ? [req.usuarioId, mes, categoriaId] : [req.usuarioId, mes];
   const despesas = db.prepare(`
     SELECT
-      d.id, d.descricao, d.valor, d.data,
+      d.id, d.descricao, d.valor, d.valor_centavos, d.data,
       c.nome AS categoria_nome, c.icone AS categoria_icone, c.cor AS categoria_cor
     FROM despesas d
     JOIN categorias c ON c.id = d.categoria_id
@@ -82,12 +83,14 @@ router.get('/', (req, res) => {
   // Entradas (adições ao orçamento) do mesmo mês — mostradas separadas das
   // despesas no relatório, não somadas junto com o total de gastos.
   const entradas = db.prepare(`
-    SELECT id, origem, descricao, valor, data
+    SELECT id, origem, descricao, valor, valor_centavos, data
     FROM entradas
     WHERE usuario_id = ? AND strftime('%Y-%m', data) = ?
     ORDER BY data DESC, id DESC
   `).all(req.usuarioId, mes);
-  const totalEntradas = entradas.reduce((soma, e) => soma + e.valor, 0);
+  const despesasComValores = despesas.map((despesa) => comValorEmReais(despesa));
+  const entradasComValores = entradas.map((entrada) => comValorEmReais(entrada));
+  const totalEntradas = entradasComValores.reduce((soma, e) => soma + e.valor, 0);
 
   res.json({
     mes,
@@ -96,8 +99,8 @@ router.get('/', (req, res) => {
     totalAnterior,
     variacaoAbsoluta,
     variacaoPercentual,
-    despesas,
-    entradas,
+    despesas: despesasComValores,
+    entradas: entradasComValores,
     totalEntradas,
   });
 });

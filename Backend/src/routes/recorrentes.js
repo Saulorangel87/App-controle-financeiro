@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db');
+const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
 
 const router = express.Router();
 
@@ -48,13 +49,13 @@ router.get('/', (req, res) => {
   const mes = mesAtual();
   const linhas = db.prepare(`
     SELECT id, descricao, valor, dia_vencimento, observacao,
-           pago_mes, pago_em, parcela_total, parcela_mes_inicio
+           pago_mes, pago_em, parcela_total, parcela_mes_inicio, valor_centavos
     FROM despesas_recorrentes
     WHERE usuario_id = ?
     ORDER BY dia_vencimento IS NULL, dia_vencimento ASC, descricao ASC
   `).all(req.usuarioId);
 
-  const itens = linhas.map((l) => comCamposCalculados(l, mes));
+  const itens = linhas.map((l) => comCamposCalculados(comValorEmReais(l), mes));
   const ativos = itens.filter((i) => !i.parcela_concluida);
   const totalCheio = ativos.reduce((soma, i) => soma + (i.valor || 0), 0);
   const totalPago = ativos.reduce((soma, i) => soma + (i.pago ? (i.valor || 0) : 0), 0);
@@ -91,12 +92,13 @@ router.post('/', (req, res) => {
 
   const info = db.prepare(`
     INSERT INTO despesas_recorrentes
-      (usuario_id, descricao, valor, dia_vencimento, observacao, parcela_total, parcela_mes_inicio)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+      (usuario_id, descricao, valor, valor_centavos, dia_vencimento, observacao, parcela_total, parcela_mes_inicio)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     req.usuarioId,
     descricao.trim(),
     valor ? Number(valor) : null,
+    valor ? paraCentavos(Number(valor)) : null,
     dia_vencimento ? Number(dia_vencimento) : null,
     observacao ? observacao.trim() : null,
     parcelaTotalNum,
@@ -104,7 +106,7 @@ router.post('/', (req, res) => {
   );
 
   res.status(201).json(comCamposCalculados(
-    db.prepare('SELECT * FROM despesas_recorrentes WHERE id = ?').get(info.lastInsertRowid),
+    comValorEmReais(db.prepare('SELECT * FROM despesas_recorrentes WHERE id = ?').get(info.lastInsertRowid)),
     mesAtual(),
   ));
 });
@@ -123,13 +125,15 @@ router.put('/:id', (req, res) => {
     return res.status(400).json({ erro: 'descrição é obrigatória' });
   }
 
+  const valorFinal = valor ?? existente.valor;
   db.prepare(`
     UPDATE despesas_recorrentes
-    SET descricao = ?, valor = ?, dia_vencimento = ?, observacao = ?
+    SET descricao = ?, valor = ?, valor_centavos = ?, dia_vencimento = ?, observacao = ?
     WHERE id = ? AND usuario_id = ?
   `).run(
     descricao.trim(),
-    valor ? Number(valor) : null,
+    valorFinal ? Number(valorFinal) : null,
+    valorFinal ? paraCentavos(Number(valorFinal)) : null,
     dia_vencimento ? Number(dia_vencimento) : null,
     observacao ? observacao.trim() : null,
     req.params.id,
@@ -137,7 +141,7 @@ router.put('/:id', (req, res) => {
   );
 
   res.json(comCamposCalculados(
-    db.prepare('SELECT * FROM despesas_recorrentes WHERE id = ?').get(req.params.id),
+    comValorEmReais(db.prepare('SELECT * FROM despesas_recorrentes WHERE id = ?').get(req.params.id)),
     mesAtual(),
   ));
 });
@@ -164,7 +168,7 @@ router.patch('/:id/pago', (req, res) => {
   );
 
   res.json(comCamposCalculados(
-    db.prepare('SELECT * FROM despesas_recorrentes WHERE id = ?').get(req.params.id),
+    comValorEmReais(db.prepare('SELECT * FROM despesas_recorrentes WHERE id = ?').get(req.params.id)),
     mes,
   ));
 });

@@ -16,4 +16,13 @@ function deCentavos(centavos) {
   return centavos / 100;
 }
 
-module.exports = { paraCentavos, deCentavos };
+function comValorEmReais(linha, coluna = 'valor') {
+  const colunaCentavos = `${coluna}_centavos`;
+  const { [colunaCentavos]: centavos, ...resto } = linha;
+  return {
+    ...resto,
+    [coluna]: Number.isInteger(centavos) ? deCentavos(centavos) : Number(linha[coluna]),
+  };
+}
+
+module.exports = { paraCentavos, deCentavos, comValorEmReais };

@@ -10,6 +10,7 @@
 //   sudo docker compose exec backend node src/db/adicionarCategoriasFaltantes.js
 const db = require('./index');
 const CATEGORIAS_PADRAO = require('./categoriasPadrao');
+const { paraCentavos } = require('../utils/dinheiro');
 
 const usuarios = db.prepare('SELECT id, nome FROM usuarios').all();
 
@@ -17,8 +18,8 @@ const jaTemCategoria = db.prepare(
   'SELECT 1 FROM categorias WHERE usuario_id = ? AND nome = ?'
 );
 const inserirCategoria = db.prepare(`
-  INSERT INTO categorias (usuario_id, nome, icone, cor, limite)
-  VALUES (?, ?, ?, ?, ?)
+  INSERT INTO categorias (usuario_id, nome, icone, cor, limite, limite_centavos)
+  VALUES (?, ?, ?, ?, ?, ?)
 `);
 
 let totalAdicionadas = 0;
@@ -28,7 +29,7 @@ for (const usuario of usuarios) {
     const existe = jaTemCategoria.get(usuario.id, cat.nome);
     if (existe) continue;
 
-    inserirCategoria.run(usuario.id, cat.nome, cat.icone, cat.cor, cat.limite);
+    inserirCategoria.run(usuario.id, cat.nome, cat.icone, cat.cor, cat.limite, paraCentavos(cat.limite));
     totalAdicionadas += 1;
     console.log(`+ "${cat.nome}" adicionada para ${usuario.nome} (usuario_id=${usuario.id})`);
   }
