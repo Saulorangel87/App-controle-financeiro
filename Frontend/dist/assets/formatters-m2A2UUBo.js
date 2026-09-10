@@ -1,0 +1,1 @@
+function e(e){return e.toLocaleString(`pt-BR`,{style:`currency`,currency:`BRL`})}function t(e){let[,t,n]=e.split(`-`);return`${n} de ${[`jan`,`fev`,`mar`,`abr`,`mai`,`jun`,`jul`,`ago`,`set`,`out`,`nov`,`dez`][Number(t)-1]}.`}export{e as n,t};
