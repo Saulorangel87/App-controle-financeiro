@@ -27,7 +27,10 @@ function AreaLogada() {
   const [versao, setVersao] = useState(0);
 
   const recarregarAlertas = useCallback(() => {
-    api.get('/resumo').then((res) => setAlertasCount(res.data.categoriasComAlerta));
+    Promise.all([api.get('/resumo'), api.get('/recorrentes')]).then(([resumo, recorrentes]) => {
+      const recorrentesComAlerta = recorrentes.data.itens.filter((item) => item.alerta_vencimento).length;
+      setAlertasCount(resumo.data.categoriasComAlerta + recorrentesComAlerta);
+    });
   }, []);
 
   useEffect(() => {

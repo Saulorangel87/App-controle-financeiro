@@ -64,6 +64,37 @@
   color: #0a0a0a;
 }
 
+.bloco-alertas-recorrentes {
+  padding: 24px;
+  border: 1px solid var(--warning);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.lista-recorrentes-alerta {
+  list-style: none;
+  margin-top: 8px;
+}
+
+.lista-recorrentes-alerta li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.lista-recorrentes-alerta li > div,
+.lista-recorrentes-alerta li > span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.recorrente-alerta-vencida strong { color: var(--danger); }
+.recorrente-alerta-urgente strong { color: var(--warning); }
+.recorrente-alerta-atencao strong { color: var(--accent); }
+
 @media (max-width: 600px) {
   .alerta-valores {
     grid-template-columns: 1fr;
