@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS categorias (
   icone TEXT NOT NULL DEFAULT 'circle',
   cor TEXT NOT NULL DEFAULT '#c8f000',
   limite REAL NOT NULL DEFAULT 0,
+  limite_centavos INTEGER,
   criado_em TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS despesas (
   categoria_id INTEGER NOT NULL,
   descricao TEXT NOT NULL,
   valor REAL NOT NULL,
+  valor_centavos INTEGER,
   data TEXT NOT NULL,
   criado_em TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
@@ -42,6 +44,7 @@ CREATE TABLE IF NOT EXISTS despesas (
 CREATE TABLE IF NOT EXISTS orcamento (
   usuario_id INTEGER PRIMARY KEY,
   valor REAL NOT NULL DEFAULT 0,
+  valor_centavos INTEGER,
   atualizado_em TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
@@ -53,6 +56,7 @@ CREATE TABLE IF NOT EXISTS orcamento_mensal (
   usuario_id INTEGER NOT NULL,
   mes TEXT NOT NULL,
   valor REAL NOT NULL DEFAULT 0,
+  valor_centavos INTEGER,
   atualizado_em TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (usuario_id, mes),
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
@@ -67,6 +71,7 @@ CREATE TABLE IF NOT EXISTS entradas (
   origem TEXT NOT NULL,
   descricao TEXT,
   valor REAL NOT NULL,
+  valor_centavos INTEGER,
   data TEXT NOT NULL,
   criado_em TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
@@ -92,6 +97,7 @@ CREATE TABLE IF NOT EXISTS despesas_recorrentes (
   usuario_id INTEGER NOT NULL,
   descricao TEXT NOT NULL,
   valor REAL,
+  valor_centavos INTEGER,
   dia_vencimento INTEGER,
   observacao TEXT,
   pago_mes TEXT,

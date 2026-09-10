@@ -9,6 +9,7 @@
     "backup": "node src/db/backup.js",
     "backup:verify": "node src/db/verificarBackup.js",
     "migrar:centavos:simular": "node src/db/simularMigracaoCentavos.js",
+    "migrar:centavos:paralelo": "node src/db/migrarCentavosParalelo.js",
     "test": "node --test test/*.test.js",
     "migrar-categorias": "node src/db/adicionarCategoriasFaltantes.js",
     "corrigir-cor-outros": "node src/db/corrigirCorOutros.js"
