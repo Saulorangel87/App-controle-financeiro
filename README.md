@@ -94,34 +94,11 @@ O backend cria backups consistentes com `npm run backup`. Em produção, defina
 `BACKUP_ENCRYPTION_KEY` com 64 caracteres hexadecimais e `BACKUP_RETENTION_DAYS`
 para manter somente a janela necessária. Depois, valide o backup mais recente
 com `npm run backup:verify`. O script `ops/backup-despesas.sh` executa o
-backup e verifica sua integridade; recomenda-se agendá-lo diariamente na VM e
-copiar os arquivos criptografados para um armazenamento separado. Os arquivos
-`ops/controle-despesas-backup.service` e `ops/controle-despesas-backup.timer`
-podem ser instalados em `/etc/systemd/system/` na VM. Com `BACKUP_BUCKET`
-configurado no `.env` da VM e o OCI CLI usando Instance Principal, o script
-também envia automaticamente o último arquivo `.db.enc` para o bucket.
+backup e verifica sua integridade; recomenda-se agendá-lo diariamente na infraestrutura e
+copiar os arquivos criptografados para um armazenamento separado. O script também envia
+automaticamente o último arquivo `.db.enc` para um bucket privado. O procedimento
+detalhado de configuração e recuperação fica no runbook operacional local.
 - Segredos e dados sensíveis nunca versionados (`.gitignore` cobrindo `.env` e banco de dados local)
-
-### Recuperação do banco
-
-O backup remoto deve ser restaurado somente durante uma recuperação autorizada. Primeiro
-baixe o arquivo criptografado para a VM, sem sobrescrever o banco atual:
-
-```bash
-cd ~/apps/App-controle-financeiro
-/home/ubuntu/bin/oci os object get --auth instance_principal \
-  --region sa-vinhedo-1 --bucket-name controle-despesas-backups \
-  --name NOME_DO_BACKUP.db.enc --file /tmp/NOME_DO_BACKUP.db.enc
-cp /tmp/NOME_DO_BACKUP.db.enc Backend/data/backups/
-sudo docker compose exec -T backend npm run backup:verify
-```
-
-Esse procedimento descriptografa o arquivo em uma área temporária e executa o
-`integrity_check` do SQLite; o banco de produção não é alterado. Para uma restauração
-efetiva, preserve primeiro uma cópia do banco atual, pare o backend e substitua somente
-`Backend/data/despesas.db` pelo banco restaurado. A chave `BACKUP_ENCRYPTION_KEY` é
-indispensável e deve ser recuperada do armazenamento seguro; ela nunca deve ser colocada
-no Git ou no bucket.
 
 ## ♿ Qualidade, acessibilidade e SEO
 
