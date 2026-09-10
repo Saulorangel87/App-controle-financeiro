@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pencil, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Pencil, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
 import { useDespesaModal } from '../contexts/DespesaModalContext';
@@ -9,19 +9,29 @@ import './Despesas.css';
 const POR_PAGINA = 20;
 const POR_PAGINA_ENTRADAS = 10;
 
+function rotuloMes(mes) {
+  return new Date(`${mes}-01T00:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+}
+
 export default function Despesas() {
   const [dados, setDados] = useState(null);
   const [pagina, setPagina] = useState(1);
   const [carregando, setCarregando] = useState(true);
   const [dadosEntradas, setDadosEntradas] = useState(null);
   const [paginaEntradas, setPaginaEntradas] = useState(1);
+  const [mesSelecionado, setMesSelecionado] = useState('');
+  const [meses, setMeses] = useState([]);
   const { abrirEdicao } = useDespesaModal();
 
   const carregar = useCallback(async (paginaAlvo) => {
     setCarregando(true);
-    const res = await api.get('/despesas', { params: { pagina: paginaAlvo, porPagina: POR_PAGINA } });
+    const res = await api.get('/despesas', { params: { pagina: paginaAlvo, porPagina: POR_PAGINA, ...(mesSelecionado ? { mes: mesSelecionado } : {}) } });
     setDados(res.data);
     setCarregando(false);
+  }, [mesSelecionado]);
+
+  useEffect(() => {
+    api.get('/despesas/meses').then((res) => setMeses(res.data)).catch(() => {});
   }, []);
 
   const carregarEntradas = useCallback(async (paginaAlvo) => {
@@ -38,6 +48,8 @@ export default function Despesas() {
   }, [carregarEntradas, paginaEntradas]);
 
   async function excluir(id) {
+    const despesa = dados?.despesas.find((item) => item.id === id);
+    if (!window.confirm(`Tem certeza que deseja excluir a despesa "${despesa?.descricao || ''}"?`)) return;
     await api.delete(`/despesas/${id}`);
     // Se era o último registro da página (e não é a primeira página), volta
     // uma página — senão a tela fica "vazia" mostrando uma página inexistente.
@@ -69,10 +81,15 @@ export default function Despesas() {
     <div className="despesas-e-entradas">
       <div className="panel despesas-panel">
         <div className="despesas-header">
-          <span className="label">Todas as Despesas — {total} registros</span>
-          <span className="label">
-            Total: <strong style={{ color: 'var(--text-primary)' }}>{formatarMoeda(totalGeral)}</strong>
-          </span>
+          <div className="despesas-header-titulo">
+            <span className="label">{mesSelecionado ? `Despesas de ${rotuloMes(mesSelecionado)}` : 'Todas as Despesas'} — {total} registros</span>
+            <label className="sr-only" htmlFor="filtro-mes-despesas">Filtrar despesas por mês</label>
+            <select id="filtro-mes-despesas" className="filtro-mes" value={mesSelecionado} onChange={(evento) => { setMesSelecionado(evento.target.value); setPagina(1); }}>
+              <option value="">Todos os meses</option>
+              {meses.map((mes) => <option key={mes} value={mes}>{rotuloMes(mes)}</option>)}
+            </select>
+          </div>
+          <span className="label">Total: <strong style={{ color: 'var(--text-primary)' }}>{formatarMoeda(totalGeral)}</strong></span>
         </div>
 
         <div className="tabela-despesas">
@@ -88,7 +105,7 @@ export default function Despesas() {
           {despesas.map((d) => (
             <div className="linha" key={d.id}>
               <span className="celula-data">{formatarData(d.data)}</span>
-              <strong title={d.descricao}>{d.descricao}</strong>
+              <strong className="celula-descricao" title={d.descricao}>{d.descricao}</strong>
               <span className="celula-categoria" style={{ color: d.categoria_cor }}>
                 <IconeCategoria nome={d.categoria_icone} size={14} />
                 {d.categoria_nome}
@@ -98,7 +115,7 @@ export default function Despesas() {
                 <Pencil size={14} />
               </button>
               <button className="botao-excluir" onClick={() => excluir(d.id)} aria-label="Excluir despesa">
-                ×
+                <Trash2 size={16} />
               </button>
             </div>
           ))}
@@ -154,7 +171,7 @@ export default function Despesas() {
           {entradas.map((e) => (
             <div className="linha linha-entrada" key={e.id}>
               <span className="celula-data">{formatarData(e.data)}</span>
-              <strong title={e.origem}>{e.origem}</strong>
+              <strong className="celula-origem-entrada" title={e.origem}>{e.origem}</strong>
               <span className="celula-descricao-entrada">{e.descricao || '—'}</span>
               <span className="celula-valor" style={{ color: 'var(--ok)' }}>+{formatarMoeda(e.valor)}</span>
               <button className="botao-excluir" onClick={() => excluirEntrada(e.id)} aria-label={`Excluir entrada ${e.origem}`}>

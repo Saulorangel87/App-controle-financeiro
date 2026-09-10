@@ -23,6 +23,16 @@ function hojeISO() {
 //
 // Com ?mes=YYYY-MM (em qualquer um dos dois modos): filtra só as despesas
 // daquele mês.
+router.get('/meses', (req, res) => {
+  const meses = db.prepare(`
+    SELECT DISTINCT strftime('%Y-%m', data) AS mes
+    FROM despesas
+    WHERE usuario_id = ?
+    ORDER BY mes DESC
+  `).all(req.usuarioId).map((linha) => linha.mes);
+  res.json(meses);
+});
+
 router.get('/', (req, res) => {
   const { mes, pagina, porPagina } = req.query;
 
