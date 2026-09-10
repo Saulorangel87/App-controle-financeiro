@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { paraCentavos, deCentavos } = require('../src/utils/dinheiro');
+const { paraCentavos, deCentavos, comValorEmReais } = require('../src/utils/dinheiro');
 
 test('converte valores em reais para centavos com arredondamento explícito', () => {
   assert.equal(paraCentavos(10), 1000);
@@ -14,6 +14,17 @@ test('converte valores em reais para centavos com arredondamento explícito', ()
 test('converte centavos para reais', () => {
   assert.equal(deCentavos(1099), 10.99);
   assert.equal(deCentavos(0), 0);
+});
+
+test('prioriza centavos quando o valor legado diverge', () => {
+  assert.deepEqual(
+    comValorEmReais({ id: 1, valor: 999, valor_centavos: 1099 }),
+    { id: 1, valor: 10.99 },
+  );
+  assert.deepEqual(
+    comValorEmReais({ id: 2, limite: 500, limite_centavos: 1250 }, 'limite'),
+    { id: 2, limite: 12.5 },
+  );
 });
 
 test('rejeita valores que não podem representar dinheiro com segurança', () => {
