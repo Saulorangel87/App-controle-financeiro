@@ -102,6 +102,27 @@ configurado no `.env` da VM e o OCI CLI usando Instance Principal, o script
 também envia automaticamente o último arquivo `.db.enc` para o bucket.
 - Segredos e dados sensíveis nunca versionados (`.gitignore` cobrindo `.env` e banco de dados local)
 
+### Recuperação do banco
+
+O backup remoto deve ser restaurado somente durante uma recuperação autorizada. Primeiro
+baixe o arquivo criptografado para a VM, sem sobrescrever o banco atual:
+
+```bash
+cd ~/apps/App-controle-financeiro
+/home/ubuntu/bin/oci os object get --auth instance_principal \
+  --region sa-vinhedo-1 --bucket-name controle-despesas-backups \
+  --name NOME_DO_BACKUP.db.enc --file /tmp/NOME_DO_BACKUP.db.enc
+cp /tmp/NOME_DO_BACKUP.db.enc Backend/data/backups/
+sudo docker compose exec -T backend npm run backup:verify
+```
+
+Esse procedimento descriptografa o arquivo em uma área temporária e executa o
+`integrity_check` do SQLite; o banco de produção não é alterado. Para uma restauração
+efetiva, preserve primeiro uma cópia do banco atual, pare o backend e substitua somente
+`Backend/data/despesas.db` pelo banco restaurado. A chave `BACKUP_ENCRYPTION_KEY` é
+indispensável e deve ser recuperada do armazenamento seguro; ela nunca deve ser colocada
+no Git ou no bucket.
+
 ## ♿ Qualidade, acessibilidade e SEO
 
 Auditado com Lighthouse/PageSpeed Insights e ajustado continuamente:
@@ -147,7 +168,7 @@ docker compose up -d --build
 ## 🗺️ Roadmap
 
 ### Próxima versão — v2.0: confiabilidade profissional
-- [ ] Backup automático criptografado e teste de restauração
+- [x] Backup automático criptografado, envio externo e teste de integridade/restauração
 - [ ] Transações atômicas e validação financeira rigorosa no backend
 - [ ] Testes automatizados, smoke tests e CI
 - [ ] Sessão e headers de segurança reforçados
