@@ -12,7 +12,8 @@
     "migrar:centavos:paralelo": "node src/db/migrarCentavosParalelo.js",
     "test": "node --test test/*.test.js",
     "migrar-categorias": "node src/db/adicionarCategoriasFaltantes.js",
-    "corrigir-cor-outros": "node src/db/corrigirCorOutros.js"
+    "corrigir-cor-outros": "node src/db/corrigirCorOutros.js",
+    "notificar:vencimentos": "node src/jobs/notificarVencimentos.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -21,6 +22,7 @@
     "dotenv": "^16.6.1",
     "express": "^4.21.1",
     "express-rate-limit": "^8.5.2",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "web-push": "^3.6.7"
   }
 }

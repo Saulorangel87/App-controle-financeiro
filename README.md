@@ -34,6 +34,11 @@ service worker mínimo (`Frontend/public/sw.js`), que também cacheia o "shell"
 do app para abrir mais rápido numa segunda visita — sem nunca cachear dados
 financeiros, que sempre vêm direto da API.
 
+Na tela **Alertas**, o usuário também pode ativar notificações push neste
+celular. Os avisos de despesas recorrentes são enviados 3 e 1 dia antes do
+vencimento. No iPhone, é necessário instalar o PWA na Tela de Início antes de
+autorizar as notificações.
+
 ## ✨ Funcionalidades
 
 - 🔐 **Cadastro e login** com senha criptografada (bcrypt), access token JWT curto com refresh token seguro, verificação de email obrigatória e recuperação de senha por email
@@ -47,6 +52,7 @@ financeiros, que sempre vêm direto da API.
 - 🔄 **Dashboard sempre atualizado** ao mês corrente, mesmo com a aba aberta na virada do mês
 - 📱 **Totalmente responsivo e instalável (PWA)**, com menu hambúrguer e gráficos adaptados para telas menores
 - ⬇️ **Instalação pelo rodapé** quando o navegador oferecer a instalação e o app ainda não estiver instalado
+- 🔔 **Notificações push opcionais** para despesas recorrentes próximas do vencimento
 - 🆕 **Notas da versão** em `/novidades`, com as novidades da v1.7.0 e o planejamento das próximas evoluções
 
 ## 🛠️ Tecnologias utilizadas
@@ -67,6 +73,7 @@ executa os testes do backend, o lint do frontend e o build de produção.
 - JWT (jsonwebtoken) para autenticação
 - bcryptjs para hash de senha
 - express-rate-limit para proteção contra força bruta
+- web-push para entrega criptografada de notificações ao dispositivo autorizado
 - Resend para envio de email transacional (verificação de conta e recuperação de senha)
 
 **Infraestrutura**

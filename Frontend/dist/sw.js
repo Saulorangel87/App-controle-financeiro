@@ -9,6 +9,28 @@
 
 const NOME_CACHE = "despesas-shell-v1";
 
+self.addEventListener("push", (evento) => {
+  let dados = {};
+  try { dados = evento.data ? evento.data.json() : {}; } catch { /* payload inválido não gera aviso */ }
+  evento.waitUntil(self.registration.showNotification(dados.titulo || "Controle de Despesas", {
+    body: dados.corpo || "Você tem uma despesa recorrente próxima do vencimento.",
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    tag: dados.tipo || "controle-despesas",
+    data: { url: dados.url || "/recorrentes" },
+  }));
+});
+
+self.addEventListener("notificationclick", (evento) => {
+  evento.notification.close();
+  const destino = new URL(evento.notification.data?.url || "/recorrentes", self.location.origin).href;
+  evento.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then((janelas) => {
+    const janela = janelas.find((item) => item.url.startsWith(self.location.origin));
+    if (janela) { janela.focus(); return janela.navigate(destino); }
+    return clients.openWindow(destino);
+  }));
+});
+
 self.addEventListener("install", (evento) => {
   evento.waitUntil(
     caches.open(NOME_CACHE).then((cache) => cache.add("/"))

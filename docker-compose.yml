@@ -12,6 +12,10 @@ services:
       - BACKUP_DIR=${BACKUP_DIR:-/app/data/backups}
       - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY}
       - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
+      - VAPID_SUBJECT=${VAPID_SUBJECT}
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+      - APP_TIMEZONE=${APP_TIMEZONE:-America/Sao_Paulo}
       - PORT=3001
     volumes:
       # Persiste o banco SQLite fora do container, senão os dados somem
