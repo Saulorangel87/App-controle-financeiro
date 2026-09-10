@@ -21,7 +21,7 @@ createRoot(document.getElementById('root')).render(
 // que não suportam a API.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js?v=6', { updateViaCache: 'none' }).catch((erro) => {
+    navigator.serviceWorker.register('/sw.js?v=7', { updateViaCache: 'none' }).catch((erro) => {
       console.error('Falha ao registrar o service worker:', erro);
     });
   });
