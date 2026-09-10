@@ -179,3 +179,5 @@ router.delete('/:id', (req, res) => {
 });
 
 module.exports = router;
+module.exports.diferencaMeses = diferencaMeses;
+module.exports.comCamposCalculados = comCamposCalculados;
