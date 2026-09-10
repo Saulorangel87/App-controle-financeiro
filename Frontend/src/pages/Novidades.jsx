@@ -1,8 +1,9 @@
-import { ArrowRight, CheckCircle2, CircleDot, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, Bell, CheckCircle2, CircleDot, ShieldCheck, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './Novidades.css';
 
 const novidades = [
+  ['Notificações no celular', 'Ative o push na tela Alertas e receba avisos automáticos 3 e 1 dia antes do vencimento das suas despesas recorrentes.', <Bell size={18} />],
   ['Fechamento mensal', 'Confira no relatório quais categorias ultrapassaram o limite no mês selecionado e encerre sua conferência com mais clareza.', <CheckCircle2 size={18} />],
   ['Mais precisão financeira', 'A API passou a priorizar valores em centavos, reduzindo efeitos de arredondamento em somas, saldos e relatórios.', <Sparkles size={18} />],
   ['Qualidade de produção', 'Backups criptografados com verificação, CI automatizada e testes cobrindo os fluxos financeiros mais importantes.', <ShieldCheck size={18} />],
@@ -13,7 +14,7 @@ const novidades = [
 ];
 
 const plano = [
-  'Notificações push no celular para vencimentos recorrentes',
+  'Preferências de horário e tipos de notificação',
   'Operações financeiras protegidas por transações',
   'Testes automatizados para API e fluxos principais',
   'Sessão e headers de segurança reforçados',
@@ -27,7 +28,7 @@ export default function Novidades() {
         <span className="label">Notas da versão</span>
         <h2>Mais clareza para cuidar do seu dinheiro.</h2>
         <p>A versão <strong>v1.7.0</strong> reforça a precisão financeira, a conferência mensal e a confiabilidade da operação.</p>
-        <span className="novidades-status"><span /> Versão preparada para publicação</span>
+        <span className="novidades-status"><span /> Versão atual em produção</span>
       </section>
 
       <section className="novidades-secao">

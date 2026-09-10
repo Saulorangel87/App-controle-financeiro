@@ -7,15 +7,15 @@
 // Não cacheia chamadas à API (esse cache é só para os arquivos estáticos do
 // próprio frontend) — dados de despesas sempre vêm da rede, nunca do cache.
 
-const NOME_CACHE = "despesas-shell-v1";
+const NOME_CACHE = "despesas-shell-v2";
 
 self.addEventListener("push", (evento) => {
   let dados = {};
   try { dados = evento.data ? evento.data.json() : {}; } catch { /* payload inválido não gera aviso */ }
   evento.waitUntil(self.registration.showNotification(dados.titulo || "Controle de Despesas", {
     body: dados.corpo || "Você tem uma despesa recorrente próxima do vencimento.",
-    icon: "/icon-192.png",
-    badge: "/icon-192.png",
+    icon: "/logo.png",
+    badge: "/logo.png",
     tag: dados.tipo || "controle-despesas",
     data: { url: dados.url || "/recorrentes" },
   }));

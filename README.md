@@ -157,7 +157,7 @@ docker compose up -d --build
 - [ ] Testes automatizados, smoke tests e CI
 - [ ] Sessão e headers de segurança reforçados
 - [ ] Fechamento mensal, filtros, exportação e histórico de alterações
-- [ ] Notificações push no celular para despesas recorrentes (3 e 1 dia antes)
+- [x] Notificações push no celular para despesas recorrentes (3 e 1 dia antes)
 
 - [x] CRUD de despesas e categorias
 - [x] Autenticação multiusuário
