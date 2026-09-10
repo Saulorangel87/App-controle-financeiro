@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import "./Footer.css";
 
-const VERSAO = 'v1.6.0';
+const VERSAO = 'v1.7.0';
 const ANO = new Date().getFullYear();
 
 function IconeLinkedin(props) {

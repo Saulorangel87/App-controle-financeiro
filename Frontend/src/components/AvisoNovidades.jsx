@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import './AvisoNovidades.css';
 
-const VERSAO_ATUAL = 'v1.6.0';
+const VERSAO_ATUAL = 'v1.7.0';
 const CHAVE_VISTA = `controle-despesas:novidades:${VERSAO_ATUAL}`;
 
 const destaques = [
-  'Compras parceladas com avanço automático da parcela',
-  'Total de recorrentes que diminui ao marcar contas como pagas',
-  'Entradas e orçamento mensal organizados separadamente',
+  'Fechamento mensal com conferência das categorias acima do limite',
+  'Valores financeiros preparados para maior precisão em centavos',
+  'Backup criptografado, CI e validações de qualidade reforçadas',
 ];
 
 function jaFoiVista() {
@@ -66,7 +66,7 @@ export default function AvisoNovidades() {
         <span className="label">Controle de Despesas · {VERSAO_ATUAL}</span>
         <h2 id="titulo-aviso-novidades">Mais controle no seu mês.</h2>
         <p className="aviso-novidades-intro">
-          Chegaram melhorias para acompanhar parcelas, contas recorrentes e o dinheiro que entra.
+          Chegaram melhorias para fechar o mês com mais precisão, segurança e confiança.
         </p>
 
         <ul className="aviso-novidades-lista">
