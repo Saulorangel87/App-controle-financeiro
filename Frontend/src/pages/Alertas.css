@@ -1,7 +1,7 @@
 .alertas-lista {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .card-alerta {
@@ -65,7 +65,7 @@
 }
 
 .bloco-alertas-recorrentes {
-  padding: 24px;
+  padding: 28px 30px;
   border: 1px solid var(--warning);
   border-radius: var(--radius);
   background: var(--panel);
@@ -73,14 +73,14 @@
 
 .lista-recorrentes-alerta {
   list-style: none;
-  margin-top: 8px;
+  margin-top: 24px;
 }
 
 .lista-recorrentes-alerta li {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 0;
+  padding: 18px 0;
   border-top: 1px solid var(--border-soft);
 }
 
@@ -94,8 +94,8 @@
 .recorrente-alerta-vencida strong { color: var(--danger); }
 .recorrente-alerta-urgente strong { color: var(--warning); }
 .recorrente-alerta-atencao strong { color: var(--accent); }
-.bloco-push { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; border-color:var(--accent-dim); }
-.bloco-push > div { display:flex; flex-direction:column; gap:4px; }
+.bloco-push { display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; padding:20px 24px; border-color:var(--accent-dim); }
+.bloco-push > div { display:flex; flex-direction:column; gap:7px; }
 .botao-push { margin-left:auto; }
 .botao-push.ativo { border:1px solid var(--border); color:var(--text-secondary); background:transparent; padding:10px 16px; border-radius:var(--radius); font-size:11px; text-transform:uppercase; letter-spacing:.08em; }
 @media (max-width:600px) { .botao-push { width:100%; margin-left:0; } }
