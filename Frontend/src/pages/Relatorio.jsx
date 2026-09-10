@@ -216,6 +216,25 @@ export default function Relatorio() {
         </div>
       </div>
 
+      <div className="panel bloco-fechamento-mensal">
+        <div>
+          <span className="label">Fechamento de {rotuloMes(mesSelecionado)}</span>
+          <strong className="titulo-fechamento">{dados.categoriasExcedidas?.length || 0} categorias acima do limite</strong>
+        </div>
+        {dados.categoriasExcedidas?.length > 0 ? (
+          <ul className="lista-fechamento">
+            {dados.categoriasExcedidas.map((categoria) => (
+              <li key={categoria.id}>
+                <span>{categoria.nome}</span>
+                <span className="item-valor">{formatarMoeda(categoria.gasto)} / {formatarMoeda(categoria.limite)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <span className="label">Nenhuma categoria excedeu o limite neste período.</span>
+        )}
+      </div>
+
       <div className="panel bloco-despesas-mes">
         <span className="label">
           Despesas de {rotuloMes(mesSelecionado)}{nomeCategoriaSelecionada ? ` · ${nomeCategoriaSelecionada}` : ''} — {dados.despesas.length} registros

@@ -69,6 +69,34 @@
   gap: 10px;
 }
 
+.bloco-fechamento-mensal {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-left: 3px solid var(--accent);
+}
+
+.titulo-fechamento {
+  display: block;
+  margin-top: 6px;
+  font-size: 16px;
+}
+
+.lista-fechamento {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.lista-fechamento li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-soft);
+}
+
 .bloco-despesas-mes {
   padding: 20px;
 }
