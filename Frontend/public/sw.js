@@ -7,7 +7,7 @@
 // Não cacheia chamadas à API (esse cache é só para os arquivos estáticos do
 // próprio frontend) — dados de despesas sempre vêm da rede, nunca do cache.
 
-const NOME_CACHE = "despesas-shell-v6";
+const NOME_CACHE = "despesas-shell-v7";
 
 self.addEventListener("push", (evento) => {
   let dados = {};
@@ -18,7 +18,7 @@ self.addEventListener("push", (evento) => {
     icon: "/notification-icon-192.png?v=1",
     // O badge é o símbolo pequeno da barra do Android e precisa ser
     // monocromático, com fundo transparente, para o sistema aplicar a cor.
-    badge: "/notification-badge-96.png?v=1",
+    badge: "/notification-badge-96.png?v=2",
     tag: dados.tipo || "controle-despesas",
     data: { url: dados.url || "/recorrentes" },
   }));
