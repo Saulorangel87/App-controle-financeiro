@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Pencil, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Pencil, Trash2, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip,
   PieChart, Pie, Cell, Legend,
@@ -81,6 +81,12 @@ export default function VisaoGeral() {
     carregarEntradas();
     carregarResumo();
     setPaginaEntradas(1);
+  }
+
+  async function excluirDespesa(despesa) {
+    if (!window.confirm(`Tem certeza que deseja excluir a despesa "${despesa.descricao}"?`)) return;
+    await api.delete(`/despesas/${despesa.id}`);
+    carregarTudo();
   }
 
   function entradaSalva() {
@@ -347,6 +353,9 @@ export default function VisaoGeral() {
               <span className="item-valor">-{formatarMoeda(d.valor)}</span>
               <button className="botao-icone" onClick={() => abrirEdicao(d)} aria-label="Editar despesa">
                 <Pencil size={14} />
+              </button>
+              <button className="botao-icone botao-excluir-despesa" onClick={() => excluirDespesa(d)} aria-label={`Excluir despesa ${d.descricao}`}>
+                <Trash2 size={14} />
               </button>
             </li>
           ))}

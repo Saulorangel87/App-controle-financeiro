@@ -157,6 +157,9 @@
   border-top: 1px solid var(--border-soft);
 }
 
+.botao-excluir-despesa { color:var(--text-muted); }
+.botao-excluir-despesa:hover { color:var(--danger); }
+
 .item-despesa:first-child {
   border-top: none;
 }
@@ -174,4 +177,7 @@
   .valor {
     font-size: 20px;
   }
+  .item-despesa { gap:8px; }
+  .item-despesa .item-info { min-width:0; }
+  .item-despesa .item-valor { font-size:12px; }
 }

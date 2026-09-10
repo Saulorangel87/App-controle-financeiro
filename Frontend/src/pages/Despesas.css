@@ -32,6 +32,9 @@
   margin-bottom: 4px;
 }
 
+.despesas-header-titulo { display:flex; align-items:center; gap:14px; min-width:0; }
+.filtro-mes { min-width:150px; padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); background:var(--panel-alt); color:var(--text-primary); font:inherit; font-size:11px; }
+
 .linha {
   display: grid;
   grid-template-columns: 90px 1fr 160px 130px 28px 28px;
@@ -88,21 +91,29 @@
   .linha {
     grid-template-columns: 1fr auto auto;
     grid-template-areas:
-      "desc valor valor"
-      "data cat cat";
+      "desc valor editar"
+      "data cat excluir";
     row-gap: 4px;
   }
+  .linha .celula-descricao { grid-area: desc; }
   .celula-data { grid-area: data; }
   .celula-categoria { grid-area: cat; }
   .celula-valor { grid-area: valor; }
   .linha-cabecalho { display: none; }
-  .linha .botao-icone, .linha .botao-excluir { display: none; }
+  .linha > .botao-icone { display:flex; grid-area: editar; }
+  .linha > .botao-excluir { display:flex; grid-area: excluir; }
 
   .linha-entrada {
     grid-template-columns: 1fr auto;
     grid-template-areas:
       "desc valor"
-      "data data";
+      "data excluir";
   }
+  .linha-entrada .celula-origem-entrada { grid-area: desc; }
   .linha-entrada .celula-descricao-entrada { display: none; }
+  .linha-entrada > .botao-excluir { grid-area: excluir; }
+  .despesas-header { align-items:flex-start; gap:10px; flex-direction:column; }
+  .despesas-header-titulo { width:100%; justify-content:space-between; gap:10px; }
+  .despesas-header-titulo .label { min-width:0; }
+  .filtro-mes { min-width:132px; max-width:45%; }
 }
