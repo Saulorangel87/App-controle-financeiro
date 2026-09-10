@@ -13,19 +13,22 @@ function mesAtualISO() {
 export default function Alertas() {
   const [categorias, setCategorias] = useState([]);
   const [despesas, setDespesas] = useState([]);
+  const [recorrentes, setRecorrentes] = useState([]);
   const [carregando, setCarregando] = useState(true);
 
   const carregar = useCallback(async () => {
-    const [resCategorias, resDespesas] = await Promise.all([
+    const [resCategorias, resDespesas, resRecorrentes] = await Promise.all([
       api.get('/categorias'),
       // "gasto" da categoria já é só do mês corrente, então a lista de despesas
       // mostrada aqui embaixo também precisa ser só do mês corrente — senão os
       // números não batem. Filtra direto no banco (?mes=), em vez de baixar
       // a tabela inteira e filtrar no navegador.
       api.get('/despesas', { params: { mes: mesAtualISO() } }),
+      api.get('/recorrentes'),
     ]);
     setCategorias(resCategorias.data.filter((c) => c.status === 'EXCEDIDO'));
     setDespesas(resDespesas.data);
+    setRecorrentes(resRecorrentes.data.itens.filter((item) => item.alerta_vencimento));
     setCarregando(false);
   }, []);
 
@@ -39,7 +42,33 @@ export default function Alertas() {
 
   return (
     <div className="alertas-lista">
-      <span className="label">{categorias.length} categorias com alerta ativo</span>
+      <span className="label">{categorias.length + recorrentes.length} alertas ativos</span>
+
+      {recorrentes.length > 0 && (
+        <div className="bloco-alertas-recorrentes">
+          <div className="card-alerta-header">
+            <span>
+              <strong style={{ display: 'block' }}>Despesas recorrentes</strong>
+              <span className="label">Contas próximas do vencimento ou vencidas</span>
+            </span>
+          </div>
+          <ul className="lista-recorrentes-alerta">
+            {recorrentes.map((item) => (
+              <li key={item.id} className={`recorrente-alerta-${item.alerta_vencimento.nivel}`}>
+                <div>
+                  <strong>{item.descricao}</strong>
+                  <span className="label">{item.dia_vencimento ? `Vencimento dia ${item.dia_vencimento}` : ''}</span>
+                </div>
+                <span>
+                  <strong>{item.alerta_vencimento.texto}</strong>
+                  {item.valor != null && <span className="label">{formatarMoeda(item.valor)}</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <Link to="/recorrentes" className="botao-ajustar">Ver recorrentes</Link>
+        </div>
+      )}
 
       {categorias.map((c) => {
         const despesasDaCategoria = despesas.filter((d) => d.categoria_id === c.id);

@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { diferencaMeses, comCamposCalculados } = require('../src/routes/recorrentes');
+const { diferencaMeses, comCamposCalculados, alertaVencimento } = require('../src/routes/recorrentes');
 
 test('calcula corretamente a diferença entre meses e anos', () => {
   assert.equal(diferencaMeses('2026-08', '2026-08'), 0);
@@ -40,4 +40,14 @@ test('parcela avança na virada do mês e conclui após a última', () => {
   const concluida = comCamposCalculados(despesa, '2026-12');
   assert.equal(concluida.parcela_atual, 3);
   assert.equal(concluida.parcela_concluida, true);
+});
+
+test('gera alertas de vencimento em 3, 1 e 0 dias, mas ignora contas pagas', () => {
+  const hoje = new Date('2026-09-10T12:00:00.000Z');
+  assert.equal(alertaVencimento(13, false, false, hoje).nivel, 'atencao');
+  assert.equal(alertaVencimento(11, false, false, hoje).nivel, 'urgente');
+  assert.equal(alertaVencimento(10, false, false, hoje).texto, 'Vence hoje');
+  assert.equal(alertaVencimento(9, false, false, hoje).nivel, 'vencida');
+  assert.equal(alertaVencimento(10, true, false, hoje), null);
+  assert.equal(alertaVencimento(10, false, true, hoje), null);
 });

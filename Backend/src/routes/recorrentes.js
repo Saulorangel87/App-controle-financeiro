@@ -15,6 +15,18 @@ function diferencaMeses(mesInicio, mesFim) {
   return (anoF - anoI) * 12 + (mesF - mesI);
 }
 
+function alertaVencimento(dia, pago, concluida, hoje = new Date()) {
+  if (!dia || pago || concluida) return null;
+  const vencimento = new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), Number(dia)));
+  const inicioHoje = Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), hoje.getUTCDate());
+  const dias = Math.round((vencimento.getTime() - inicioHoje) / 86400000);
+  if (dias < 0) return { nivel: 'vencida', dias, texto: 'Vencida' };
+  if (dias === 0) return { nivel: 'urgente', dias, texto: 'Vence hoje' };
+  if (dias === 1) return { nivel: 'urgente', dias, texto: 'Vence amanhã' };
+  if (dias <= 3) return { nivel: 'atencao', dias, texto: `Vence em ${dias} dias` };
+  return null;
+}
+
 // Calcula os campos derivados de uma linha crua do banco: a flag "pago"
 // (comparando pago_mes com o mês corrente) e, se for parcelada, a parcela
 // atual (calculada a partir de parcela_mes_inicio, não armazenada — por
@@ -36,6 +48,7 @@ function comCamposCalculados(linha, mes) {
     parcela_total: parcela_total || null,
     parcela_atual: parcelaAtual,
     parcela_concluida: parcelaConcluida,
+    alerta_vencimento: alertaVencimento(resto.dia_vencimento, pago_mes === mes, parcelaConcluida),
   };
 }
 
@@ -185,3 +198,4 @@ router.delete('/:id', (req, res) => {
 module.exports = router;
 module.exports.diferencaMeses = diferencaMeses;
 module.exports.comCamposCalculados = comCamposCalculados;
+module.exports.alertaVencimento = alertaVencimento;
