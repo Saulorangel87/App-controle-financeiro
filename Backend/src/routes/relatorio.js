@@ -91,6 +91,20 @@ router.get('/', (req, res) => {
   const despesasComValores = despesas.map((despesa) => comValorEmReais(despesa));
   const entradasComValores = entradas.map((entrada) => comValorEmReais(entrada));
   const totalEntradas = entradasComValores.reduce((soma, e) => soma + e.valor, 0);
+  const categoriasExcedidas = db.prepare(`
+    SELECT c.id, c.nome, c.limite, c.limite_centavos,
+           COALESCE(SUM(COALESCE(d.valor_centavos, ROUND(d.valor * 100)) / 100.0), 0) AS gasto
+    FROM categorias c
+    LEFT JOIN despesas d
+      ON d.categoria_id = c.id
+      AND d.usuario_id = c.usuario_id
+      AND strftime('%Y-%m', d.data) = ?
+    WHERE c.usuario_id = ? ${categoriaId ? 'AND c.id = ?' : ''}
+    GROUP BY c.id
+    HAVING gasto > COALESCE(c.limite_centavos / 100.0, c.limite)
+    ORDER BY gasto DESC, c.nome ASC
+  `).all(...(categoriaId ? [mes, req.usuarioId, categoriaId] : [mes, req.usuarioId]))
+    .map((categoria) => comValorEmReais(categoria, 'limite'));
 
   res.json({
     mes,
@@ -102,6 +116,7 @@ router.get('/', (req, res) => {
     despesas: despesasComValores,
     entradas: entradasComValores,
     totalEntradas,
+    categoriasExcedidas,
   });
 });
 
