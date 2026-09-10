@@ -94,6 +94,11 @@
 .recorrente-alerta-vencida strong { color: var(--danger); }
 .recorrente-alerta-urgente strong { color: var(--warning); }
 .recorrente-alerta-atencao strong { color: var(--accent); }
+.bloco-push { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; border-color:var(--accent-dim); }
+.bloco-push > div { display:flex; flex-direction:column; gap:4px; }
+.botao-push { margin-left:auto; }
+.botao-push.ativo { border:1px solid var(--border); color:var(--text-secondary); background:transparent; padding:10px 16px; border-radius:var(--radius); font-size:11px; text-transform:uppercase; letter-spacing:.08em; }
+@media (max-width:600px) { .botao-push { width:100%; margin-left:0; } }
 
 @media (max-width: 600px) {
   .alerta-valores {

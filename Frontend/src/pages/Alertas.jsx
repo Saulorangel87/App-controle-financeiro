@@ -4,6 +4,7 @@ import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
 import { formatarMoeda } from '../utils/formatters';
 import { useRecarregarAoVirarMes } from '../utils/useRecarregarAoVirarMes';
+import { ativarNotificacoes, desativarNotificacoes, estadoNotificacoes, pushDisponivel } from '../services/notificacoes';
 import './Alertas.css';
 
 function mesAtualISO() {
@@ -15,6 +16,25 @@ export default function Alertas() {
   const [despesas, setDespesas] = useState([]);
   const [recorrentes, setRecorrentes] = useState([]);
   const [carregando, setCarregando] = useState(true);
+  const [push, setPush] = useState({ suportado: false, habilitado: false, inscrito: false });
+  const [mensagemPush, setMensagemPush] = useState('');
+
+  useEffect(() => {
+    if (!pushDisponivel()) return;
+    estadoNotificacoes().then(setPush).catch(() => {});
+  }, []);
+
+  async function alternarPush() {
+    setMensagemPush('');
+    try {
+      if (push.inscrito) await desativarNotificacoes();
+      else await ativarNotificacoes();
+      setPush((atual) => ({ ...atual, inscrito: !atual.inscrito }));
+      setMensagemPush(push.inscrito ? 'Notificações desativadas.' : 'Notificações ativadas neste celular.');
+    } catch {
+      setMensagemPush('Não foi possível ativar. No iPhone, instale o app na Tela de Início e tente pelo botão novamente.');
+    }
+  }
 
   const carregar = useCallback(async () => {
     const [resCategorias, resDespesas, resRecorrentes] = await Promise.all([
@@ -43,6 +63,19 @@ export default function Alertas() {
   return (
     <div className="alertas-lista">
       <span className="label">{categorias.length + recorrentes.length} alertas ativos</span>
+
+      {push.suportado && push.habilitado && (
+        <div className="panel bloco-push">
+          <div>
+            <strong>Alertas no celular</strong>
+            <span className="label">Receba avisos 3 e 1 dia antes do vencimento.</span>
+          </div>
+          <button className={push.inscrito ? 'botao-push ativo' : 'btn-primary botao-push'} onClick={alternarPush}>
+            {push.inscrito ? 'Desativar notificações' : 'Ativar notificações'}
+          </button>
+          {mensagemPush && <span className="label" role="status">{mensagemPush}</span>}
+        </div>
+      )}
 
       {recorrentes.length > 0 && (
         <div className="bloco-alertas-recorrentes">

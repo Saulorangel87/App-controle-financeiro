@@ -17,6 +17,7 @@ const orcamentoRouter = require('./routes/orcamento');
 const entradasRouter = require('./routes/entradas');
 const recorrentesRouter = require('./routes/recorrentes');
 const relatorioRouter = require('./routes/relatorio');
+const pushRouter = require('./routes/push');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -65,6 +66,7 @@ app.use('/api/orcamento', autenticar, orcamentoRouter);
 app.use('/api/entradas', autenticar, entradasRouter);
 app.use('/api/recorrentes', autenticar, recorrentesRouter);
 app.use('/api/relatorio', autenticar, relatorioRouter);
+app.use('/api/push', autenticar, pushRouter);
 
 // Exportar o app permite testes HTTP sem abrir uma porta fixa.
 module.exports = app;

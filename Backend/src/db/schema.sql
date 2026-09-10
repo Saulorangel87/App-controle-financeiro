@@ -148,3 +148,30 @@ CREATE TABLE IF NOT EXISTS sessoes (
 );
 CREATE INDEX IF NOT EXISTS idx_sessoes_token_hash ON sessoes(token_hash);
 CREATE INDEX IF NOT EXISTS idx_sessoes_usuario ON sessoes(usuario_id);
+
+-- Inscrições Web Push: cada celular/navegador tem um endpoint próprio.
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  usuario_id INTEGER NOT NULL,
+  endpoint TEXT NOT NULL UNIQUE,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  criado_em TEXT NOT NULL DEFAULT (datetime('now')),
+  atualizado_em TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_usuario ON push_subscriptions(usuario_id);
+
+-- Impede o reenvio do mesmo aviso para o mesmo evento mensal.
+CREATE TABLE IF NOT EXISTS push_notificacoes_enviadas (
+  usuario_id INTEGER NOT NULL,
+  recorrente_id INTEGER NOT NULL,
+  inscricao_id INTEGER NOT NULL,
+  mes TEXT NOT NULL,
+  dias_antes INTEGER NOT NULL CHECK (dias_antes IN (3, 1)),
+  enviado_em TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (usuario_id, recorrente_id, inscricao_id, mes, dias_antes),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+  FOREIGN KEY (recorrente_id) REFERENCES despesas_recorrentes(id) ON DELETE CASCADE,
+  FOREIGN KEY (inscricao_id) REFERENCES push_subscriptions(id) ON DELETE CASCADE
+);
