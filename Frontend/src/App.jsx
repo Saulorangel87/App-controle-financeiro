@@ -11,6 +11,7 @@ import api from './services/api';
 // baixar Recharts, por exemplo, que só é usado na Visão Geral e Relatório).
 const VisaoGeral = lazy(() => import('./pages/VisaoGeral'));
 const Despesas = lazy(() => import('./pages/Despesas'));
+const Entradas = lazy(() => import('./pages/Entradas'));
 const Categorias = lazy(() => import('./pages/Categorias'));
 const Alertas = lazy(() => import('./pages/Alertas'));
 const Relatorio = lazy(() => import('./pages/Relatorio'));
@@ -47,6 +48,7 @@ function AreaLogada() {
         <Route element={<Layout alertasCount={alertasCount} />}>
           <Route index element={<VisaoGeral key={versao} />} />
           <Route path="despesas" element={<Despesas key={versao} />} />
+          <Route path="entradas" element={<Entradas key={versao} />} />
           <Route path="categorias" element={<Categorias key={versao} />} />
           <Route path="alertas" element={<Alertas key={versao} />} />
           <Route path="relatorio" element={<Relatorio key={versao} />} />

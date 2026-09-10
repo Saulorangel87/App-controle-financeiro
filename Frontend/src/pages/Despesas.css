@@ -44,6 +44,10 @@
   border-top: 1px solid var(--border-soft);
 }
 
+.linha.linha-entrada {
+  grid-template-columns: 90px 1fr 1fr 130px 28px;
+}
+
 .linha-cabecalho {
   border-top: none;
   padding-bottom: 8px;

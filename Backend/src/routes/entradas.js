@@ -5,6 +5,18 @@ const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
 
 const router = express.Router();
 
+// GET /api/entradas/meses — meses que possuem pelo menos uma entrada,
+// em ordem decrescente para alimentar o filtro da aba Entradas.
+router.get('/meses', (req, res) => {
+  const meses = db.prepare(`
+    SELECT DISTINCT strftime('%Y-%m', data) AS mes
+    FROM entradas
+    WHERE usuario_id = ?
+    ORDER BY mes DESC
+  `).all(req.usuarioId).map((linha) => linha.mes);
+  res.json(meses);
+});
+
 // Soma (ou subtrai, com valor negativo) no orçamento do mês correspondente
 // à data informada, criando a linha do mês se ainda não existir.
 function ajustarOrcamentoDoMes(usuarioId, data, delta) {

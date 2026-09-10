@@ -53,7 +53,8 @@ autorizar as notificações.
 - 📱 **Totalmente responsivo e instalável (PWA)**, com menu hambúrguer e gráficos adaptados para telas menores
 - ⬇️ **Instalação pelo rodapé** quando o navegador oferecer a instalação e o app ainda não estiver instalado
 - 🔔 **Notificações push opcionais** para despesas recorrentes próximas do vencimento
-- 🆕 **Notas da versão** em `/novidades`, com as novidades da v1.7.0 e o planejamento das próximas evoluções
+- 🆕 **Notas da versão** em `/novidades`, com as novidades da v1.8.0 e o planejamento das próximas evoluções
+- 💵 **Entradas em aba própria**, com filtro mensal, total do período e histórico separado das despesas
 
 ## 🛠️ Tecnologias utilizadas
 
