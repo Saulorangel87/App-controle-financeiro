@@ -19,6 +19,15 @@ Todas as colunas monetárias abaixo precisam ser migradas juntas:
 
 ## Estratégia segura
 
+### Fase 1 — colunas paralelas (concluída)
+
+As colunas `*_centavos` foram adicionadas e preenchidas nas seis tabelas em produção
+após backup validado. A rotina foi executada duas vezes: na segunda execução não houve
+novos preenchimentos nem divergências. A aplicação continua lendo e gravando as colunas
+antigas nesta fase.
+
+### Fase 2 — troca controlada da API (pendente)
+
 1. Criar backup criptografado e validar sua integridade.
 2. Colocar a aplicação em manutenção durante a migração.
 3. Criar tabelas temporárias com as colunas monetárias como `INTEGER`.
