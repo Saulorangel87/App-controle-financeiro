@@ -47,7 +47,7 @@ financeiros, que sempre vêm direto da API.
 - 🔄 **Dashboard sempre atualizado** ao mês corrente, mesmo com a aba aberta na virada do mês
 - 📱 **Totalmente responsivo e instalável (PWA)**, com menu hambúrguer e gráficos adaptados para telas menores
 - ⬇️ **Instalação pelo rodapé** quando o navegador oferecer a instalação e o app ainda não estiver instalado
-- 🆕 **Notas da versão** em `/novidades`, com as novidades da versão atual e o planejamento da v2.0
+- 🆕 **Notas da versão** em `/novidades`, com as novidades da v1.7.0 e o planejamento das próximas evoluções
 
 ## 🛠️ Tecnologias utilizadas
 
@@ -150,6 +150,7 @@ docker compose up -d --build
 - [ ] Testes automatizados, smoke tests e CI
 - [ ] Sessão e headers de segurança reforçados
 - [ ] Fechamento mensal, filtros, exportação e histórico de alterações
+- [ ] Notificações push no celular para despesas recorrentes (3 e 1 dia antes)
 
 - [x] CRUD de despesas e categorias
 - [x] Autenticação multiusuário
