@@ -1,97 +1,101 @@
-name: Deploy produção
+name: Deploy Produção (VPS)
 
+# Disparo manual: a publicação ocorre somente quando alguém executa Run workflow.
 on:
   workflow_dispatch:
-    inputs:
-      confirm_production:
-        description: Confirmo a publicação deste commit em produção
-        required: true
-        type: boolean
-        default: false
 
 permissions:
   contents: read
-  actions: read
 
 concurrency:
   group: deploy-production
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: Publicar na VM de produção
-    if: github.ref == 'refs/heads/main' && inputs.confirm_production == true
-    runs-on: ubuntu-24.04
-    environment: production
-    timeout-minutes: 25
-
+  build-check:
+    name: Checar build (Backend + Frontend)
+    runs-on: ubuntu-latest
     steps:
-      - name: Confirmar CI aprovado para o commit
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
+      - name: Checkout
+        uses: actions/checkout@v4
 
-          CI_SUCCESSES="$(gh api \
-            "repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=${GITHUB_SHA}&event=push&status=completed&per_page=100" \
-            --jq '[.workflow_runs[] | select(.name == "CI" and .conclusion == "success")] | length')"
+      - name: Instalar Node.js no Backend
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Backend/package-lock.json
 
-          if [ "$CI_SUCCESSES" -lt 1 ]; then
-            echo "Não existe uma execução bem-sucedida do CI para o commit ${GITHUB_SHA}."
-            exit 1
-          fi
+      - name: Instalar dependências do Backend
+        working-directory: Backend
+        run: npm ci
 
-      - name: Conectar temporariamente à Tailscale
+      - name: Executar testes do Backend
+        working-directory: Backend
+        run: npm test
+
+      - name: Instalar Node.js no Frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Instalar dependências do Frontend
+        working-directory: Frontend
+        run: npm ci
+
+      - name: Executar lint do Frontend
+        working-directory: Frontend
+        run: npm run lint
+
+      - name: Buildar Frontend
+        working-directory: Frontend
+        run: npm run build
+
+  deploy:
+    name: Deploy na VPS
+    needs: build-check
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - name: Conectar à rede privada Tailscale
         uses: tailscale/github-action@v4
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-          ping: 100.67.151.30
+          ping: ${{ secrets.VPS_HOST }}
 
-      - name: Preparar credenciais SSH temporárias
-        env:
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          printf '%s\n' "$DEPLOY_SSH_KEY" > "$RUNNER_TEMP/deploy_key"
-          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$RUNNER_TEMP/known_hosts"
-          chmod 600 "$RUNNER_TEMP/deploy_key" "$RUNNER_TEMP/known_hosts"
+      - name: Conectar na VPS e publicar
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          fingerprint: ${{ secrets.VPS_HOST_FINGERPRINT }}
+          port: 22
+          timeout: 60s
+          command_timeout: 10m
+          script_stop: true
+          envs: GITHUB_SHA
+          script: |
+            set -e
+            cd /home/ubuntu/apps/App-controle-financeiro
 
-      - name: Atualizar e publicar na VM
-        shell: bash
-        run: |
-          set -euo pipefail
+            if [ -n "$(git status --porcelain)" ]; then
+              echo "A publicação foi interrompida: existem alterações locais na VM."
+              git status --short
+              exit 1
+            fi
 
-          ssh \
-            -i "$RUNNER_TEMP/deploy_key" \
-            -o BatchMode=yes \
-            -o IdentitiesOnly=yes \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile="$RUNNER_TEMP/known_hosts" \
-            ubuntu@100.67.151.30 \
-            "EXPECTED_SHA='$GITHUB_SHA' bash -s" <<'REMOTE_SCRIPT'
-          set -euo pipefail
-          APP_DIR=/home/ubuntu/apps/App-controle-financeiro
-          cd "$APP_DIR"
+            git fetch --prune origin main
+            git pull --ff-only origin main
 
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "A publicação foi interrompida: existem alterações locais na VM."
-            git status --short
-            exit 1
-          fi
+            if [ "$(git rev-parse HEAD)" != "$GITHUB_SHA" ]; then
+              echo "A revisão da VM não corresponde ao commit validado pelo build-check."
+              exit 1
+            fi
 
-          git fetch --prune origin main
-          git pull --ff-only origin main
-
-          ACTUAL_SHA="$(git rev-parse HEAD)"
-          if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
-            echo "A revisão local ($ACTUAL_SHA) não corresponde à revisão aprovada ($EXPECTED_SHA)."
-            exit 1
-          fi
-
-          docker compose up -d --build
-          curl --fail --silent --show-error --retry 10 --retry-delay 2 http://127.0.0.1:8091/ >/dev/null
-          curl --fail --silent --show-error --retry 10 --retry-delay 2 http://127.0.0.1:3011/api/health >/dev/null
-          REMOTE_SCRIPT
+            docker compose up -d --build
+            curl --fail --silent --show-error --retry 10 --retry-delay 2 http://127.0.0.1:8091/ >/dev/null
+            curl --fail --silent --show-error --retry 10 --retry-delay 2 http://127.0.0.1:3011/api/health >/dev/null

@@ -1,78 +1,76 @@
 # Deploy manual pelo GitHub Actions
 
-O repositório permanece público para o portfólio. Por isso, o deploy não usa
-runner auto-hospedado na VM de produção.
+O deploy deste projeto segue o mesmo padrão do CDD Campos e permanece manual:
 
-O workflow `Deploy produção` usa um runner temporário hospedado pelo GitHub e
-só pode ser acionado pelo botão **Run workflow** na branch `main`.
+```text
+Run workflow → build-check → Tailscale → SSH → Docker → smoke test
+```
+
+O repositório pode permanecer público para o portfólio porque a VM não é usada
+como runner do GitHub. O workflow executa o build em um runner GitHub-hosted e
+acessa a VM somente durante o job de deploy, pela rede privada Tailscale.
 
 ## Fluxo
 
-```text
-Run workflow → confirmação → CI aprovado → Tailscale temporária → SSH → Docker → smoke test
-```
+O workflow `Deploy Produção (VPS)`:
 
-O workflow:
+1. é iniciado manualmente em **Actions → Deploy Produção (VPS) → Run workflow**;
+2. executa testes do backend, lint e build do frontend;
+3. só inicia o deploy se `build-check` passar;
+4. conecta o runner temporariamente à Tailscale;
+5. acessa a VPS por SSH usando chave exclusiva e fingerprint da host key;
+6. atualiza o checkout com `git pull --ff-only`;
+7. confirma que a VPS está na mesma revisão validada;
+8. reconstrói os containers e valida frontend/API.
 
-1. exige confirmação explícita da publicação;
-2. verifica se o commit selecionado já passou pelo workflow `CI`;
-3. conecta o runner GitHub-hosted à Tailscale apenas durante a execução;
-4. usa uma chave SSH exclusiva de deploy e host key fixada;
-5. atualiza a VM com `git pull --ff-only`;
-6. reconstrói os containers e valida frontend/API.
+O workflow não contém valores de segredos.
 
-O workflow não contém valores de segredos. Eles ficam no ambiente protegido
-`production` do GitHub.
+## Secrets do ambiente `production`
 
-## Segredos do ambiente `production`
+Em **Settings → Environments → production → Environment secrets**, crie estes
+secrets:
 
-Em **Settings → Environments → production → Environment secrets**, crie:
+- `TAILSCALE_AUTHKEY`: auth key Tailscale efêmera, reutilizável, pré-aprovada
+  quando necessário e associada a uma tag exclusiva do GitHub Actions.
+- `VPS_HOST`: `100.67.151.30`.
+- `VPS_USER`: `ubuntu`.
+- `VPS_SSH_KEY`: chave privada SSH exclusiva para este deploy. Não reutilize a
+  chave administrativa pessoal.
+- `VPS_HOST_FINGERPRINT`: fingerprint SHA-256 da chave pública SSH da VPS.
 
-- `TAILSCALE_AUTHKEY`: chave Tailscale reutilizável, efêmera e associada a uma
-  tag exclusiva para o GitHub Actions. Essa tag deve ter permissão de acessar a
-  VM na porta SSH.
-- `DEPLOY_SSH_KEY`: chave privada SSH exclusiva para o deploy automático. Não
-  reutilize a chave administrativa pessoal.
-- `DEPLOY_KNOWN_HOSTS`: a linha da host key da VM para
-  `100.67.151.30`, obtida do arquivo local de hosts conhecidos. Não desative a
-  validação de host.
+Os três secrets `VPS_HOST`, `VPS_USER` e `VPS_SSH_KEY` seguem o mesmo padrão
+usado no CDD Campos. O `VPS_HOST_FINGERPRINT` é uma proteção adicional para
+evitar conexão com uma máquina diferente da VM validada.
 
-Na Tailscale, a tag da chave deve permitir somente o acesso necessário à VM e
-à porta `22`. A chave deve ser criada como efêmera e pré-aprovada quando o
-tailnet exigir aprovação de dispositivos.
+## Tailscale
 
-## Proteção do ambiente
+Na Tailscale, a tag usada pela auth key deve ter permissão somente para acessar
+a VPS na porta `22`. A chave deve ser efêmera e pré-aprovada quando o tailnet
+usar aprovação de dispositivos. Consulte a documentação da [Tailscale GitHub
+Action](https://tailscale.com/docs/integrations/github/github-action).
+
+## Ambiente de produção
 
 Em **Settings → Environments → production**:
 
-- permita apenas a branch `main`;
-- mantenha a aprovação obrigatória ativada para exigir uma confirmação antes
-  de acessar os segredos e publicar;
-- não salve nenhum segredo no README, no workflow ou no `.env` versionado.
+- permita somente a branch `main`;
+- mantenha aprovação obrigatória antes do deploy;
+- não salve secrets no README, workflow ou arquivos versionados.
 
-## Como publicar
+Ambientes do GitHub podem restringir branches e liberar secrets somente após as
+regras de proteção serem atendidas ([documentação do GitHub](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments)).
 
-1. Abra **Actions → Deploy produção**.
-2. Clique em **Run workflow**.
-3. Selecione `main`.
-4. Marque a confirmação de produção.
-5. Inicie o workflow.
-6. Se o ambiente solicitar, aprove o deployment.
+## Publicar
 
-O job será interrompido se não houver CI aprovado para o commit, se a conexão
-Tailscale falhar, se a host key não corresponder, se a VM tiver alterações
-locais ou se o smoke test falhar.
+1. Faça push do workflow para a branch `main`.
+2. Abra **Actions → Deploy Produção (VPS)**.
+3. Clique em **Run workflow** e selecione `main`.
+4. Aguarde o `build-check`.
+5. Aprove o ambiente `production`, se solicitado.
+6. Confirme o smoke test da API e do frontend.
 
-## Remoção do runner antigo
+## Runner antigo
 
-Como o repositório é público, o runner auto-hospedado instalado anteriormente
-na VM deve ser desativado e removido depois que esta configuração for
-versionada:
-
-```bash
-cd ~/actions-runner
-sudo ./svc.sh stop
-sudo ./svc.sh uninstall
-```
-
-Depois remova o runner em **Settings → Actions → Runners**.
+O runner auto-hospedado da VM não é necessário para este padrão. O serviço já
+foi parado; depois de confirmar que ele não aparece mais na interface do
+GitHub, não o reinstale.
