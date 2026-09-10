@@ -1,14 +1,17 @@
 name: Deploy produção
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
+    inputs:
+      confirm_production:
+        description: Confirmo a publicação deste commit em produção
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: deploy-production
@@ -17,23 +20,60 @@ concurrency:
 jobs:
   deploy:
     name: Publicar na VM de produção
-    if: >-
-      (github.event_name == 'workflow_dispatch' &&
-      github.ref == 'refs/heads/main') ||
-      (github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main')
-    runs-on: [self-hosted, linux, ARM64, despesas-production]
+    if: github.ref == 'refs/heads/main' && inputs.confirm_production == true
+    runs-on: ubuntu-24.04
     environment: production
-    timeout-minutes: 20
-    env:
-      EXPECTED_SHA: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.workflow_run.head_sha }}
-      APP_DIR: /home/ubuntu/apps/App-controle-financeiro
+    timeout-minutes: 25
 
     steps:
-      - name: Atualizar código validado
+      - name: Confirmar CI aprovado para o commit
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
+
+          CI_SUCCESSES="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=${GITHUB_SHA}&event=push&status=completed&per_page=100" \
+            --jq '[.workflow_runs[] | select(.name == "CI" and .conclusion == "success")] | length')"
+
+          if [ "$CI_SUCCESSES" -lt 1 ]; then
+            echo "Não existe uma execução bem-sucedida do CI para o commit ${GITHUB_SHA}."
+            exit 1
+          fi
+
+      - name: Conectar temporariamente à Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          ping: 100.67.151.30
+
+      - name: Preparar credenciais SSH temporárias
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$RUNNER_TEMP/deploy_key"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$RUNNER_TEMP/known_hosts"
+          chmod 600 "$RUNNER_TEMP/deploy_key" "$RUNNER_TEMP/known_hosts"
+
+      - name: Atualizar e publicar na VM
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ssh \
+            -i "$RUNNER_TEMP/deploy_key" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$RUNNER_TEMP/known_hosts" \
+            ubuntu@100.67.151.30 \
+            "EXPECTED_SHA='$GITHUB_SHA' bash -s" <<'REMOTE_SCRIPT'
+          set -euo pipefail
+          APP_DIR=/home/ubuntu/apps/App-controle-financeiro
           cd "$APP_DIR"
 
           if [ -n "$(git status --porcelain)" ]; then
@@ -47,20 +87,11 @@ jobs:
 
           ACTUAL_SHA="$(git rev-parse HEAD)"
           if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
-            echo "A publicação foi interrompida: a revisão local ($ACTUAL_SHA) não corresponde à revisão validada ($EXPECTED_SHA)."
+            echo "A revisão local ($ACTUAL_SHA) não corresponde à revisão aprovada ($EXPECTED_SHA)."
             exit 1
           fi
 
-      - name: Reconstruir e iniciar containers
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd "$APP_DIR"
           docker compose up -d --build
-
-      - name: Verificar frontend e API
-        shell: bash
-        run: |
-          set -euo pipefail
           curl --fail --silent --show-error --retry 10 --retry-delay 2 http://127.0.0.1:8091/ >/dev/null
           curl --fail --silent --show-error --retry 10 --retry-delay 2 http://127.0.0.1:3011/api/health >/dev/null
+          REMOTE_SCRIPT

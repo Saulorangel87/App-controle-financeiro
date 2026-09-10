@@ -59,10 +59,11 @@ autorizar as notificações.
 ## 🛠️ Tecnologias utilizadas
 
 O projeto possui CI no GitHub Actions: cada push ou pull request para `main`
-executa os testes do backend, o lint do frontend e o build de produção. Após o
-CI aprovado na `main`, o workflow de deploy publica automaticamente na VM de
-produção por um runner auto-hospedado. Veja o [runbook de deploy automático](docs/DEPLOY-GITHUB.md)
-para a configuração única da infraestrutura.
+executa os testes do backend, o lint do frontend e o build de produção. O
+deploy de produção é acionado manualmente pelo **Run workflow**, após a
+validação do CI, usando um runner GitHub-hosted conectado temporariamente à
+VM pela Tailscale. Veja o [runbook de deploy](docs/DEPLOY-GITHUB.md) para a
+configuração da infraestrutura.
 
 **Frontend**
 - React 19 + Vite (com code-splitting por rota)

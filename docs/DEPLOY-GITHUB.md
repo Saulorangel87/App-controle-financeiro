@@ -1,79 +1,78 @@
-# Deploy automático pelo GitHub Actions
+# Deploy manual pelo GitHub Actions
 
-O projeto usa dois workflows:
+O repositório permanece público para o portfólio. Por isso, o deploy não usa
+runner auto-hospedado na VM de produção.
 
-- `CI`: executa testes do backend, lint do frontend e build em cada alteração na
-  `main` ou pull request.
-- `Deploy produção`: só publica depois que o `CI` da `main` termina com sucesso.
+O workflow `Deploy produção` usa um runner temporário hospedado pelo GitHub e
+só pode ser acionado pelo botão **Run workflow** na branch `main`.
 
-## Arquitetura
-
-O deploy roda em um runner auto-hospedado instalado na própria VM Oracle. Essa
-decisão é necessária porque a VM usa o endereço privado da Tailscale e não deve
-ter SSH exposto na internet para o GitHub.
-
-O job de produção:
-
-1. atualiza o checkout da VM com `git pull --ff-only`;
-2. exige que a revisão local seja exatamente a revisão aprovada pelo CI;
-3. executa `docker compose up -d --build`;
-4. valida o frontend na porta `8091` e a API na porta `3011`.
-
-O workflow não contém chave SSH, token de acesso, senha ou variável de ambiente
-de produção.
-
-## Configuração única no GitHub
-
-No repositório, acesse **Settings → Actions → Runners → New self-hosted
-runner**. Selecione **Linux** e **ARM64**. Na VM, execute os comandos exibidos
-nessa tela, na ordem indicada pelo GitHub, dentro de um diretório próprio, por
-exemplo `~/actions-runner`.
-
-Ao configurar o runner, use o label adicional:
+## Fluxo
 
 ```text
-despesas-production
+Run workflow → confirmação → CI aprovado → Tailscale temporária → SSH → Docker → smoke test
 ```
 
-Depois instale o runner como serviço do sistema para que ele volte após
-reinicializações da VM:
+O workflow:
+
+1. exige confirmação explícita da publicação;
+2. verifica se o commit selecionado já passou pelo workflow `CI`;
+3. conecta o runner GitHub-hosted à Tailscale apenas durante a execução;
+4. usa uma chave SSH exclusiva de deploy e host key fixada;
+5. atualiza a VM com `git pull --ff-only`;
+6. reconstrói os containers e valida frontend/API.
+
+O workflow não contém valores de segredos. Eles ficam no ambiente protegido
+`production` do GitHub.
+
+## Segredos do ambiente `production`
+
+Em **Settings → Environments → production → Environment secrets**, crie:
+
+- `TAILSCALE_AUTHKEY`: chave Tailscale reutilizável, efêmera e associada a uma
+  tag exclusiva para o GitHub Actions. Essa tag deve ter permissão de acessar a
+  VM na porta SSH.
+- `DEPLOY_SSH_KEY`: chave privada SSH exclusiva para o deploy automático. Não
+  reutilize a chave administrativa pessoal.
+- `DEPLOY_KNOWN_HOSTS`: a linha da host key da VM para
+  `100.67.151.30`, obtida do arquivo local de hosts conhecidos. Não desative a
+  validação de host.
+
+Na Tailscale, a tag da chave deve permitir somente o acesso necessário à VM e
+à porta `22`. A chave deve ser criada como efêmera e pré-aprovada quando o
+tailnet exigir aprovação de dispositivos.
+
+## Proteção do ambiente
+
+Em **Settings → Environments → production**:
+
+- permita apenas a branch `main`;
+- mantenha a aprovação obrigatória ativada para exigir uma confirmação antes
+  de acessar os segredos e publicar;
+- não salve nenhum segredo no README, no workflow ou no `.env` versionado.
+
+## Como publicar
+
+1. Abra **Actions → Deploy produção**.
+2. Clique em **Run workflow**.
+3. Selecione `main`.
+4. Marque a confirmação de produção.
+5. Inicie o workflow.
+6. Se o ambiente solicitar, aprove o deployment.
+
+O job será interrompido se não houver CI aprovado para o commit, se a conexão
+Tailscale falhar, se a host key não corresponder, se a VM tiver alterações
+locais ou se o smoke test falhar.
+
+## Remoção do runner antigo
+
+Como o repositório é público, o runner auto-hospedado instalado anteriormente
+na VM deve ser desativado e removido depois que esta configuração for
+versionada:
 
 ```bash
-sudo ./svc.sh install ubuntu
-sudo ./svc.sh start
+cd ~/actions-runner
+sudo ./svc.sh stop
+sudo ./svc.sh uninstall
 ```
 
-O runner deve aparecer como **Idle/Online** em **Settings → Actions →
-Runners**. O token mostrado pelo GitHub é temporário; não o salve no projeto,
-em mensagens ou em arquivos versionados.
-
-## Ambiente de produção
-
-Em **Settings → Environments**, crie o ambiente `production`. Recomenda-se
-adicionar a regra de branch permitida `main`. Um revisor obrigatório pode ser
-ativado caso seja desejada uma aprovação manual antes de cada publicação; sem
-essa regra, o deploy continua automático após o CI aprovado.
-
-## Execução
-
-Depois que o runner estiver online, um push na `main` seguirá esta sequência:
-
-```text
-push → CI → Deploy produção → smoke test frontend/API
-```
-
-Também é possível disparar o workflow manualmente pela aba **Actions**, usando
-`Run workflow`. O modo manual ainda exige a revisão indicada pelo workflow e
-não ignora a validação da revisão esperada.
-
-## Diagnóstico rápido
-
-- **Queued:** o runner está offline ou sem o label `despesas-production`.
-- **CI concluído, deploy não iniciado:** confira se o CI terminou com sucesso e
-  se o workflow de deploy está na `main`.
-- **Alterações locais na VM:** o job para de propósito para não sobrescrever
-  alterações manuais.
-- **Revisão divergente:** houve outra publicação ou outro push antes do job;
-  confirme a execução mais recente antes de repetir.
-- **Smoke test falhou:** consulte os logs dos containers na VM com
-  `docker compose logs --tail=100`.
+Depois remova o runner em **Settings → Actions → Runners**.
