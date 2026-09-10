@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import './AvisoNovidades.css';
 
-const VERSAO_ATUAL = 'v1.7.0';
+const VERSAO_ATUAL = 'v1.8.0';
 const CHAVE_VISTA = `controle-despesas:novidades:${VERSAO_ATUAL}`;
 
 const destaques = [
+  'Aba Entradas separada, com filtro mensal e total do período',
+  'Exclusão de entradas com confirmação para evitar toques acidentais',
   'Fechamento mensal com conferência das categorias acima do limite',
-  'Valores financeiros preparados para maior precisão em centavos',
-  'Backup criptografado, CI e validações de qualidade reforçadas',
 ];
 
 function jaFoiVista() {
@@ -64,9 +64,9 @@ export default function AvisoNovidades() {
 
         <span className="aviso-novidades-selo">Nova versão</span>
         <span className="label">Controle de Despesas · {VERSAO_ATUAL}</span>
-        <h2 id="titulo-aviso-novidades">Mais controle no seu mês.</h2>
+        <h2 id="titulo-aviso-novidades">Mais organização no seu mês.</h2>
         <p className="aviso-novidades-intro">
-          Chegaram melhorias para fechar o mês com mais precisão, segurança e confiança.
+          As entradas agora têm seu próprio espaço, com consulta mensal e totalização clara.
         </p>
 
         <ul className="aviso-novidades-lista">

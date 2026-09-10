@@ -43,6 +43,9 @@ export default function Layout({ alertasCount }) {
           <NavLink to="/despesas" className={itemNav} onClick={fecharMenu}>
             Despesas
           </NavLink>
+          <NavLink to="/entradas" className={itemNav} onClick={fecharMenu}>
+            Entradas
+          </NavLink>
           <NavLink to="/categorias" className={itemNav} onClick={fecharMenu}>
             Categorias
           </NavLink>

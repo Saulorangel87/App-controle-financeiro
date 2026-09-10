@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pencil, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
 import { useDespesaModal } from '../contexts/DespesaModalContext';
@@ -7,7 +7,6 @@ import { formatarMoeda, formatarData } from '../utils/formatters';
 import './Despesas.css';
 
 const POR_PAGINA = 20;
-const POR_PAGINA_ENTRADAS = 10;
 
 function rotuloMes(mes) {
   return new Date(`${mes}-01T00:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
@@ -17,8 +16,6 @@ export default function Despesas() {
   const [dados, setDados] = useState(null);
   const [pagina, setPagina] = useState(1);
   const [carregando, setCarregando] = useState(true);
-  const [dadosEntradas, setDadosEntradas] = useState(null);
-  const [paginaEntradas, setPaginaEntradas] = useState(1);
   const [mesSelecionado, setMesSelecionado] = useState('');
   const [meses, setMeses] = useState([]);
   const { abrirEdicao } = useDespesaModal();
@@ -34,18 +31,9 @@ export default function Despesas() {
     api.get('/despesas/meses').then((res) => setMeses(res.data)).catch(() => {});
   }, []);
 
-  const carregarEntradas = useCallback(async (paginaAlvo) => {
-    const res = await api.get('/entradas', { params: { pagina: paginaAlvo, porPagina: POR_PAGINA_ENTRADAS } });
-    setDadosEntradas(res.data);
-  }, []);
-
   useEffect(() => {
     carregar(pagina);
   }, [carregar, pagina]);
-
-  useEffect(() => {
-    carregarEntradas(paginaEntradas);
-  }, [carregarEntradas, paginaEntradas]);
 
   async function excluir(id) {
     const despesa = dados?.despesas.find((item) => item.id === id);
@@ -60,22 +48,9 @@ export default function Despesas() {
     }
   }
 
-  async function excluirEntrada(id) {
-    await api.delete(`/entradas/${id}`);
-    if (dadosEntradas.entradas.length === 1 && paginaEntradas > 1) {
-      setPaginaEntradas((p) => p - 1);
-    } else {
-      carregarEntradas(paginaEntradas);
-    }
-  }
-
   if (carregando || !dados) return <p className="label">Carregando...</p>;
 
   const { despesas, total, totalGeral, totalPaginas } = dados;
-  const entradas = dadosEntradas?.entradas || [];
-  const totalEntradasReg = dadosEntradas?.total || 0;
-  const totalEntradasValor = dadosEntradas?.totalGeral || 0;
-  const totalPaginasEntradas = dadosEntradas?.totalPaginas || 1;
 
   return (
     <div className="despesas-e-entradas">
@@ -148,65 +123,6 @@ export default function Despesas() {
         )}
       </div>
 
-      {/* Entradas (adições ao orçamento) ficam num painel à parte — não se
-          misturam com as despesas, são um registro separado de dinheiro que
-          entrou, não de dinheiro gasto. */}
-      <div className="panel despesas-panel entradas-registro">
-        <div className="despesas-header">
-          <span className="label">Entradas Registradas — {totalEntradasReg} registros</span>
-          <span className="label">
-            Total: <strong style={{ color: 'var(--ok)' }}>+{formatarMoeda(totalEntradasValor)}</strong>
-          </span>
-        </div>
-
-        <div className="tabela-despesas">
-          <div className="linha linha-entrada linha-cabecalho">
-            <span className="label">Data</span>
-            <span className="label">Origem</span>
-            <span className="label">Descrição</span>
-            <span className="label" style={{ textAlign: 'right' }}>Valor</span>
-            <span />
-          </div>
-
-          {entradas.map((e) => (
-            <div className="linha linha-entrada" key={e.id}>
-              <span className="celula-data">{formatarData(e.data)}</span>
-              <strong className="celula-origem-entrada" title={e.origem}>{e.origem}</strong>
-              <span className="celula-descricao-entrada">{e.descricao || '—'}</span>
-              <span className="celula-valor" style={{ color: 'var(--ok)' }}>+{formatarMoeda(e.valor)}</span>
-              <button className="botao-excluir" onClick={() => excluirEntrada(e.id)} aria-label={`Excluir entrada ${e.origem}`}>
-                <X size={16} />
-              </button>
-            </div>
-          ))}
-
-          {entradas.length === 0 && (
-            <p className="label" style={{ padding: '24px 0' }}>Nenhuma entrada registrada ainda.</p>
-          )}
-        </div>
-
-        {totalPaginasEntradas > 1 && (
-          <div className="paginacao">
-            <button
-              className="botao-icone"
-              onClick={() => setPaginaEntradas((p) => p - 1)}
-              disabled={paginaEntradas <= 1}
-              aria-label="Página anterior de entradas"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span className="label">Página {paginaEntradas} de {totalPaginasEntradas}</span>
-            <button
-              className="botao-icone"
-              onClick={() => setPaginaEntradas((p) => p + 1)}
-              disabled={paginaEntradas >= totalPaginasEntradas}
-              aria-label="Próxima página de entradas"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

@@ -98,6 +98,17 @@ test('fluxo financeiro autenticado mantém orçamento e recorrentes consistentes
   assert.equal(resultado.resposta.status, 201);
   const entradaId = resultado.corpo.id;
 
+  resultado = await jsonFetch(baseUrl, '/api/entradas/meses', { headers: autenticado });
+  assert.equal(resultado.resposta.status, 200);
+  assert.deepEqual(resultado.corpo, [hoje.slice(0, 7)]);
+
+  resultado = await jsonFetch(baseUrl, `/api/entradas?pagina=1&porPagina=10&mes=${hoje.slice(0, 7)}`, {
+    headers: autenticado,
+  });
+  assert.equal(resultado.resposta.status, 200);
+  assert.equal(resultado.corpo.total, 1);
+  assert.equal(resultado.corpo.totalGeral, 1000);
+
   resultado = await jsonFetch(baseUrl, '/api/orcamento', { headers: autenticado });
   assert.equal(resultado.corpo.valor, 1000);
 

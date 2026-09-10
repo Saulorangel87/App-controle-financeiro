@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom';
 import './Novidades.css';
 
 const novidades = [
+  ['Entradas em aba própria', 'Consulte salários, bônus, freelas e reembolsos em uma área separada das despesas, sem misturar dinheiro recebido com dinheiro gasto.', <ArrowRight size={18} />],
+  ['Filtro mensal de entradas', 'Selecione um mês para ver somente os lançamentos daquele período ou mantenha Todos os meses para consultar o total completo.', <CheckCircle2 size={18} />],
   ['Notificações no celular', 'Ative o push na tela Alertas e receba avisos automáticos 3 e 1 dia antes do vencimento das suas despesas recorrentes.', <Bell size={18} />],
   ['Fechamento mensal', 'Confira no relatório quais categorias ultrapassaram o limite no mês selecionado e encerre sua conferência com mais clareza.', <CheckCircle2 size={18} />],
   ['Mais precisão financeira', 'A API passou a priorizar valores em centavos, reduzindo efeitos de arredondamento em somas, saldos e relatórios.', <Sparkles size={18} />],
   ['Qualidade de produção', 'Backups criptografados com verificação, CI automatizada e testes cobrindo os fluxos financeiros mais importantes.', <ShieldCheck size={18} />],
   ['Compras parceladas', 'Cadastre o total de parcelas e acompanhe automaticamente a parcela atual a cada virada de mês.', <CircleDot size={18} />],
   ['Recorrentes mais completas', 'Veja o total das contas ativas e mantenha o histórico das despesas fixas e parcelamentos quitados.', <CheckCircle2 size={18} />],
-  ['Entradas organizadas', 'Registre salários, bônus, freelas e reembolsos separadamente das despesas, com histórico e paginação.', <ArrowRight size={18} />],
   ['Orçamento por mês', 'O orçamento começa de forma independente a cada mês, sem carregar valores antigos por engano.', <Sparkles size={18} />],
 ];
 
@@ -27,12 +28,12 @@ export default function Novidades() {
       <section className="novidades-hero">
         <span className="label">Notas da versão</span>
         <h2>Mais clareza para cuidar do seu dinheiro.</h2>
-        <p>A versão <strong>v1.7.0</strong> reforça a precisão financeira, a conferência mensal e a confiabilidade da operação.</p>
+        <p>A versão <strong>v1.8.0</strong> organiza as entradas, melhora a consulta mensal e mantém a confiabilidade da operação.</p>
         <span className="novidades-status"><span /> Versão atual em produção</span>
       </section>
 
       <section className="novidades-secao">
-        <div className="novidades-secao-titulo"><span className="label">v1.7.0 · O que mudou</span><h3>Novidades desta versão</h3></div>
+        <div className="novidades-secao-titulo"><span className="label">v1.8.0 · O que mudou</span><h3>Novidades desta versão</h3></div>
         <div className="novidades-grid">
           {novidades.map(([titulo, texto, icone]) => (
             <article className="panel novidade-card" key={titulo}>
