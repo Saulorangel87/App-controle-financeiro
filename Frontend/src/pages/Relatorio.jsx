@@ -140,38 +140,42 @@ export default function Relatorio() {
           </p>
         </div>
         <div className="relatorio-controles ocultar-impressao">
-          <select
-            id="seletor-mes-relatorio"
-            className="seletor-mes"
-            value={mesSelecionado}
-            onChange={(e) => setMesSelecionado(e.target.value)}
-          >
-            {meses.map((m) => (
-              <option key={m} value={m}>{rotuloMes(m)}</option>
-            ))}
-          </select>
-          <select
-            id="seletor-categoria-relatorio"
-            className="seletor-mes seletor-categoria"
-            value={categoriaSelecionada}
-            aria-label="Filtrar por categoria"
-            onChange={(e) => setCategoriaSelecionada(e.target.value)}
-          >
-            <option value="">Todas as categorias</option>
-            {categorias.map((categoria) => (
-              <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="btn-primary botao-imprimir"
-            onClick={() => window.print()}
-          >
-            <Printer size={14} /> Imprimir
-          </button>
-          <button type="button" className="botao-exportar" onClick={exportarExcel}>
-            <Download size={14} /> Excel
-          </button>
+          <div className="relatorio-filtros">
+            <select
+              id="seletor-mes-relatorio"
+              className="seletor-mes"
+              value={mesSelecionado}
+              onChange={(e) => setMesSelecionado(e.target.value)}
+            >
+              {meses.map((m) => (
+                <option key={m} value={m}>{rotuloMes(m)}</option>
+              ))}
+            </select>
+            <select
+              id="seletor-categoria-relatorio"
+              className="seletor-mes seletor-categoria"
+              value={categoriaSelecionada}
+              aria-label="Filtrar por categoria"
+              onChange={(e) => setCategoriaSelecionada(e.target.value)}
+            >
+              <option value="">Todas as categorias</option>
+              {categorias.map((categoria) => (
+                <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
+              ))}
+            </select>
+          </div>
+          <div className="relatorio-acoes">
+            <button
+              type="button"
+              className="btn-primary botao-imprimir"
+              onClick={() => window.print()}
+            >
+              <Printer size={14} /> Imprimir
+            </button>
+            <button type="button" className="botao-exportar" onClick={exportarExcel}>
+              <Download size={14} /> Excel
+            </button>
+          </div>
         </div>
       </div>
 

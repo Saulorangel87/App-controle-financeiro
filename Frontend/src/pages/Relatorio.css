@@ -16,6 +16,13 @@
   gap: 10px;
 }
 
+.relatorio-filtros,
+.relatorio-acoes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .seletor-mes {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -134,13 +141,39 @@
     gap: 10px;
   }
   .relatorio-controles {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+
+  .relatorio-filtros,
+  .relatorio-acoes {
     width: 100%;
   }
+
+  .relatorio-filtros {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .relatorio-acoes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .seletor-mes {
-    flex: 1;
+    width: 100%;
   }
 
   .seletor-categoria {
     min-width: 0;
+  }
+
+  .botao-imprimir,
+  .botao-exportar {
+    justify-content: center;
+    min-width: 0;
+    width: 100%;
   }
 }
