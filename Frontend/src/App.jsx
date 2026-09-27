@@ -16,6 +16,7 @@ const Categorias = lazy(() => import('./pages/Categorias'));
 const Alertas = lazy(() => import('./pages/Alertas'));
 const Relatorio = lazy(() => import('./pages/Relatorio'));
 const DespesasRecorrentes = lazy(() => import('./pages/DespesasRecorrentes'));
+const Metas = lazy(() => import('./pages/Metas'));
 const Login = lazy(() => import('./pages/Login'));
 const Cadastro = lazy(() => import('./pages/Cadastro'));
 const VerificarEmail = lazy(() => import('./pages/VerificarEmail'));
@@ -53,6 +54,7 @@ function AreaLogada() {
           <Route path="alertas" element={<Alertas key={versao} />} />
           <Route path="relatorio" element={<Relatorio key={versao} />} />
           <Route path="recorrentes" element={<DespesasRecorrentes key={versao} />} />
+          <Route path="metas" element={<Metas key={versao} />} />
           <Route path="novidades" element={<Novidades />} />
         </Route>
       </Routes>

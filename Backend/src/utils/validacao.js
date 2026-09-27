@@ -11,4 +11,8 @@ function dataISOValida(data) {
     && dataConvertida.toISOString().slice(0, 10) === data;
 }
 
-module.exports = { numeroMonetarioValido, dataISOValida };
+function mesISOValido(mes) {
+  return typeof mes === 'string' && /^\d{4}-\d{2}$/.test(mes);
+}
+
+module.exports = { numeroMonetarioValido, dataISOValida, mesISOValido };

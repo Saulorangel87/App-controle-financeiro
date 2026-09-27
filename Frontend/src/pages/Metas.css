@@ -1,0 +1,86 @@
+.metas {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.metas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.form-meta {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.linha-periodo-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.grid-metas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.card-meta {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-meta-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-meta-header strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge-andamento {
+  color: var(--ok);
+}
+
+.barra-fundo-meta {
+  margin-top: 14px;
+  height: 6px;
+  background: var(--panel-alt);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.barra-preenchida-meta {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.card-meta-rodape {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+@media (max-width: 860px) {
+  .grid-metas {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 500px) {
+  .linha-periodo-meta {
+    grid-template-columns: 1fr;
+  }
+}

@@ -109,6 +109,22 @@ CREATE TABLE IF NOT EXISTS despesas_recorrentes (
 );
 CREATE INDEX IF NOT EXISTS idx_recorrentes_usuario ON despesas_recorrentes(usuario_id);
 
+-- Metas de economia: o progresso é calculado automaticamente pelo saldo
+-- (entradas - despesas) dos meses do período, sem exigir nenhum lançamento
+-- manual à parte — basta criar a meta com valor alvo e período.
+CREATE TABLE IF NOT EXISTS metas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  usuario_id INTEGER NOT NULL,
+  nome TEXT NOT NULL,
+  valor_alvo REAL NOT NULL,
+  valor_alvo_centavos INTEGER,
+  mes_inicio TEXT NOT NULL,
+  mes_fim TEXT NOT NULL,
+  criado_em TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_metas_usuario ON metas(usuario_id);
+
 -- Índices para consultas mais rápidas filtrando por usuário
 CREATE INDEX IF NOT EXISTS idx_categorias_usuario ON categorias(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_despesas_usuario ON despesas(usuario_id);
