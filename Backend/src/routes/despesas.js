@@ -33,6 +33,45 @@ router.get('/meses', (req, res) => {
   res.json(meses);
 });
 
+// GET /api/despesas/sugestao-categoria?descricao=...
+// Sugere uma categoria com base no histórico do próprio usuário: primeiro
+// tenta descrição idêntica (ex: sempre cadastrou "Uber" em Transporte),
+// depois cai pra um match parcial pela primeira palavra significativa.
+// Sempre a categoria mais usada entre as que combinam, nunca a mais recente
+// isoladamente — evita que um cadastro avulso desvie a sugestão.
+router.get('/sugestao-categoria', (req, res) => {
+  const descricao = (req.query.descricao || '').trim();
+  if (!descricao) return res.json({ categoria_id: null });
+
+  const normalizada = descricao.toLowerCase();
+
+  const exata = db.prepare(`
+    SELECT categoria_id, COUNT(*) AS total
+    FROM despesas
+    WHERE usuario_id = ? AND LOWER(TRIM(descricao)) = ?
+    GROUP BY categoria_id
+    ORDER BY total DESC
+    LIMIT 1
+  `).get(req.usuarioId, normalizada);
+
+  if (exata) return res.json({ categoria_id: exata.categoria_id });
+
+  const primeiraPalavra = normalizada.split(/\s+/)[0];
+  if (primeiraPalavra && primeiraPalavra.length >= 3) {
+    const parcial = db.prepare(`
+      SELECT categoria_id, COUNT(*) AS total
+      FROM despesas
+      WHERE usuario_id = ? AND LOWER(descricao) LIKE ?
+      GROUP BY categoria_id
+      ORDER BY total DESC
+      LIMIT 1
+    `).get(req.usuarioId, `%${primeiraPalavra}%`);
+    if (parcial) return res.json({ categoria_id: parcial.categoria_id });
+  }
+
+  res.json({ categoria_id: null });
+});
+
 router.get('/', (req, res) => {
   const { mes, pagina, porPagina } = req.query;
 

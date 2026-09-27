@@ -45,3 +45,8 @@
   font-size: 10px;
   color: var(--text-muted);
 }
+
+.dica-sugestao {
+  font-size: 11px;
+  color: var(--accent-dim);
+}

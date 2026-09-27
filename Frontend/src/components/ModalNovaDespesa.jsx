@@ -19,6 +19,8 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
   const [data, setData] = useState(hoje());
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
+  const [categoriaTocada, setCategoriaTocada] = useState(false);
+  const [sugestaoAtiva, setSugestaoAtiva] = useState(false);
 
   const dataEhFutura = data > hoje();
 
@@ -42,10 +44,44 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
       setValor('');
       setData(hoje());
     }
+    setCategoriaTocada(false);
+    setSugestaoAtiva(false);
     setErro('');
   }, [aberto, despesaEditando]);
 
+  // Sugere categoria pelo histórico de descrições parecidas, só em despesa
+  // nova e enquanto o usuário não tiver escolhido a categoria manualmente.
+  useEffect(() => {
+    if (!aberto || editando || categoriaTocada) return;
+
+    const texto = descricao.trim();
+    if (texto.length < 3) {
+      setSugestaoAtiva(false);
+      return;
+    }
+
+    const temporizador = setTimeout(() => {
+      api.get('/despesas/sugestao-categoria', { params: { descricao: texto } })
+        .then((res) => {
+          const sugerida = res.data.categoria_id;
+          if (sugerida && categorias.some((c) => c.id === sugerida)) {
+            setCategoriaId(sugerida);
+            setSugestaoAtiva(true);
+          }
+        })
+        .catch(() => {});
+    }, 400);
+
+    return () => clearTimeout(temporizador);
+  }, [descricao, aberto, editando, categoriaTocada, categorias]);
+
   if (!aberto) return null;
+
+  function selecionarCategoria(id) {
+    setCategoriaId(id);
+    setCategoriaTocada(true);
+    setSugestaoAtiva(false);
+  }
 
   async function enviar(e) {
     e.preventDefault();
@@ -120,11 +156,18 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
 
           <div className="campo">
             <label className="label" htmlFor="campo-categoria-despesa">Categoria</label>
-            <select id="campo-categoria-despesa" value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
+            <select
+              id="campo-categoria-despesa"
+              value={categoriaId}
+              onChange={(e) => selecionarCategoria(e.target.value)}
+            >
               {categorias.map((c) => (
                 <option key={c.id} value={c.id}>{c.nome}</option>
               ))}
             </select>
+            {sugestaoAtiva && (
+              <span className="dica-sugestao">Categoria sugerida com base no histórico</span>
+            )}
           </div>
 
           <div className="campo">
