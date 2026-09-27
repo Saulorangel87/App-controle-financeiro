@@ -4,12 +4,18 @@ const { comValorEmReais } = require('../utils/dinheiro');
 
 const router = express.Router();
 
-function mesAnterior(mes) {
+// Desloca "YYYY-MM" por qualquer quantidade de meses (positiva ou negativa).
+// mesAnterior/mesMesmoMesAnoAnterior são casos particulares deste helper.
+function deslocarMes(mes, delta) {
   const [ano, m] = mes.split('-').map(Number);
-  const data = new Date(ano, m - 2, 1); // m-1 é o mês atual (0-indexed), -1 pra pegar o anterior
-  const anoAnterior = data.getFullYear();
-  const mesAnteriorNum = String(data.getMonth() + 1).padStart(2, '0');
-  return `${anoAnterior}-${mesAnteriorNum}`;
+  const data = new Date(ano, m - 1 + delta, 1);
+  const anoResultado = data.getFullYear();
+  const mesResultado = String(data.getMonth() + 1).padStart(2, '0');
+  return `${anoResultado}-${mesResultado}`;
+}
+
+function mesAnterior(mes) {
+  return deslocarMes(mes, -1);
 }
 
 function totalDoMes(usuarioId, mes, categoriaId) {
@@ -43,6 +49,38 @@ router.get('/meses', (req, res) => {
   res.json(meses);
 });
 
+// GET /api/relatorio/historico?meses=6&categoria_id=...
+// Série mensal de gastos pros últimos N meses (padrão 6, máximo 24),
+// terminando no mês corrente. Preenche com 0 os meses sem nenhuma despesa —
+// é o que alimenta o gráfico de tendência do Relatório.
+router.get('/historico', (req, res) => {
+  const quantidadeMeses = Math.min(24, Math.max(2, parseInt(req.query.meses, 10) || 6));
+  const categoriaId = req.query.categoria_id ? Number(req.query.categoria_id) : null;
+
+  if (categoriaId !== null) {
+    if (!Number.isInteger(categoriaId) || categoriaId < 1) {
+      return res.status(400).json({ erro: 'parâmetro categoria_id inválido' });
+    }
+    const categoria = db.prepare(
+      'SELECT id FROM categorias WHERE id = ? AND usuario_id = ?'
+    ).get(categoriaId, req.usuarioId);
+    if (!categoria) return res.status(400).json({ erro: 'categoria inválida' });
+  }
+
+  const mesAtual = new Date().toISOString().slice(0, 7);
+  const meses = [];
+  for (let i = quantidadeMeses - 1; i >= 0; i -= 1) {
+    meses.push(deslocarMes(mesAtual, -i));
+  }
+
+  const serie = meses.map((mes) => ({
+    mes,
+    total: totalDoMes(req.usuarioId, mes, categoriaId),
+  }));
+
+  res.json(serie);
+});
+
 // GET /api/relatorio?mes=YYYY-MM
 router.get('/', (req, res) => {
   const mes = req.query.mes || new Date().toISOString().slice(0, 7);
@@ -63,10 +101,17 @@ router.get('/', (req, res) => {
 
   const totalAtual = totalDoMes(req.usuarioId, mes, categoriaId);
   const totalAnterior = totalDoMes(req.usuarioId, mesAnterior(mes), categoriaId);
+  const totalMesmoMesAnoAnterior = totalDoMes(req.usuarioId, deslocarMes(mes, -12), categoriaId);
 
   const variacaoAbsoluta = totalAtual - totalAnterior;
   const variacaoPercentual =
     totalAnterior > 0 ? Number(((variacaoAbsoluta / totalAnterior) * 100).toFixed(1)) : null;
+
+  const variacaoAbsolutaAno = totalAtual - totalMesmoMesAnoAnterior;
+  const variacaoPercentualAno =
+    totalMesmoMesAnoAnterior > 0
+      ? Number(((variacaoAbsolutaAno / totalMesmoMesAnoAnterior) * 100).toFixed(1))
+      : null;
 
   const filtroCategoria = categoriaId ? 'AND d.categoria_id = ?' : '';
   const parametrosDespesas = categoriaId ? [req.usuarioId, mes, categoriaId] : [req.usuarioId, mes];
@@ -113,6 +158,9 @@ router.get('/', (req, res) => {
     totalAnterior,
     variacaoAbsoluta,
     variacaoPercentual,
+    totalMesmoMesAnoAnterior,
+    variacaoAbsolutaAno,
+    variacaoPercentualAno,
     despesas: despesasComValores,
     entradas: entradasComValores,
     totalEntradas,

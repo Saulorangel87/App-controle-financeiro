@@ -65,8 +65,12 @@
 
 .cards-relatorio {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 20px;
+}
+
+.bloco-tendencia {
+  padding: 20px;
 }
 
 .card-relatorio {

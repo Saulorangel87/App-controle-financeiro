@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Printer, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
 import { formatarMoeda, formatarData } from '../utils/formatters';
@@ -9,12 +10,19 @@ const NOMES_MES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
+const NOMES_MES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const POR_PAGINA = 20;
 const POR_PAGINA_ENTRADAS = 10;
+const MESES_TENDENCIA = 6;
 
 function rotuloMes(mesISO) {
   const [ano, mes] = mesISO.split('-').map(Number);
   return `${NOMES_MES[mes - 1]} ${ano}`;
+}
+
+function rotuloMesCurto(mesISO) {
+  const [ano, mes] = mesISO.split('-').map(Number);
+  return `${NOMES_MES_ABREV[mes - 1]}/${String(ano).slice(2)}`;
 }
 
 export default function Relatorio() {
@@ -26,6 +34,7 @@ export default function Relatorio() {
   const [carregando, setCarregando] = useState(true);
   const [pagina, setPagina] = useState(1);
   const [paginaEntradas, setPaginaEntradas] = useState(1);
+  const [tendencia, setTendencia] = useState([]);
 
   useEffect(() => {
     async function carregarMeses() {
@@ -56,7 +65,20 @@ export default function Relatorio() {
     });
   }, [mesSelecionado, categoriaSelecionada]);
 
+  // Tendência dos últimos meses independe do mês selecionado no filtro —
+  // sempre termina no mês corrente, só a categoria é filtrável junto.
+  useEffect(() => {
+    api.get('/relatorio/historico', {
+      params: { meses: MESES_TENDENCIA, categoria_id: categoriaSelecionada || undefined },
+    }).then((res) => setTendencia(res.data)).catch(() => setTendencia([]));
+  }, [categoriaSelecionada]);
+
   if (!mesSelecionado || carregando || !dados) return <p className="label">Carregando...</p>;
+
+  const dadosTendencia = tendencia.map((item) => ({
+    mes: rotuloMesCurto(item.mes),
+    total: item.total,
+  }));
 
   const aumentou = dados.variacaoAbsoluta > 0;
   const corVariacao = aumentou ? 'var(--danger)' : 'var(--accent)';
@@ -206,6 +228,18 @@ export default function Relatorio() {
         </div>
 
         <div className="panel card-relatorio">
+          <span className="label">Mesmo mês, ano passado</span>
+          <strong className="valor" style={{ color: 'var(--text-secondary)' }}>
+            {formatarMoeda(dados.totalMesmoMesAnoAnterior)}
+          </strong>
+          {dados.totalMesmoMesAnoAnterior > 0 && (
+            <span className="label" style={{ color: dados.variacaoAbsolutaAno > 0 ? 'var(--danger)' : 'var(--accent)' }}>
+              {dados.variacaoAbsolutaAno > 0 ? '↑' : '↓'} {Math.abs(dados.variacaoPercentualAno)}%
+            </span>
+          )}
+        </div>
+
+        <div className="panel card-relatorio">
           <span className="label">Entradas em {rotuloMes(mesSelecionado)}</span>
           <strong className="valor" style={{ color: 'var(--ok)' }}>
             +{formatarMoeda(dados.totalEntradas || 0)}
@@ -237,6 +271,47 @@ export default function Relatorio() {
         ) : (
           <span className="label">Nenhuma categoria excedeu o limite neste período.</span>
         )}
+      </div>
+
+      <div className="panel bloco-tendencia ocultar-impressao">
+        <span className="label">
+          Tendência{nomeCategoriaSelecionada ? ` · ${nomeCategoriaSelecionada}` : ''} — últimos {MESES_TENDENCIA} meses
+        </span>
+        <div style={{ width: '100%', height: 220, marginTop: 16 }}>
+          {dadosTendencia.every((item) => item.total === 0) ? (
+            <p className="label" style={{ padding: '80px 0', textAlign: 'center' }}>
+              Sem despesas registradas nesse período.
+            </p>
+          ) : (
+            <ResponsiveContainer>
+              <BarChart data={dadosTendencia} barGap={4}>
+                <XAxis
+                  dataKey="mes"
+                  tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
+                  axisLine={{ stroke: 'var(--border)' }}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
+                  axisLine={{ stroke: 'var(--border)' }}
+                  tickLine={false}
+                  width={48}
+                />
+                <Tooltip
+                  cursor={{ fill: 'var(--panel-alt)' }}
+                  contentStyle={{
+                    background: 'var(--panel)',
+                    border: '1px solid var(--border)',
+                    fontSize: 12,
+                    fontFamily: 'var(--font-mono)',
+                  }}
+                  formatter={(valor) => formatarMoeda(valor)}
+                />
+                <Bar dataKey="total" fill="var(--accent)" radius={[2, 2, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
       </div>
 
       <div className="panel bloco-despesas-mes">
