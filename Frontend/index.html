@@ -8,6 +8,20 @@
     <meta name="theme-color" content="#0a0a0a" />
     <title>Controle de Despesas</title>
 
+    <!-- Aplica o tema salvo (ou a preferência do sistema) antes do primeiro
+         paint, para não piscar o tema errado enquanto o React carrega. -->
+    <script>
+      (function () {
+        try {
+          var salvo = localStorage.getItem('tema');
+          var tema = salvo === 'claro' || salvo === 'escuro'
+            ? salvo
+            : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'claro' : 'escuro');
+          document.documentElement.dataset.theme = tema === 'claro' ? 'light' : 'dark';
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- Manifesto PWA: nome, ícones e display "standalone" são o que faz o
          Chrome oferecer "Instalar app" de verdade, em vez de só um atalho. -->
     <link rel="manifest" href="/manifest.json" />

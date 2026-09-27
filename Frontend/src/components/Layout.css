@@ -42,6 +42,18 @@
   justify-content: center;
 }
 
+.header-acoes-topo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.botao-tema {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px;
+}
+
 .header-nav {
   display: flex;
   gap: 4px;
@@ -66,7 +78,7 @@
 
 .nav-item.active {
   background: var(--accent);
-  color: #0a0a0a;
+  color: var(--accent-contrast);
   font-weight: 700;
 }
 

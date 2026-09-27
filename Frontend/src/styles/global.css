@@ -1,4 +1,8 @@
-:root {
+/* Tema escuro é o padrão (e o fallback para :root, caso o script de
+   detecção em index.html ainda não tenha rodado). O tema claro entra por
+   [data-theme="light"] no <html>, trocado em tempo real pelo ThemeContext. */
+:root,
+[data-theme='dark'] {
   /* Base */
   --bg: #0a0a0a;
   --panel: #111111;
@@ -11,14 +15,18 @@
   --text-secondary: #8a8a8a;
   --text-muted: #858585;
 
-  /* Acento */
+  /* Acento (fundo de botão/destaque + texto que fica em cima dele) */
   --accent: #c6ff2e;
   --accent-dim: #8fb821;
+  --accent-contrast: #0a0a0a;
 
   /* Semânticas */
   --danger: #ef4444;
   --warning: #f5a623;
   --ok: #22d3ee;
+
+  /* Barra neutra de comparação nos gráficos (ex: limite vs. gasto) */
+  --chart-neutral: #2a2a2a;
 
   /* Cores fixas por categoria (mesma paleta do design original) */
   --cat-moradia: #f97316;
@@ -32,6 +40,37 @@
 
   --radius: 2px;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  /* Base */
+  --bg: #f5f5f4;
+  --panel: #ffffff;
+  --panel-alt: #f0f0ee;
+  --border: #dcdcda;
+  --border-soft: #e8e8e6;
+
+  /* Texto */
+  --text-primary: #17181a;
+  --text-secondary: #5c5c59;
+  --text-muted: #6f6f6c;
+
+  /* Acento — verde mais escuro que no tema escuro, para manter contraste
+     de texto sobre fundo claro; texto sobre o acento vira branco. */
+  --accent: #5c7a00;
+  --accent-dim: #4a6300;
+  --accent-contrast: #ffffff;
+
+  /* Semânticas (levemente escurecidas para contraste em fundo claro) */
+  --danger: #dc2626;
+  --warning: #b45309;
+  --ok: #0e7490;
+
+  --chart-neutral: #d8d8d5;
+
+  color-scheme: light;
 }
 
 * {
@@ -141,7 +180,7 @@ input, select {
 
 .btn-primary {
   background: var(--accent);
-  color: #0a0a0a;
+  color: var(--accent-contrast);
   border: none;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -200,10 +239,6 @@ input, select {
 
 .campo input::placeholder {
   color: var(--text-muted);
-}
-
-.campo input[type="date"] {
-  color-scheme: dark;
 }
 
 .erro-form {

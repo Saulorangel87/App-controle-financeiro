@@ -326,7 +326,7 @@ export default function VisaoGeral() {
                   formatter={(valor) => formatarMoeda(valor)}
                 />
                 <Bar dataKey="gasto" fill="var(--accent)" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="limite" fill="#2a2a2a" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="limite" fill="var(--chart-neutral)" radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Sun, Moon } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useDespesaModal } from "../contexts/DespesaModalContext";
+import { useTheme } from "../contexts/ThemeContext";
 import "./Layout.css";
 import Footer from "./Footer";
 import AvisoNovidades from "./AvisoNovidades";
@@ -10,6 +11,7 @@ import AvisoNovidades from "./AvisoNovidades";
 export default function Layout({ alertasCount }) {
   const { usuario, logout } = useAuth();
   const { abrirNovo } = useDespesaModal();
+  const { tema, alternarTema } = useTheme();
   const [menuAberto, setMenuAberto] = useState(false);
 
   function fecharMenu() {
@@ -26,14 +28,24 @@ export default function Layout({ alertasCount }) {
             <span className="label">Sistema</span>
             <h1 className="header-title">Controle de Despesas</h1>
           </div>
-          <button
-            className="botao-hamburguer"
-            onClick={() => setMenuAberto((v) => !v)}
-            aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
-            aria-expanded={menuAberto}
-          >
-            {menuAberto ? <X size={20} /> : <Menu size={20} />}
-          </button>
+          <div className="header-acoes-topo">
+            <button
+              className="botao-icone botao-tema"
+              onClick={alternarTema}
+              aria-label={tema === "claro" ? "Ativar tema escuro" : "Ativar tema claro"}
+              title={tema === "claro" ? "Ativar tema escuro" : "Ativar tema claro"}
+            >
+              {tema === "claro" ? <Moon size={18} /> : <Sun size={18} />}
+            </button>
+            <button
+              className="botao-hamburguer"
+              onClick={() => setMenuAberto((v) => !v)}
+              aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
+              aria-expanded={menuAberto}
+            >
+              {menuAberto ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </div>
 
         <nav className={`header-nav ${menuAberto ? "aberto" : ""}`} aria-label="Navegação principal">

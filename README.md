@@ -55,6 +55,7 @@ autorizar as notificações.
 - 🔔 **Notificações push opcionais** para despesas recorrentes próximas do vencimento
 - 🆕 **Notas da versão** em `/novidades`, com as novidades da v1.8.0 e o planejamento das próximas evoluções
 - 💵 **Entradas em aba própria**, com filtro mensal, total do período e histórico separado das despesas
+- 🌗 **Tema claro e escuro**, com detecção automática da preferência do sistema e alternância manual salva por dispositivo
 
 ## 🛠️ Tecnologias utilizadas
 
