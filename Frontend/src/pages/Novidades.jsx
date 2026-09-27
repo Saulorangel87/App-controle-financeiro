@@ -1,8 +1,9 @@
-import { ArrowRight, Bell, CheckCircle2, CircleDot, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, Bell, CheckCircle2, CircleDot, ShieldCheck, Sparkles, SunMoon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './Novidades.css';
 
 const novidades = [
+  ['Tema claro e escuro', 'Alterne o visual do app pelo ícone no cabeçalho. A escolha fica salva neste dispositivo e, na primeira vez, respeita a preferência do seu sistema.', <SunMoon size={18} />],
   ['Entradas em aba própria', 'Consulte salários, bônus, freelas e reembolsos em uma área separada das despesas, sem misturar dinheiro recebido com dinheiro gasto.', <ArrowRight size={18} />],
   ['Filtro mensal de entradas', 'Selecione um mês para ver somente os lançamentos daquele período ou mantenha Todos os meses para consultar o total completo.', <CheckCircle2 size={18} />],
   ['Notificações no celular', 'Ative o push na tela Alertas e receba avisos automáticos 3 e 1 dia antes do vencimento das suas despesas recorrentes.', <Bell size={18} />],
