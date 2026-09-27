@@ -24,6 +24,9 @@ CREATE TABLE IF NOT EXISTS categorias (
 );
 
 -- Despesas (cada despesa pertence a um usuário e a uma categoria)
+-- dividida_com/divisao_valor_centavos: divisão simples com outra pessoa,
+-- sem exigir que ela tenha conta no app. "Sua parte" é sempre calculada
+-- como valor - divisao_valor, nunca salva. NULL nas duas = despesa comum.
 CREATE TABLE IF NOT EXISTS despesas (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   usuario_id INTEGER NOT NULL,
@@ -32,6 +35,8 @@ CREATE TABLE IF NOT EXISTS despesas (
   valor REAL NOT NULL,
   valor_centavos INTEGER,
   data TEXT NOT NULL,
+  dividida_com TEXT,
+  divisao_valor_centavos INTEGER,
   criado_em TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
   FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE CASCADE

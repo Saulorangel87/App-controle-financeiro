@@ -50,3 +50,35 @@
   font-size: 11px;
   color: var(--accent-dim);
 }
+
+.campo-checkbox {
+  flex-direction: row;
+  align-items: center;
+}
+
+.rotulo-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.rotulo-checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.linha-divisao {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 420px) {
+  .linha-divisao {
+    grid-template-columns: 1fr;
+  }
+}

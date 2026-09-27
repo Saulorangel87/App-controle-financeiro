@@ -61,4 +61,17 @@ if (!colunasRecorrentes.some((c) => c.name === 'parcela_mes_inicio')) {
   db.exec('ALTER TABLE despesas_recorrentes ADD COLUMN parcela_mes_inicio TEXT');
 }
 
+// Migração idempotente: divisão simples de despesa com outra pessoa (sem
+// exigir que ela tenha conta no app). dividida_com guarda um nome/etiqueta
+// livre; divisao_valor_centavos guarda quanto da despesa é da OUTRA pessoa
+// — "sua parte" é sempre "valor - divisao_valor", calculado na hora, nunca
+// salvo. NULL nas duas colunas = despesa comum (sem divisão).
+const colunasDespesas = db.prepare('PRAGMA table_info(despesas)').all();
+if (!colunasDespesas.some((c) => c.name === 'dividida_com')) {
+  db.exec('ALTER TABLE despesas ADD COLUMN dividida_com TEXT');
+}
+if (!colunasDespesas.some((c) => c.name === 'divisao_valor_centavos')) {
+  db.exec('ALTER TABLE despesas ADD COLUMN divisao_valor_centavos INTEGER');
+}
+
 module.exports = db;

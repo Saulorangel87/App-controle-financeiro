@@ -25,4 +25,11 @@ function comValorEmReais(linha, coluna = 'valor') {
   };
 }
 
-module.exports = { paraCentavos, deCentavos, comValorEmReais };
+// Como comValorEmReais, mas pra colunas opcionais que não têm um espelho em
+// reais (ex: divisao_valor_centavos) — null quando não há valor, em vez de
+// NaN ou de exigir uma coluna REAL só pra isso.
+function centavosOuNulo(centavos) {
+  return Number.isInteger(centavos) ? deCentavos(centavos) : null;
+}
+
+module.exports = { paraCentavos, deCentavos, comValorEmReais, centavosOuNulo };

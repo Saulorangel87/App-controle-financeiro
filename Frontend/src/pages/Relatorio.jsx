@@ -332,6 +332,11 @@ export default function Relatorio() {
                 <div className="item-info">
                   <strong>{d.descricao}</strong>
                   <span className="label">{d.categoria_nome} · {formatarData(d.data)}</span>
+                  {d.dividida_com && (
+                    <span className="label" style={{ color: 'var(--text-muted)' }}>
+                      Dividida com {d.dividida_com} · sua parte {formatarMoeda(d.valor - d.divisao_valor)}
+                    </span>
+                  )}
                 </div>
                 <span className="item-valor">-{formatarMoeda(d.valor)}</span>
               </li>

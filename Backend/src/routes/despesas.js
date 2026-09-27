@@ -1,9 +1,46 @@
 const express = require('express');
 const db = require('../db');
 const { numeroMonetarioValido, dataISOValida } = require('../utils/validacao');
-const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
+const { paraCentavos, comValorEmReais, centavosOuNulo } = require('../utils/dinheiro');
 
 const router = express.Router();
+
+const LIMITE_DIVIDIDA_COM = 40;
+
+// Converte a despesa completa (valor + divisão) pro formato de resposta da
+// API: valor_centavos vira valor (comValorEmReais), divisao_valor_centavos
+// vira divisao_valor (null quando a despesa não foi dividida com ninguém).
+function comDivisao(despesa) {
+  const { divisao_valor_centavos, ...resto } = despesa;
+  return { ...resto, divisao_valor: centavosOuNulo(divisao_valor_centavos) };
+}
+
+function paraResposta(despesa) {
+  return comDivisao(comValorEmReais(despesa));
+}
+
+// Valida os campos de divisão (dividida_com + divisao_valor) a partir do
+// corpo da requisição. Retorna { alterar: false } quando dividida_com nem
+// veio no corpo (PUT parcial não mexe na divisão existente), ou os valores
+// prontos pra salvar — dividida_com vazio/null limpa uma divisão existente.
+function validarDivisao(body, valorReferencia) {
+  const { dividida_com, divisao_valor } = body;
+
+  if (dividida_com === undefined) return { alterar: false };
+
+  if (dividida_com === null || dividida_com === '') {
+    return { alterar: true, dividida_com: null, divisaoValorCentavos: null };
+  }
+
+  if (typeof dividida_com !== 'string' || !dividida_com.trim() || dividida_com.length > LIMITE_DIVIDIDA_COM) {
+    return { erro: `dividida_com inválida (máximo ${LIMITE_DIVIDIDA_COM} caracteres)` };
+  }
+  if (!numeroMonetarioValido(divisao_valor) || divisao_valor > valorReferencia) {
+    return { erro: 'divisao_valor deve ser positivo e não pode ultrapassar o valor total da despesa' };
+  }
+
+  return { alterar: true, dividida_com: dividida_com.trim(), divisaoValorCentavos: paraCentavos(divisao_valor) };
+}
 
 // Data de hoje no formato YYYY-MM-DD (mesmo formato salvo no banco), usada
 // pra bloquear datas futuras. Comparação é feita por string porque o campo
@@ -94,13 +131,14 @@ router.get('/', (req, res) => {
   if (!paginando) {
     const despesas = db.prepare(`
       SELECT d.id, d.descricao, d.valor, d.valor_centavos, d.data,
+             d.dividida_com, d.divisao_valor_centavos,
              c.id AS categoria_id, c.nome AS categoria_nome,
              c.icone AS categoria_icone, c.cor AS categoria_cor
       ${baseSql}
       ORDER BY d.data DESC, d.id DESC
     `).all(...params);
 
-    return res.json(despesas.map((despesa) => comValorEmReais(despesa)));
+    return res.json(despesas.map((despesa) => paraResposta(despesa)));
   }
 
   const paginaAtual = Math.max(1, parseInt(pagina, 10) || 1);
@@ -114,6 +152,7 @@ router.get('/', (req, res) => {
 
   const despesas = db.prepare(`
     SELECT d.id, d.descricao, d.valor, d.valor_centavos, d.data,
+           d.dividida_com, d.divisao_valor_centavos,
            c.id AS categoria_id, c.nome AS categoria_nome,
            c.icone AS categoria_icone, c.cor AS categoria_cor
     ${baseSql}
@@ -122,7 +161,7 @@ router.get('/', (req, res) => {
   `).all(...params, itensPorPagina, offset);
 
   res.json({
-    despesas: despesas.map((despesa) => comValorEmReais(despesa)),
+    despesas: despesas.map((despesa) => paraResposta(despesa)),
     pagina: paginaAtual,
     porPagina: itensPorPagina,
     total,
@@ -148,6 +187,11 @@ router.post('/', (req, res) => {
     return res.status(400).json({ erro: 'não é possível cadastrar uma despesa com data futura' });
   }
 
+  const divisao = validarDivisao(req.body, valor);
+  if (divisao.erro) {
+    return res.status(400).json({ erro: divisao.erro });
+  }
+
   // Garante que a categoria pertence ao usuário atual
   const categoria = db.prepare(
     'SELECT id FROM categorias WHERE id = ? AND usuario_id = ?'
@@ -158,12 +202,16 @@ router.post('/', (req, res) => {
   }
 
   const info = db.prepare(`
-    INSERT INTO despesas (usuario_id, categoria_id, descricao, valor, valor_centavos, data)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(req.usuarioId, categoria_id, descricao, valor, paraCentavos(valor), data);
+    INSERT INTO despesas (usuario_id, categoria_id, descricao, valor, valor_centavos, data, dividida_com, divisao_valor_centavos)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    req.usuarioId, categoria_id, descricao, valor, paraCentavos(valor), data,
+    divisao.alterar ? divisao.dividida_com : null,
+    divisao.alterar ? divisao.divisaoValorCentavos : null
+  );
 
   const nova = db.prepare('SELECT * FROM despesas WHERE id = ?').get(info.lastInsertRowid);
-  res.status(201).json(comValorEmReais(nova));
+  res.status(201).json(paraResposta(nova));
 });
 
 // PUT /api/despesas/:id
@@ -200,9 +248,15 @@ router.put('/:id', (req, res) => {
   }
 
   const valorFinal = valor ?? despesa.valor;
+
+  const divisao = validarDivisao(req.body, valorFinal);
+  if (divisao.erro) {
+    return res.status(400).json({ erro: divisao.erro });
+  }
+
   db.prepare(`
     UPDATE despesas
-    SET descricao = ?, valor = ?, valor_centavos = ?, categoria_id = ?, data = ?
+    SET descricao = ?, valor = ?, valor_centavos = ?, categoria_id = ?, data = ?, dividida_com = ?, divisao_valor_centavos = ?
     WHERE id = ? AND usuario_id = ?
   `).run(
     descricao ?? despesa.descricao,
@@ -210,12 +264,14 @@ router.put('/:id', (req, res) => {
     paraCentavos(valorFinal),
     categoria_id ?? despesa.categoria_id,
     data ?? despesa.data,
+    divisao.alterar ? divisao.dividida_com : despesa.dividida_com,
+    divisao.alterar ? divisao.divisaoValorCentavos : despesa.divisao_valor_centavos,
     id,
     req.usuarioId
   );
 
   const atualizada = db.prepare('SELECT * FROM despesas WHERE id = ?').get(id);
-  res.json(comValorEmReais(atualizada));
+  res.json(paraResposta(atualizada));
 });
 
 // DELETE /api/despesas/:id

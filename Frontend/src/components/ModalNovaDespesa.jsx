@@ -3,6 +3,7 @@ import api from '../services/api';
 import './ModalNovaDespesa.css';
 
 const LIMITE_DESCRICAO = 80;
+const LIMITE_DIVIDIDA_COM = 40;
 
 function hoje() {
   const d = new Date();
@@ -21,6 +22,9 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
   const [erro, setErro] = useState('');
   const [categoriaTocada, setCategoriaTocada] = useState(false);
   const [sugestaoAtiva, setSugestaoAtiva] = useState(false);
+  const [dividirDespesa, setDividirDespesa] = useState(false);
+  const [divididaCom, setDivididaCom] = useState('');
+  const [divisaoValor, setDivisaoValor] = useState('');
 
   const dataEhFutura = data > hoje();
 
@@ -39,10 +43,16 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
       setValor(String(despesaEditando.valor));
       setCategoriaId(despesaEditando.categoria_id);
       setData(despesaEditando.data);
+      setDividirDespesa(Boolean(despesaEditando.dividida_com));
+      setDivididaCom(despesaEditando.dividida_com || '');
+      setDivisaoValor(despesaEditando.divisao_valor != null ? String(despesaEditando.divisao_valor) : '');
     } else {
       setDescricao('');
       setValor('');
       setData(hoje());
+      setDividirDespesa(false);
+      setDivididaCom('');
+      setDivisaoValor('');
     }
     setCategoriaTocada(false);
     setSugestaoAtiva(false);
@@ -95,6 +105,14 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
       setErro('Não é possível cadastrar uma despesa com data futura.');
       return;
     }
+    if (dividirDespesa && (!divididaCom.trim() || !divisaoValor)) {
+      setErro('Preencha com quem dividiu e o valor da outra pessoa.');
+      return;
+    }
+    if (dividirDespesa && Number(divisaoValor) > Number(valor)) {
+      setErro('O valor da outra pessoa não pode ultrapassar o valor total da despesa.');
+      return;
+    }
 
     setEnviando(true);
     try {
@@ -103,6 +121,8 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
         valor: Number(valor),
         categoria_id: Number(categoriaId),
         data,
+        dividida_com: dividirDespesa ? divididaCom.trim() : null,
+        divisao_valor: dividirDespesa ? Number(divisaoValor) : null,
       };
 
       if (editando) {
@@ -187,6 +207,46 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
               </p>
             )}
           </div>
+
+          <div className="campo campo-checkbox">
+            <label className="rotulo-checkbox" htmlFor="campo-dividir-despesa">
+              <input
+                id="campo-dividir-despesa"
+                type="checkbox"
+                checked={dividirDespesa}
+                onChange={(e) => setDividirDespesa(e.target.checked)}
+              />
+              Dividir com alguém
+            </label>
+          </div>
+
+          {dividirDespesa && (
+            <div className="linha-divisao">
+              <div className="campo">
+                <label className="label" htmlFor="campo-dividida-com">Dividida com</label>
+                <input
+                  id="campo-dividida-com"
+                  type="text"
+                  placeholder="ex: Ana"
+                  value={divididaCom}
+                  maxLength={LIMITE_DIVIDIDA_COM}
+                  onChange={(e) => setDivididaCom(e.target.value)}
+                />
+              </div>
+              <div className="campo">
+                <label className="label" htmlFor="campo-divisao-valor">Valor da outra pessoa (R$)</label>
+                <input
+                  id="campo-divisao-valor"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  placeholder="0.00"
+                  value={divisaoValor}
+                  onChange={(e) => setDivisaoValor(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
 
           {erro && <p className="erro-form" role="alert">{erro}</p>}
 

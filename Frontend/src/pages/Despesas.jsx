@@ -80,7 +80,14 @@ export default function Despesas() {
           {despesas.map((d) => (
             <div className="linha" key={d.id}>
               <span className="celula-data">{formatarData(d.data)}</span>
-              <strong className="celula-descricao" title={d.descricao}>{d.descricao}</strong>
+              <div className="celula-descricao" title={d.descricao}>
+                <strong>{d.descricao}</strong>
+                {d.dividida_com && (
+                  <span className="info-divisao">
+                    Dividida com {d.dividida_com} · sua parte {formatarMoeda(d.valor - d.divisao_valor)}
+                  </span>
+                )}
+              </div>
               <span className="celula-categoria" style={{ color: d.categoria_cor }}>
                 <IconeCategoria nome={d.categoria_icone} size={14} />
                 {d.categoria_nome}

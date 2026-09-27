@@ -1,6 +1,6 @@
 const express = require('express');
 const db = require('../db');
-const { comValorEmReais } = require('../utils/dinheiro');
+const { comValorEmReais, centavosOuNulo } = require('../utils/dinheiro');
 
 const router = express.Router();
 
@@ -118,6 +118,7 @@ router.get('/', (req, res) => {
   const despesas = db.prepare(`
     SELECT
       d.id, d.descricao, d.valor, d.valor_centavos, d.data,
+      d.dividida_com, d.divisao_valor_centavos,
       c.nome AS categoria_nome, c.icone AS categoria_icone, c.cor AS categoria_cor
     FROM despesas d
     JOIN categorias c ON c.id = d.categoria_id
@@ -133,7 +134,10 @@ router.get('/', (req, res) => {
     WHERE usuario_id = ? AND strftime('%Y-%m', data) = ?
     ORDER BY data DESC, id DESC
   `).all(req.usuarioId, mes);
-  const despesasComValores = despesas.map((despesa) => comValorEmReais(despesa));
+  const despesasComValores = despesas.map((despesa) => {
+    const { divisao_valor_centavos, ...resto } = comValorEmReais(despesa);
+    return { ...resto, divisao_valor: centavosOuNulo(divisao_valor_centavos) };
+  });
   const entradasComValores = entradas.map((entrada) => comValorEmReais(entrada));
   const totalEntradas = entradasComValores.reduce((soma, e) => soma + e.valor, 0);
   const categoriasExcedidas = db.prepare(`
