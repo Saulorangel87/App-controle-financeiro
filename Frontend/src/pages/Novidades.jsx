@@ -1,9 +1,20 @@
-import { ArrowRight, Bell, CheckCircle2, CircleDot, ShieldCheck, Sparkles, SunMoon } from 'lucide-react';
+import {
+  ArrowRight, Bell, CheckCircle2, CircleDot, ShieldCheck, Sparkles,
+  SunMoon, Wand2, TrendingUp, PiggyBank, Users, FileUp,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './Novidades.css';
 
 const novidades = [
   ['Tema claro e escuro', 'Alterne o visual do app pelo ícone no cabeçalho. A escolha fica salva neste dispositivo e, na primeira vez, respeita a preferência do seu sistema.', <SunMoon size={18} />],
+  ['Categoria sugerida automaticamente', 'Ao repetir uma descrição já usada antes (ex: "Uber"), a categoria certa é sugerida sozinha — só confirme ou troque se quiser.', <Wand2 size={18} />],
+  ['Comparativo ano a ano no relatório', 'Veja como o mês atual se compara ao mesmo mês do ano passado, além de um gráfico de tendência dos últimos 6 meses.', <TrendingUp size={18} />],
+  ['Metas de economia', 'Defina um valor e um período — o progresso é calculado sozinho pelo saldo (entradas menos despesas) de cada mês, sem lançamento manual extra.', <PiggyBank size={18} />],
+  ['Dividir despesa com alguém', 'Marque que uma despesa foi dividida com outra pessoa (sem precisar que ela tenha conta) e acompanhe sua parte separada do valor total.', <Users size={18} />],
+  ['Importar extrato em CSV', 'Envie um extrato bancário em CSV, revise os lançamentos detectados e importe despesas e entradas de uma vez, com categoria já sugerida.', <FileUp size={18} />],
+];
+
+const novidadesAnteriores = [
   ['Entradas em aba própria', 'Consulte salários, bônus, freelas e reembolsos em uma área separada das despesas, sem misturar dinheiro recebido com dinheiro gasto.', <ArrowRight size={18} />],
   ['Filtro mensal de entradas', 'Selecione um mês para ver somente os lançamentos daquele período ou mantenha Todos os meses para consultar o total completo.', <CheckCircle2 size={18} />],
   ['Notificações no celular', 'Ative o push na tela Alertas e receba avisos automáticos 3 e 1 dia antes do vencimento das suas despesas recorrentes.', <Bell size={18} />],
@@ -20,7 +31,6 @@ const plano = [
   'Operações financeiras protegidas por transações',
   'Testes automatizados para API e fluxos principais',
   'Sessão e headers de segurança reforçados',
-  'Fechamento mensal, filtros e exportação de dados',
 ];
 
 export default function Novidades() {
@@ -29,14 +39,25 @@ export default function Novidades() {
       <section className="novidades-hero">
         <span className="label">Notas da versão</span>
         <h2>Mais clareza para cuidar do seu dinheiro.</h2>
-        <p>A versão <strong>v1.8.0</strong> organiza as entradas, melhora a consulta mensal e mantém a confiabilidade da operação.</p>
+        <p>A versão <strong>v1.9.0</strong> traz metas de economia, divisão de despesas, importação de extrato e mais inteligência no relatório.</p>
         <span className="novidades-status"><span /> Versão atual em produção</span>
       </section>
 
       <section className="novidades-secao">
-        <div className="novidades-secao-titulo"><span className="label">v1.8.0 · O que mudou</span><h3>Novidades desta versão</h3></div>
+        <div className="novidades-secao-titulo"><span className="label">v1.9.0 · O que mudou</span><h3>Novidades desta versão</h3></div>
         <div className="novidades-grid">
           {novidades.map(([titulo, texto, icone]) => (
+            <article className="panel novidade-card" key={titulo}>
+              <span className="novidade-icone">{icone}</span><h4>{titulo}</h4><p>{texto}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="novidades-secao">
+        <div className="novidades-secao-titulo"><span className="label">v1.8.0 · Versão anterior</span><h3>Também disponível</h3></div>
+        <div className="novidades-grid">
+          {novidadesAnteriores.map(([titulo, texto, icone]) => (
             <article className="panel novidade-card" key={titulo}>
               <span className="novidade-icone">{icone}</span><h4>{titulo}</h4><p>{texto}</p>
             </article>
