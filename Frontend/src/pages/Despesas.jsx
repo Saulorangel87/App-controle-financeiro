@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Pencil, Trash2, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
 import { useDespesaModal } from '../contexts/DespesaModalContext';
@@ -64,7 +65,12 @@ export default function Despesas() {
               {meses.map((mes) => <option key={mes} value={mes}>{rotuloMes(mes)}</option>)}
             </select>
           </div>
-          <span className="label">Total: <strong style={{ color: 'var(--text-primary)' }}>{formatarMoeda(totalGeral)}</strong></span>
+          <div className="despesas-header-acoes">
+            <Link to="/importar" className="botao-importar">
+              <Upload size={13} /> Importar CSV
+            </Link>
+            <span className="label">Total: <strong style={{ color: 'var(--text-primary)' }}>{formatarMoeda(totalGeral)}</strong></span>
+          </div>
         </div>
 
         <div className="tabela-despesas">

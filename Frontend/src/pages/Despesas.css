@@ -33,6 +33,31 @@
 }
 
 .despesas-header-titulo { display:flex; align-items:center; gap:14px; min-width:0; }
+
+.despesas-header-acoes {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.botao-importar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 13px;
+  color: var(--text-primary);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.botao-importar:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .filtro-mes { min-width:150px; padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); background:var(--panel-alt); color:var(--text-primary); font:inherit; font-size:11px; }
 
 .linha {
@@ -134,5 +159,6 @@
   .despesas-header { align-items:flex-start; gap:10px; flex-direction:column; }
   .despesas-header-titulo { width:100%; justify-content:space-between; gap:10px; }
   .despesas-header-titulo .label { min-width:0; }
+  .despesas-header-acoes { width:100%; justify-content:space-between; }
   .filtro-mes { min-width:132px; max-width:45%; }
 }

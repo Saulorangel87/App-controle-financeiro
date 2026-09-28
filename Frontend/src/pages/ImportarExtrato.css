@@ -1,0 +1,90 @@
+.importar-extrato {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.importar-cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.importar-upload,
+.importar-resultado,
+.importar-preview {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.botao-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+}
+
+.importar-preview-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabela-importar-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabela-importar {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+  font-size: 12px;
+}
+
+.tabela-importar th {
+  text-align: left;
+  padding: 8px 6px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabela-importar td {
+  padding: 6px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.tabela-importar input,
+.tabela-importar select {
+  width: 100%;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.tabela-importar input[type="checkbox"] {
+  width: auto;
+}
+
+.linha-com-erro {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+@media (max-width: 700px) {
+  .importar-upload,
+  .importar-resultado,
+  .importar-preview {
+    padding: 16px;
+  }
+}

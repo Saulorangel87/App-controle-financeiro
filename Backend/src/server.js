@@ -18,6 +18,7 @@ const entradasRouter = require('./routes/entradas');
 const recorrentesRouter = require('./routes/recorrentes');
 const relatorioRouter = require('./routes/relatorio');
 const metasRouter = require('./routes/metas');
+const importacaoRouter = require('./routes/importacao');
 const pushRouter = require('./routes/push');
 
 const app = express();
@@ -44,7 +45,16 @@ const origensPermitidas = process.env.FRONTEND_URL
   : ['http://localhost:5173'];
 
 app.use(cors({ origin: origensPermitidas, credentials: true }));
-app.use(express.json({ limit: '32kb' }));
+
+// Limite padrão de 32kb é suficiente pra qualquer rota comum do app. A
+// importação de extrato é a única exceção: um lote de até 500 lançamentos
+// em JSON passa fácil desse teto, então só ela usa um limite maior.
+const corpoJsonPadrao = express.json({ limit: '32kb' });
+const corpoJsonImportacao = express.json({ limit: '512kb' });
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/importacao')) return corpoJsonImportacao(req, res, next);
+  return corpoJsonPadrao(req, res, next);
+});
 
 app.get('/api/health', (req, res) => {
   try {
@@ -68,6 +78,7 @@ app.use('/api/entradas', autenticar, entradasRouter);
 app.use('/api/recorrentes', autenticar, recorrentesRouter);
 app.use('/api/relatorio', autenticar, relatorioRouter);
 app.use('/api/metas', autenticar, metasRouter);
+app.use('/api/importacao', autenticar, importacaoRouter);
 app.use('/api/push', autenticar, pushRouter);
 
 // Exportar o app permite testes HTTP sem abrir uma porta fixa.
