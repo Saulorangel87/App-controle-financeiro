@@ -67,7 +67,7 @@ export default function Despesas() {
           </div>
           <div className="despesas-header-acoes">
             <Link to="/importar" className="botao-importar">
-              <Upload size={13} /> Importar CSV
+              <Upload size={13} /> Importar extrato
             </Link>
             <span className="label">Total: <strong style={{ color: 'var(--text-primary)' }}>{formatarMoeda(totalGeral)}</strong></span>
           </div>

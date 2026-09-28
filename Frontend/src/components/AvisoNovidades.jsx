@@ -9,7 +9,7 @@ const CHAVE_VISTA = `controle-despesas:novidades:${VERSAO_ATUAL}`;
 const destaques = [
   'Tema claro e escuro, com alternância pelo cabeçalho',
   'Metas de economia com progresso calculado automaticamente',
-  'Divisão de despesas com outra pessoa e importação de extrato em CSV',
+  'Divisão de despesas com outra pessoa e importação de extrato bancário',
 ];
 
 function jaFoiVista() {

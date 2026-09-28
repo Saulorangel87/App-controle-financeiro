@@ -125,16 +125,16 @@ export default function ImportarExtrato() {
     <div className="importar-extrato">
       <div className="importar-cabecalho">
         <Link to="/despesas" className="link-destacado"><ArrowLeft size={14} /> Voltar para Despesas</Link>
-        <span className="label">Importar Extrato (CSV)</span>
+        <span className="label">Importar Extrato</span>
       </div>
 
       <div className="panel importar-upload">
         <p className="label">
-          Envie um CSV com data, descrição e valor. Valores negativos viram despesas, positivos viram entradas —
-          é o padrão da maioria dos extratos bancários.
+          Envie o arquivo do extrato exportado pelo seu banco (formato .csv), com data, descrição e valor.
+          Valores negativos viram despesas, positivos viram entradas — é o padrão da maioria dos extratos bancários.
         </p>
         <label className="btn-primary botao-upload" htmlFor="arquivo-csv">
-          <Upload size={14} /> Escolher arquivo CSV
+          <Upload size={14} /> Escolher arquivo do extrato
         </label>
         <input
           id="arquivo-csv"

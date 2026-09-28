@@ -11,7 +11,7 @@ const novidades = [
   ['Comparativo ano a ano no relatório', 'Veja como o mês atual se compara ao mesmo mês do ano passado, além de um gráfico de tendência dos últimos 6 meses.', <TrendingUp size={18} />],
   ['Metas de economia', 'Defina um valor e um período — o progresso é calculado sozinho pelo saldo (entradas menos despesas) de cada mês, sem lançamento manual extra.', <PiggyBank size={18} />],
   ['Dividir despesa com alguém', 'Marque que uma despesa foi dividida com outra pessoa (sem precisar que ela tenha conta) e acompanhe sua parte separada do valor total.', <Users size={18} />],
-  ['Importar extrato em CSV', 'Envie um extrato bancário em CSV, revise os lançamentos detectados e importe despesas e entradas de uma vez, com categoria já sugerida.', <FileUp size={18} />],
+  ['Importar extrato bancário', 'Envie o extrato do seu banco, revise os lançamentos detectados e importe despesas e entradas de uma vez, com categoria já sugerida.', <FileUp size={18} />],
 ];
 
 const novidadesAnteriores = [
