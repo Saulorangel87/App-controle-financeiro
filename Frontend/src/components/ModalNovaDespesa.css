@@ -1,18 +1,24 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 100;
   padding: 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
+/* margin:auto centraliza quando cabe e permite rolar sem cortar o topo quando não cabe */
 .modal {
   width: 100%;
   max-width: 440px;
   padding: 24px;
+  margin: auto;
 }
 
 .modal-header {
@@ -74,11 +80,30 @@
 .linha-divisao {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  align-items: end;
   gap: 16px;
 }
 
 @media (max-width: 420px) {
   .linha-divisao {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-overlay {
+    padding: 12px;
+  }
+
+  .modal {
+    padding: 18px;
+  }
+
+  .modal-header {
+    margin-bottom: 14px;
+  }
+
+  .modal-form {
+    gap: 12px;
   }
 }

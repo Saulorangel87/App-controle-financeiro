@@ -85,6 +85,15 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
     return () => clearTimeout(temporizador);
   }, [descricao, aberto, editando, categoriaTocada, categorias]);
 
+  useEffect(() => {
+    if (!aberto) return;
+    const anterior = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = anterior;
+    };
+  }, [aberto]);
+
   if (!aberto) return null;
 
   function selecionarCategoria(id) {

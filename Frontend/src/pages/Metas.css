@@ -36,6 +36,12 @@
   gap: 4px;
 }
 
+.linha-valor {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .card-meta-header {
   display: flex;
   justify-content: space-between;

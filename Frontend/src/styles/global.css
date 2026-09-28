@@ -227,8 +227,10 @@ input, select {
   gap: 6px;
 }
 
-.campo input,
+.campo input:not([type="checkbox"]):not([type="radio"]),
 .campo select {
+  width: 100%;
+  min-width: 0;
   background: var(--panel-alt);
   border: 1px solid var(--border);
   color: var(--text-primary);

@@ -29,6 +29,15 @@ export default function ModalEntrada({ aberto, onFechar, onSalvo }) {
     setErro('');
   }, [aberto]);
 
+  useEffect(() => {
+    if (!aberto) return;
+    const anterior = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = anterior;
+    };
+  }, [aberto]);
+
   if (!aberto) return null;
 
   async function enviar(e) {

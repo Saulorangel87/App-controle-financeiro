@@ -61,12 +61,12 @@
 }
 
 .nav-item {
-  font-size: 12px;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-secondary);
-  padding: 8px 14px;
-  border-radius: var(--radius);
+  padding: 6px 10px;
+  border-radius: 4px;
   transition:
     color 0.15s ease,
     background 0.15s ease;
