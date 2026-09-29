@@ -77,7 +77,9 @@ export default function Layout({ alertasCount }) {
 
         <div className="header-row header-row-bottom">
           <div className="header-usuario">
-            <span className="label">{usuario?.nome}</span>
+            <NavLink to="/conta" className="label" onClick={fecharMenu}>
+              {usuario?.nome}
+            </NavLink>
             <button className="botao-sair" onClick={logout}>
               Sair
             </button>

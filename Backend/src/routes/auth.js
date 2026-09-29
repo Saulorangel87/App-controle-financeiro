@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../db');
 const CATEGORIAS_PADRAO = require('../db/categoriasPadrao');
 const { JWT_SECRET } = require('../config/jwt');
+const autenticar = require('../middleware/autenticar');
 const limiteEmail = require('../middleware/limiteEmail');
 const { enviarEmailVerificacao, enviarEmailRecuperacaoSenha } = require('../services/email');
 const { paraCentavos } = require('../utils/dinheiro');
@@ -315,6 +316,32 @@ router.post('/redefinir-senha', async (req, res) => {
   db.prepare('UPDATE tokens SET usado = 1 WHERE id = ?').run(registro.id);
 
   res.json({ mensagem: 'Senha redefinida! Você já pode entrar com a nova senha.' });
+});
+
+// DELETE /api/auth/conta — exclui a própria conta e todos os dados
+// associados. Exige a senha atual como confirmação, igual ao login. O
+// cascade (ON DELETE CASCADE, ver schema.sql) apaga sozinho categorias,
+// despesas, orçamento, entradas, recorrentes, metas, tokens e sessões.
+router.delete('/conta', autenticar, async (req, res) => {
+  const { senha } = req.body;
+  if (!senha) {
+    return res.status(400).json({ erro: 'senha é obrigatória para confirmar a exclusão' });
+  }
+
+  const usuario = db.prepare('SELECT * FROM usuarios WHERE id = ?').get(req.usuarioId);
+  if (!usuario) {
+    return res.status(401).json({ erro: 'não autenticado' });
+  }
+
+  const senhaCorreta = await bcrypt.compare(senha, usuario.senha_hash);
+  if (!senhaCorreta) {
+    return res.status(401).json({ erro: 'senha incorreta' });
+  }
+
+  db.prepare('DELETE FROM usuarios WHERE id = ?').run(req.usuarioId);
+
+  limparCookieRefresh(res);
+  res.status(204).send();
 });
 
 module.exports = router;

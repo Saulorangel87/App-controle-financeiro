@@ -1,0 +1,36 @@
+.conta-pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 480px;
+}
+
+.conta-dados {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.conta-excluir {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid var(--danger);
+}
+
+.botao-excluir-conta {
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  background: var(--danger);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.botao-excluir-conta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
