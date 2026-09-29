@@ -6,6 +6,12 @@ const { paraCentavos, comValorEmReais, centavosOuNulo } = require('../utils/dinh
 const router = express.Router();
 
 const LIMITE_DIVIDIDA_COM = 40;
+const FORMAS_PAGAMENTO_VALIDAS = ['dinheiro', 'debito', 'credito', 'pix', 'boleto', 'outro'];
+
+// forma_pagamento é opcional: undefined/null/'' significa "não informado".
+function formaPagamentoValida(valor) {
+  return valor === undefined || valor === null || valor === '' || FORMAS_PAGAMENTO_VALIDAS.includes(valor);
+}
 
 // Converte a despesa completa (valor + divisão) pro formato de resposta da
 // API: valor_centavos vira valor (comValorEmReais), divisao_valor_centavos
@@ -110,13 +116,17 @@ router.get('/sugestao-categoria', (req, res) => {
 });
 
 router.get('/', (req, res) => {
-  const { mes, pagina, porPagina } = req.query;
+  const { mes, pagina, porPagina, forma_pagamento } = req.query;
 
   const filtros = ['d.usuario_id = ?'];
   const params = [req.usuarioId];
   if (mes) {
     filtros.push("strftime('%Y-%m', d.data) = ?");
     params.push(mes);
+  }
+  if (forma_pagamento) {
+    filtros.push('d.forma_pagamento = ?');
+    params.push(forma_pagamento);
   }
   const whereSql = filtros.join(' AND ');
 
@@ -131,7 +141,7 @@ router.get('/', (req, res) => {
   if (!paginando) {
     const despesas = db.prepare(`
       SELECT d.id, d.descricao, d.valor, d.valor_centavos, d.data,
-             d.dividida_com, d.divisao_valor_centavos,
+             d.dividida_com, d.divisao_valor_centavos, d.forma_pagamento,
              c.id AS categoria_id, c.nome AS categoria_nome,
              c.icone AS categoria_icone, c.cor AS categoria_cor
       ${baseSql}
@@ -152,7 +162,7 @@ router.get('/', (req, res) => {
 
   const despesas = db.prepare(`
     SELECT d.id, d.descricao, d.valor, d.valor_centavos, d.data,
-           d.dividida_com, d.divisao_valor_centavos,
+           d.dividida_com, d.divisao_valor_centavos, d.forma_pagamento,
            c.id AS categoria_id, c.nome AS categoria_nome,
            c.icone AS categoria_icone, c.cor AS categoria_cor
     ${baseSql}
@@ -173,7 +183,7 @@ router.get('/', (req, res) => {
 // POST /api/despesas
 // Cria uma nova despesa.
 router.post('/', (req, res) => {
-  const { descricao, valor, categoria_id, data } = req.body;
+  const { descricao, valor, categoria_id, data, forma_pagamento } = req.body;
 
   if (!descricao || !numeroMonetarioValido(valor) || !categoria_id || !dataISOValida(data)) {
     return res.status(400).json({
@@ -185,6 +195,9 @@ router.post('/', (req, res) => {
   }
   if (data > hojeISO()) {
     return res.status(400).json({ erro: 'não é possível cadastrar uma despesa com data futura' });
+  }
+  if (!formaPagamentoValida(forma_pagamento)) {
+    return res.status(400).json({ erro: `forma_pagamento inválida (use: ${FORMAS_PAGAMENTO_VALIDAS.join(', ')})` });
   }
 
   const divisao = validarDivisao(req.body, valor);
@@ -202,12 +215,13 @@ router.post('/', (req, res) => {
   }
 
   const info = db.prepare(`
-    INSERT INTO despesas (usuario_id, categoria_id, descricao, valor, valor_centavos, data, dividida_com, divisao_valor_centavos)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO despesas (usuario_id, categoria_id, descricao, valor, valor_centavos, data, dividida_com, divisao_valor_centavos, forma_pagamento)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     req.usuarioId, categoria_id, descricao, valor, paraCentavos(valor), data,
     divisao.alterar ? divisao.dividida_com : null,
-    divisao.alterar ? divisao.divisaoValorCentavos : null
+    divisao.alterar ? divisao.divisaoValorCentavos : null,
+    forma_pagamento || null
   );
 
   const nova = db.prepare('SELECT * FROM despesas WHERE id = ?').get(info.lastInsertRowid);
@@ -218,7 +232,7 @@ router.post('/', (req, res) => {
 // Edita uma despesa existente (ex: corrigir um cadastro feito errado).
 router.put('/:id', (req, res) => {
   const { id } = req.params;
-  const { descricao, valor, categoria_id, data } = req.body;
+  const { descricao, valor, categoria_id, data, forma_pagamento } = req.body;
 
   const despesa = db.prepare(
     'SELECT * FROM despesas WHERE id = ? AND usuario_id = ?'
@@ -232,6 +246,9 @@ router.put('/:id', (req, res) => {
   }
   if (data !== undefined && (!dataISOValida(data) || data > hojeISO())) {
     return res.status(400).json({ erro: 'não é possível cadastrar uma despesa com data futura' });
+  }
+  if (!formaPagamentoValida(forma_pagamento)) {
+    return res.status(400).json({ erro: `forma_pagamento inválida (use: ${FORMAS_PAGAMENTO_VALIDAS.join(', ')})` });
   }
 
   if (categoria_id !== undefined) {
@@ -256,7 +273,7 @@ router.put('/:id', (req, res) => {
 
   db.prepare(`
     UPDATE despesas
-    SET descricao = ?, valor = ?, valor_centavos = ?, categoria_id = ?, data = ?, dividida_com = ?, divisao_valor_centavos = ?
+    SET descricao = ?, valor = ?, valor_centavos = ?, categoria_id = ?, data = ?, dividida_com = ?, divisao_valor_centavos = ?, forma_pagamento = ?
     WHERE id = ? AND usuario_id = ?
   `).run(
     descricao ?? despesa.descricao,
@@ -266,6 +283,7 @@ router.put('/:id', (req, res) => {
     data ?? despesa.data,
     divisao.alterar ? divisao.dividida_com : despesa.dividida_com,
     divisao.alterar ? divisao.divisaoValorCentavos : despesa.divisao_valor_centavos,
+    forma_pagamento !== undefined ? (forma_pagamento || null) : despesa.forma_pagamento,
     id,
     req.usuarioId
   );

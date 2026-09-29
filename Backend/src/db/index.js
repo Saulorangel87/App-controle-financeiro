@@ -84,4 +84,12 @@ if (!colunasUsuariosLogin.some((c) => c.name === 'ultimo_login')) {
   db.exec('UPDATE usuarios SET ultimo_login = criado_em WHERE ultimo_login IS NULL');
 }
 
+// Migração idempotente: forma de pagamento da despesa (dinheiro, débito,
+// crédito, pix, boleto, outro). Nullable — despesas antigas continuam
+// válidas sem esse dado, só não entram nos filtros por forma de pagamento.
+const colunasDespesasPagamento = db.prepare('PRAGMA table_info(despesas)').all();
+if (!colunasDespesasPagamento.some((c) => c.name === 'forma_pagamento')) {
+  db.exec('ALTER TABLE despesas ADD COLUMN forma_pagamento TEXT');
+}
+
 module.exports = db;

@@ -18,13 +18,16 @@ function mesAnterior(mes) {
   return deslocarMes(mes, -1);
 }
 
-function totalDoMes(usuarioId, mes, categoriaId) {
+function totalDoMes(usuarioId, mes, categoriaId, formaPagamento) {
   const filtroCategoria = categoriaId ? 'AND categoria_id = ?' : '';
-  const parametros = categoriaId ? [usuarioId, mes, categoriaId] : [usuarioId, mes];
+  const filtroFormaPagamento = formaPagamento ? 'AND forma_pagamento = ?' : '';
+  const parametros = [usuarioId, mes];
+  if (categoriaId) parametros.push(categoriaId);
+  if (formaPagamento) parametros.push(formaPagamento);
   const row = db.prepare(`
     SELECT COALESCE(SUM(COALESCE(valor_centavos, ROUND(valor * 100)) / 100.0), 0) AS total
     FROM despesas
-    WHERE usuario_id = ? AND strftime('%Y-%m', data) = ? ${filtroCategoria}
+    WHERE usuario_id = ? AND strftime('%Y-%m', data) = ? ${filtroCategoria} ${filtroFormaPagamento}
   `).get(...parametros);
   return row.total;
 }
@@ -56,6 +59,7 @@ router.get('/meses', (req, res) => {
 router.get('/historico', (req, res) => {
   const quantidadeMeses = Math.min(24, Math.max(2, parseInt(req.query.meses, 10) || 6));
   const categoriaId = req.query.categoria_id ? Number(req.query.categoria_id) : null;
+  const formaPagamento = req.query.forma_pagamento || null;
 
   if (categoriaId !== null) {
     if (!Number.isInteger(categoriaId) || categoriaId < 1) {
@@ -75,7 +79,7 @@ router.get('/historico', (req, res) => {
 
   const serie = meses.map((mes) => ({
     mes,
-    total: totalDoMes(req.usuarioId, mes, categoriaId),
+    total: totalDoMes(req.usuarioId, mes, categoriaId, formaPagamento),
   }));
 
   res.json(serie);
@@ -85,6 +89,7 @@ router.get('/historico', (req, res) => {
 router.get('/', (req, res) => {
   const mes = req.query.mes || new Date().toISOString().slice(0, 7);
   const categoriaId = req.query.categoria_id ? Number(req.query.categoria_id) : null;
+  const formaPagamento = req.query.forma_pagamento || null;
 
   if (!/^\d{4}-\d{2}$/.test(mes)) {
     return res.status(400).json({ erro: 'parâmetro mes inválido, use o formato YYYY-MM' });
@@ -99,9 +104,9 @@ router.get('/', (req, res) => {
     if (!categoria) return res.status(400).json({ erro: 'categoria inválida' });
   }
 
-  const totalAtual = totalDoMes(req.usuarioId, mes, categoriaId);
-  const totalAnterior = totalDoMes(req.usuarioId, mesAnterior(mes), categoriaId);
-  const totalMesmoMesAnoAnterior = totalDoMes(req.usuarioId, deslocarMes(mes, -12), categoriaId);
+  const totalAtual = totalDoMes(req.usuarioId, mes, categoriaId, formaPagamento);
+  const totalAnterior = totalDoMes(req.usuarioId, mesAnterior(mes), categoriaId, formaPagamento);
+  const totalMesmoMesAnoAnterior = totalDoMes(req.usuarioId, deslocarMes(mes, -12), categoriaId, formaPagamento);
 
   const variacaoAbsoluta = totalAtual - totalAnterior;
   const variacaoPercentual =
@@ -114,15 +119,18 @@ router.get('/', (req, res) => {
       : null;
 
   const filtroCategoria = categoriaId ? 'AND d.categoria_id = ?' : '';
-  const parametrosDespesas = categoriaId ? [req.usuarioId, mes, categoriaId] : [req.usuarioId, mes];
+  const filtroFormaPagamento = formaPagamento ? 'AND d.forma_pagamento = ?' : '';
+  const parametrosDespesas = [req.usuarioId, mes];
+  if (categoriaId) parametrosDespesas.push(categoriaId);
+  if (formaPagamento) parametrosDespesas.push(formaPagamento);
   const despesas = db.prepare(`
     SELECT
       d.id, d.descricao, d.valor, d.valor_centavos, d.data,
-      d.dividida_com, d.divisao_valor_centavos,
+      d.dividida_com, d.divisao_valor_centavos, d.forma_pagamento,
       c.nome AS categoria_nome, c.icone AS categoria_icone, c.cor AS categoria_cor
     FROM despesas d
     JOIN categorias c ON c.id = d.categoria_id
-    WHERE d.usuario_id = ? AND strftime('%Y-%m', d.data) = ? ${filtroCategoria}
+    WHERE d.usuario_id = ? AND strftime('%Y-%m', d.data) = ? ${filtroCategoria} ${filtroFormaPagamento}
     ORDER BY d.data DESC, d.id DESC
   `).all(...parametrosDespesas);
 
@@ -158,6 +166,7 @@ router.get('/', (req, res) => {
   res.json({
     mes,
     categoriaId,
+    formaPagamento,
     totalAtual,
     totalAnterior,
     variacaoAbsoluta,

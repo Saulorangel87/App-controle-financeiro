@@ -14,6 +14,14 @@ const NOMES_MES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago',
 const POR_PAGINA = 20;
 const POR_PAGINA_ENTRADAS = 10;
 const MESES_TENDENCIA = 6;
+const FORMAS_PAGAMENTO = [
+  { valor: 'dinheiro', rotulo: 'Dinheiro' },
+  { valor: 'debito', rotulo: 'Débito' },
+  { valor: 'credito', rotulo: 'Crédito' },
+  { valor: 'pix', rotulo: 'Pix' },
+  { valor: 'boleto', rotulo: 'Boleto' },
+  { valor: 'outro', rotulo: 'Outro' },
+];
 
 function rotuloMes(mesISO) {
   const [ano, mes] = mesISO.split('-').map(Number);
@@ -30,6 +38,7 @@ export default function Relatorio() {
   const [categorias, setCategorias] = useState([]);
   const [mesSelecionado, setMesSelecionado] = useState('');
   const [categoriaSelecionada, setCategoriaSelecionada] = useState('');
+  const [formaPagamentoSelecionada, setFormaPagamentoSelecionada] = useState('');
   const [dados, setDados] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [pagina, setPagina] = useState(1);
@@ -56,6 +65,7 @@ export default function Relatorio() {
       params: {
         mes: mesSelecionado,
         categoria_id: categoriaSelecionada || undefined,
+        forma_pagamento: formaPagamentoSelecionada || undefined,
       },
     }).then((res) => {
       setDados(res.data);
@@ -63,15 +73,19 @@ export default function Relatorio() {
       setPagina(1); // troca de mês sempre volta pra primeira página
       setPaginaEntradas(1);
     });
-  }, [mesSelecionado, categoriaSelecionada]);
+  }, [mesSelecionado, categoriaSelecionada, formaPagamentoSelecionada]);
 
   // Tendência dos últimos meses independe do mês selecionado no filtro —
-  // sempre termina no mês corrente, só a categoria é filtrável junto.
+  // sempre termina no mês corrente, só categoria/forma de pagamento são filtráveis junto.
   useEffect(() => {
     api.get('/relatorio/historico', {
-      params: { meses: MESES_TENDENCIA, categoria_id: categoriaSelecionada || undefined },
+      params: {
+        meses: MESES_TENDENCIA,
+        categoria_id: categoriaSelecionada || undefined,
+        forma_pagamento: formaPagamentoSelecionada || undefined,
+      },
     }).then((res) => setTendencia(res.data)).catch(() => setTendencia([]));
-  }, [categoriaSelecionada]);
+  }, [categoriaSelecionada, formaPagamentoSelecionada]);
 
   if (!mesSelecionado || carregando || !dados) return <p className="label">Carregando...</p>;
 
@@ -183,6 +197,18 @@ export default function Relatorio() {
               <option value="">Todas as categorias</option>
               {categorias.map((categoria) => (
                 <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
+              ))}
+            </select>
+            <select
+              id="seletor-forma-pagamento-relatorio"
+              className="seletor-mes seletor-categoria"
+              value={formaPagamentoSelecionada}
+              aria-label="Filtrar por forma de pagamento"
+              onChange={(e) => setFormaPagamentoSelecionada(e.target.value)}
+            >
+              <option value="">Todas as formas de pagamento</option>
+              {FORMAS_PAGAMENTO.map((opcao) => (
+                <option key={opcao.valor} value={opcao.valor}>{opcao.rotulo}</option>
               ))}
             </select>
           </div>

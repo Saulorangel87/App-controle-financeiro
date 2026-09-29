@@ -4,6 +4,15 @@ import './ModalNovaDespesa.css';
 
 const LIMITE_DESCRICAO = 80;
 const LIMITE_DIVIDIDA_COM = 40;
+const FORMAS_PAGAMENTO = [
+  { valor: '', rotulo: 'Não informado' },
+  { valor: 'dinheiro', rotulo: 'Dinheiro' },
+  { valor: 'debito', rotulo: 'Débito' },
+  { valor: 'credito', rotulo: 'Crédito' },
+  { valor: 'pix', rotulo: 'Pix' },
+  { valor: 'boleto', rotulo: 'Boleto' },
+  { valor: 'outro', rotulo: 'Outro' },
+];
 
 function hoje() {
   const d = new Date();
@@ -25,6 +34,7 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
   const [dividirDespesa, setDividirDespesa] = useState(false);
   const [divididaCom, setDivididaCom] = useState('');
   const [divisaoValor, setDivisaoValor] = useState('');
+  const [formaPagamento, setFormaPagamento] = useState('');
 
   const dataEhFutura = data > hoje();
 
@@ -46,6 +56,7 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
       setDividirDespesa(Boolean(despesaEditando.dividida_com));
       setDivididaCom(despesaEditando.dividida_com || '');
       setDivisaoValor(despesaEditando.divisao_valor != null ? String(despesaEditando.divisao_valor) : '');
+      setFormaPagamento(despesaEditando.forma_pagamento || '');
     } else {
       setDescricao('');
       setValor('');
@@ -53,6 +64,7 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
       setDividirDespesa(false);
       setDivididaCom('');
       setDivisaoValor('');
+      setFormaPagamento('');
     }
     setCategoriaTocada(false);
     setSugestaoAtiva(false);
@@ -132,6 +144,7 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
         data,
         dividida_com: dividirDespesa ? divididaCom.trim() : null,
         divisao_valor: dividirDespesa ? Number(divisaoValor) : null,
+        forma_pagamento: formaPagamento || null,
       };
 
       if (editando) {
@@ -215,6 +228,19 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
                 ⚠ Data futura não é permitida — despesas só podem ser cadastradas até hoje.
               </p>
             )}
+          </div>
+
+          <div className="campo">
+            <label className="label" htmlFor="campo-forma-pagamento">Forma de pagamento</label>
+            <select
+              id="campo-forma-pagamento"
+              value={formaPagamento}
+              onChange={(e) => setFormaPagamento(e.target.value)}
+            >
+              {FORMAS_PAGAMENTO.map((opcao) => (
+                <option key={opcao.valor} value={opcao.valor}>{opcao.rotulo}</option>
+              ))}
+            </select>
           </div>
 
           <div className="campo campo-checkbox">
