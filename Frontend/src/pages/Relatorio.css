@@ -17,14 +17,28 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+  width: 100%;
 }
 
-.relatorio-filtros,
+.relatorio-filtros {
+  flex: 1 1 480px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .relatorio-acoes {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+}
+
+/* Mesma altura em seletores e botões, pra a linha inteira alinhar. */
+.seletor-mes,
+.botao-imprimir,
+.botao-exportar {
+  box-sizing: border-box;
+  height: 44px;
 }
 
 .seletor-mes {
@@ -38,7 +52,7 @@
 }
 
 .seletor-categoria {
-  min-width: 170px;
+  min-width: 0;
 }
 
 .botao-imprimir {
