@@ -13,7 +13,8 @@
     "test": "node --test --test-concurrency=1 test/*.test.js",
     "migrar-categorias": "node src/db/adicionarCategoriasFaltantes.js",
     "corrigir-cor-outros": "node src/db/corrigirCorOutros.js",
-    "notificar:vencimentos": "node src/jobs/notificarVencimentos.js"
+    "notificar:vencimentos": "node src/jobs/notificarVencimentos.js",
+    "remover:inativos": "node src/jobs/removerInativos.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

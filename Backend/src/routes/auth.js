@@ -186,6 +186,7 @@ router.post('/login', async (req, res) => {
   const token = gerarTokenSessao(usuario);
   const refreshToken = criarRefreshToken(usuario.id);
   definirCookieRefresh(res, refreshToken);
+  db.prepare("UPDATE usuarios SET ultimo_login = datetime('now') WHERE id = ?").run(usuario.id);
   res.json({ token, usuario: usuarioPublico(usuario) });
 });
 

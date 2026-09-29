@@ -79,4 +79,24 @@ async function enviarEmailRecuperacaoSenha(para, token) {
   });
 }
 
-module.exports = { enviarEmailVerificacao, enviarEmailRecuperacaoSenha };
+async function enviarEmailContaRemovida(para) {
+  await enviarEmail({
+    para,
+    assunto: 'Sua conta foi removida por inatividade — Controle de Despesas',
+    html: `
+      <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
+        <h2 style="color: #111;">Conta removida por inatividade</h2>
+        <p style="color: #444; line-height: 1.5;">
+          Sua conta no Controle de Despesas ficou mais de 90 dias sem login e foi
+          removida, junto com todos os dados associados (despesas, categorias,
+          entradas, orçamento, recorrentes e metas).
+        </p>
+        <p style="color: #444; line-height: 1.5;">
+          Se quiser voltar a usar o app, é só criar uma conta nova quando precisar.
+        </p>
+      </div>
+    `,
+  });
+}
+
+module.exports = { enviarEmailVerificacao, enviarEmailRecuperacaoSenha, enviarEmailContaRemovida };
