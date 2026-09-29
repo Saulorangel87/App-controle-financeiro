@@ -55,7 +55,7 @@ autorizar as notificações.
 - 🔔 **Notificações push opcionais** para despesas recorrentes próximas do vencimento
 - 🆕 **Notas da versão** em `/novidades`, com as novidades da v1.9.0 e o planejamento das próximas evoluções
 - 💵 **Entradas em aba própria**, com filtro mensal, total do período e histórico separado das despesas
-- 🌗 **Tema claro e escuro**, com detecção automática da preferência do sistema e alternância manual salva por dispositivo
+- 🌗 **Tema claro e escuro**, com detecção automática da preferência do sistema e alternância manual salva por dispositivo, com transição suave de cores
 - 🧠 **Categoria sugerida automaticamente** ao repetir uma descrição já usada antes, com base no próprio histórico do usuário
 - 📈 **Comparativo ano a ano e gráfico de tendência** dos últimos 6 meses no Relatório
 - 🐷 **Metas de economia por período**, com progresso calculado automaticamente pelo saldo (entradas − despesas)

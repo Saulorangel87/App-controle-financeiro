@@ -23,6 +23,10 @@ export function ThemeProvider({ children }) {
   }, [tema]);
 
   function alternarTema() {
+    // Classe temporária habilita a transição de cores só durante a troca.
+    const raiz = document.documentElement;
+    raiz.classList.add("transicao-tema");
+    window.setTimeout(() => raiz.classList.remove("transicao-tema"), 400);
     setTema((atual) => (atual === "claro" ? "escuro" : "claro"));
   }
 

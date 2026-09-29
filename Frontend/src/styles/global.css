@@ -334,3 +334,22 @@ input, select {
     transition: none !important;
   }
 }
+
+/* Transição suave na troca de tema. A classe é aplicada só durante a troca
+   (ver ThemeContext), pra não interferir nas transições normais da interface.
+   Vem depois do bloco reduced-motion e só vale quando não há preferência por
+   menos movimento. */
+@media (prefers-reduced-motion: no-preference) {
+  html.transicao-tema,
+  html.transicao-tema *,
+  html.transicao-tema *::before,
+  html.transicao-tema *::after {
+    transition:
+      background-color 0.35s ease,
+      color 0.35s ease,
+      border-color 0.35s ease,
+      fill 0.35s ease,
+      stroke 0.35s ease,
+      box-shadow 0.35s ease !important;
+  }
+}
