@@ -61,6 +61,7 @@ autorizar as notificações.
 - 🐷 **Metas de economia por período**, com progresso calculado automaticamente pelo saldo (entradas − despesas)
 - 🤝 **Divisão de despesa com outra pessoa** (sem precisar que ela tenha conta), mostrando "sua parte" separada do valor total
 - 📥 **Importação de extrato bancário em CSV**, com revisão dos lançamentos antes de confirmar e categoria já sugerida
+- 🗑️ **Exclusão da própria conta** (tela `/conta`, acessível pelo nome do usuário ou pelo menu "Minha conta" no celular) e aviso por email antes da remoção automática de contas inativas
 
 ## 🛠️ Tecnologias utilizadas
 

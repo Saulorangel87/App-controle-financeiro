@@ -73,6 +73,11 @@ export default function Layout({ alertasCount }) {
           <NavLink to="/relatorio" className={itemNav} onClick={fecharMenu}>
             Relatório
           </NavLink>
+          {/* Em telas muito pequenas o nome do usuário (link pra /conta) some
+              da barra; este item garante acesso à exclusão de conta. */}
+          <NavLink to="/conta" className={({ isActive }) => `${itemNav({ isActive })} nav-item-conta`} onClick={fecharMenu}>
+            Minha conta
+          </NavLink>
         </nav>
 
         <div className="header-row header-row-bottom">

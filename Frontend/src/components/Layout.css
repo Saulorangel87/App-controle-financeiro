@@ -162,8 +162,16 @@
   }
 }
 
+.nav-item-conta {
+  display: none;
+}
+
 @media (max-width: 420px) {
   .header-usuario .label {
     display: none;
+  }
+
+  .nav-item-conta {
+    display: block;
   }
 }
