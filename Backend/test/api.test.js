@@ -60,6 +60,9 @@ test('fluxo financeiro autenticado mantém orçamento e recorrentes consistentes
   });
   assert.equal(resultado.resposta.status, 200);
   assert.notEqual(resultado.corpo.token, token);
+  db.prepare("UPDATE usuarios SET ultimo_login = '2000-01-01 00:00:00' WHERE email = ?").run(email);
+  await jsonFetch(baseUrl, '/api/auth/refresh', { method: 'POST', headers: { Cookie: resultado.resposta.headers.get('set-cookie')?.split(';')[0] } });
+  assert.notEqual(db.prepare('SELECT ultimo_login FROM usuarios WHERE email = ?').get(email).ultimo_login, '2000-01-01 00:00:00');
   cookieRefresh = resultado.resposta.headers.get('set-cookie')?.split(';')[0];
   assert.match(cookieRefresh || '', /^refresh_token=/);
 

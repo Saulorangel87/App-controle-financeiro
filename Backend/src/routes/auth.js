@@ -198,6 +198,9 @@ router.post('/refresh', (req, res) => {
     limparCookieRefresh(res);
     return res.status(401).json({ erro: 'sessão expirada' });
   }
+  // Quem usa o app só pelo cookie de sessão nunca passa pelo /login, então
+  // a renovação também conta como atividade (senão seria removido por inatividade).
+  db.prepare("UPDATE usuarios SET ultimo_login = datetime('now') WHERE id = ?").run(usuario.usuario_id);
   res.json({ token: gerarTokenSessao(usuario), usuario: usuarioPublico(usuario) });
 });
 

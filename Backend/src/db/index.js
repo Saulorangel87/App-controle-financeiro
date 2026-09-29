@@ -76,12 +76,12 @@ if (!colunasDespesas.some((c) => c.name === 'divisao_valor_centavos')) {
 
 // Migração idempotente: adiciona ultimo_login em usuarios, usada pra
 // detectar contas inativas há mais de 90 dias (ver jobs/removerInativos.js).
-// Backfill com criado_em pra quem já existe — ninguém vira "inativo" da
-// noite pro dia só porque a coluna acabou de ser criada.
+// Backfill com a data da migração pra quem já existe — ninguém vira
+// "inativo" da noite pro dia só porque a coluna acabou de ser criada.
 const colunasUsuariosLogin = db.prepare('PRAGMA table_info(usuarios)').all();
 if (!colunasUsuariosLogin.some((c) => c.name === 'ultimo_login')) {
   db.exec('ALTER TABLE usuarios ADD COLUMN ultimo_login TEXT');
-  db.exec('UPDATE usuarios SET ultimo_login = criado_em WHERE ultimo_login IS NULL');
+  db.exec("UPDATE usuarios SET ultimo_login = datetime('now') WHERE ultimo_login IS NULL");
 }
 
 // Migração idempotente: forma de pagamento da despesa (dinheiro, débito,

@@ -76,8 +76,8 @@ test('migrações de schema são idempotentes e preservam dados pré-existentes'
       assert.equal(linhasOrcamentoMensal[0].valor, 100);
 
       // Backfill de ultimo_login não deixa ninguém "inativo" no primeiro dia.
-      const usuario = db.prepare('SELECT ultimo_login, criado_em FROM usuarios WHERE id = 1').get();
-      assert.equal(usuario.ultimo_login, usuario.criado_em);
+      const usuario = db.prepare('SELECT ultimo_login FROM usuarios WHERE id = 1').get();
+      assert.ok(usuario.ultimo_login);
     } finally {
       db.close();
     }
