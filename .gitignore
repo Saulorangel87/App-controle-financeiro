@@ -13,6 +13,10 @@ Backend/data/*.db*
 Backend/node_modules/
 Frontend/node_modules/
 
+# Build gerado do frontend — o Docker builda a imagem de produção do zero
+# a cada deploy, então versionar isso só cria diffs de hash irrelevantes
+Frontend/dist/
+
 # Notas de Deploy
 NOTAS-DEPLOY.md
 docs/DEPLOY-GITHUB.md

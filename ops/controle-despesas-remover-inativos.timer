@@ -1,0 +1,10 @@
+[Unit]
+Description=Agendamento diário da remoção de contas inativas do Controle de Despesas
+
+[Timer]
+OnCalendar=*-*-* 04:00:00
+Persistent=true
+RandomizedDelaySec=10m
+
+[Install]
+WantedBy=timers.target
