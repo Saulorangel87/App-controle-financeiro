@@ -33,7 +33,8 @@ function salvarInscricao(usuarioId, inscricao) {
 }
 
 function removerInscricao(usuarioId, endpoint) {
-  db.prepare('DELETE FROM push_subscriptions WHERE usuario_id = ? AND endpoint = ?').run(usuarioId, endpoint);
+  const { changes } = db.prepare('DELETE FROM push_subscriptions WHERE usuario_id = ? AND endpoint = ?').run(usuarioId, endpoint);
+  console.log(`[push] inscrição removida a pedido do usuário ${usuarioId} (botão Desativar): ${changes} registro(s)`);
 }
 
 async function enviarPush(inscricao, payload) {
@@ -47,6 +48,7 @@ async function enviarPush(inscricao, payload) {
   } catch (erro) {
     if (erro.statusCode === 404 || erro.statusCode === 410) {
       db.prepare('DELETE FROM push_subscriptions WHERE id = ?').run(inscricao.id);
+      console.log(`[push] inscrição ${inscricao.id} (usuário ${inscricao.usuario_id}) removida: o serviço de push respondeu ${erro.statusCode} (expirada/inválida)`);
     }
     console.error(`Falha ao enviar push para inscrição ${inscricao.id}:`, erro.statusCode || erro.message);
     return false;

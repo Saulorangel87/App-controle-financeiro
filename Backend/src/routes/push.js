@@ -23,6 +23,7 @@ router.post('/inscricoes', (req, res) => {
   if (!pushConfigurado()) return res.status(503).json({ erro: 'notificações push ainda não configuradas' });
   if (!validarInscricao(req.body)) return res.status(400).json({ erro: 'inscrição de push inválida' });
   salvarInscricao(req.usuarioId, req.body);
+  console.log(`[push] inscrição salva para o usuário ${req.usuarioId} (botão Ativar)`);
   res.status(204).send();
 });
 
