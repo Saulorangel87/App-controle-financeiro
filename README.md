@@ -166,9 +166,9 @@ docker compose up -d --build
 - [x] Transações atômicas e validação financeira rigorosa no backend
 - [x] Sessão e headers de segurança reforçados (access token curto + refresh token em cookie HttpOnly)
 - [x] CI (testes do backend, lint e build do frontend) e testes de integração da API
-- [x] Fechamento mensal (receitas, despesas, saldo e categorias excedidas) e filtros por período/categoria no Relatório
-- [ ] Smoke tests do frontend
-- [ ] Exportação CSV/PDF dedicada do relatório e histórico de alterações
+- [x] Fechamento mensal (receitas, despesas, saldo e categorias excedidas) e filtros por período/categoria/forma de pagamento no Relatório
+- [x] Smoke tests do frontend (Vitest + Testing Library) rodando no CI
+- [x] Exportação CSV/Excel do relatório (PDF já coberto pelo "Imprimir") e histórico de alterações de despesas/entradas
 - [x] Notificações push no celular para despesas recorrentes (3 e 1 dia antes)
 
 - [x] CRUD de despesas e categorias
