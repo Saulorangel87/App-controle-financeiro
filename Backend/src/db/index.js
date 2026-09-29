@@ -84,6 +84,15 @@ if (!colunasUsuariosLogin.some((c) => c.name === 'ultimo_login')) {
   db.exec("UPDATE usuarios SET ultimo_login = datetime('now') WHERE ultimo_login IS NULL");
 }
 
+// Migração idempotente: quando o aviso de inatividade foi enviado. NULL =
+// nenhum aviso pendente. Volta a NULL sempre que a pessoa usa o app de novo,
+// e a remoção só acontece depois de o aviso ter sido enviado (ver
+// jobs/removerInativos.js).
+const colunasUsuariosAviso = db.prepare('PRAGMA table_info(usuarios)').all();
+if (!colunasUsuariosAviso.some((c) => c.name === 'aviso_inatividade_em')) {
+  db.exec('ALTER TABLE usuarios ADD COLUMN aviso_inatividade_em TEXT');
+}
+
 // Migração idempotente: forma de pagamento da despesa (dinheiro, débito,
 // crédito, pix, boleto, outro). Nullable — despesas antigas continuam
 // válidas sem esse dado, só não entram nos filtros por forma de pagamento.

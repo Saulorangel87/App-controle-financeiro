@@ -30,7 +30,7 @@ async function enviarEmail({ para, assunto, html }) {
   }
 }
 
-function layoutEmail(titulo, mensagemHtml, linkUrl, textoBotao) {
+function layoutEmail(titulo, mensagemHtml, linkUrl, textoBotao, rodape = 'Se você não pediu isso, pode ignorar este email com segurança.') {
   return `
     <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
       <h2 style="color: #111;">${titulo}</h2>
@@ -45,7 +45,7 @@ function layoutEmail(titulo, mensagemHtml, linkUrl, textoBotao) {
         <a href="${linkUrl}" style="color: #888;">${linkUrl}</a>
       </p>
       <p style="color: #aaa; font-size: 12px; margin-top: 24px;">
-        Se você não pediu isso, pode ignorar este email com segurança.
+        ${rodape}
       </p>
     </div>
   `;
@@ -79,6 +79,21 @@ async function enviarEmailRecuperacaoSenha(para, token) {
   });
 }
 
+async function enviarEmailAvisoInatividade(para, diasRestantes) {
+  const link = `${process.env.FRONTEND_URL}/login`;
+  await enviarEmail({
+    para,
+    assunto: 'Sua conta será removida por inatividade — Controle de Despesas',
+    html: layoutEmail(
+      'Sua conta será removida em breve',
+      `Sua conta no Controle de Despesas está há muito tempo sem uso e será removida em ${diasRestantes} dias, junto com todos os seus dados (despesas, categorias, entradas, orçamento, recorrentes e metas). Para mantê-la, é só entrar no app antes disso.`,
+      link,
+      'Entrar e manter minha conta',
+      'Se você não quiser manter a conta, não precisa fazer nada.'
+    ),
+  });
+}
+
 async function enviarEmailContaRemovida(para) {
   await enviarEmail({
     para,
@@ -87,9 +102,9 @@ async function enviarEmailContaRemovida(para) {
       <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
         <h2 style="color: #111;">Conta removida por inatividade</h2>
         <p style="color: #444; line-height: 1.5;">
-          Sua conta no Controle de Despesas ficou mais de 90 dias sem login e foi
+          Sua conta no Controle de Despesas ficou mais de 90 dias sem uso e foi
           removida, junto com todos os dados associados (despesas, categorias,
-          entradas, orçamento, recorrentes e metas).
+          entradas, orçamento, recorrentes e metas). Esses dados não podem ser recuperados.
         </p>
         <p style="color: #444; line-height: 1.5;">
           Se quiser voltar a usar o app, é só criar uma conta nova quando precisar.
@@ -99,4 +114,9 @@ async function enviarEmailContaRemovida(para) {
   });
 }
 
-module.exports = { enviarEmailVerificacao, enviarEmailRecuperacaoSenha, enviarEmailContaRemovida };
+module.exports = {
+  enviarEmailVerificacao,
+  enviarEmailRecuperacaoSenha,
+  enviarEmailAvisoInatividade,
+  enviarEmailContaRemovida,
+};

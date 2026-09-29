@@ -179,7 +179,7 @@ docker compose up -d --build
 - [x] Recuperação de senha e validação de email no cadastro
 - [x] Versão instalável (PWA)
 - [x] Opção de excluir a própria conta
-- [x] Exclusão automática de usuários inativos há mais de 90 dias
+- [x] Exclusão automática de usuários inativos há mais de 90 dias, com aviso por email 7 dias antes (a remoção só ocorre depois do aviso)
 - [ ] Migração para PostgreSQL (caso o uso simultâneo cresça)
 
 ## 👤 Autor

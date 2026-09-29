@@ -11,32 +11,51 @@ process.env.NODE_ENV = 'test';
 process.env.RESEND_API_KEY = '';
 
 const db = require('../src/db');
-const { executar, DIAS_INATIVIDADE } = require('../src/jobs/removerInativos');
-
-function criarUsuario(email, ultimoLogin) {
-  const info = db.prepare(`
-    INSERT INTO usuarios (nome, email, senha_hash, email_verificado, ultimo_login)
-    VALUES (?, ?, 'hash-qualquer', 1, ?)
-  `).run(email, email, ultimoLogin);
-  return info.lastInsertRowid;
-}
+const { executar, DIAS_INATIVIDADE, DIAS_AVISO } = require('../src/jobs/removerInativos');
 
 function dataHaDias(dias) {
-  return new Date(Date.now() - dias * 24 * 60 * 60 * 1000).toISOString();
+  return new Date(Date.now() - dias * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
 }
 
-test('remove contas sem login há mais de 90 dias e preserva as recentes', async (t) => {
+function criarUsuario(email, diasSemLogin, diasDesdeAviso = null) {
+  return db.prepare(`
+    INSERT INTO usuarios (nome, email, senha_hash, email_verificado, ultimo_login, aviso_inatividade_em)
+    VALUES (?, ?, 'hash-qualquer', 1, ?, ?)
+  `).run(email, email, dataHaDias(diasSemLogin), diasDesdeAviso === null ? null : dataHaDias(diasDesdeAviso)).lastInsertRowid;
+}
+
+const existe = (id) => db.prepare('SELECT COUNT(*) AS n FROM usuarios WHERE id = ?').get(id).n === 1;
+const aviso = (id) => db.prepare('SELECT aviso_inatividade_em AS a FROM usuarios WHERE id = ?').get(id).a;
+
+test('avisa quem está a 7 dias do limite e só remove quem já foi avisado', async (t) => {
   t.after(() => {
     db.close();
     fs.rmSync(pastaTemporaria, { recursive: true, force: true });
   });
 
-  const idInativo = criarUsuario('inativo@example.com', dataHaDias(DIAS_INATIVIDADE + 1));
-  const idRecente = criarUsuario('recente@example.com', dataHaDias(1));
+  const recente = criarUsuario('recente@example.com', 1);
+  const perto = criarUsuario('perto@example.com', DIAS_INATIVIDADE - DIAS_AVISO + 1);
+  const vencidoSemAviso = criarUsuario('vencido-sem-aviso@example.com', DIAS_INATIVIDADE + 5);
+  const vencidoAvisadoRecente = criarUsuario('avisado-recente@example.com', DIAS_INATIVIDADE + 5, 2);
+  const vencidoAvisado = criarUsuario('avisado-antigo@example.com', DIAS_INATIVIDADE + 10, DIAS_AVISO + 1);
 
-  const removidos = await executar();
+  const resultado = await executar();
 
-  assert.equal(removidos, 1);
-  assert.equal(db.prepare('SELECT COUNT(*) AS total FROM usuarios WHERE id = ?').get(idInativo).total, 0);
-  assert.equal(db.prepare('SELECT COUNT(*) AS total FROM usuarios WHERE id = ?').get(idRecente).total, 1);
+  // "perto" e "vencidoSemAviso" recebem aviso agora.
+  assert.equal(resultado.avisados, 2);
+  assert.ok(aviso(perto));
+  assert.ok(aviso(vencidoSemAviso));
+  assert.equal(aviso(recente), null);
+
+  // Só quem passou dos 90 dias E foi avisado há 7+ dias é removido.
+  assert.equal(resultado.removidos, 1);
+  assert.equal(existe(vencidoAvisado), false);
+  assert.equal(existe(vencidoSemAviso), true);
+  assert.equal(existe(vencidoAvisadoRecente), true);
+  assert.equal(existe(perto), true);
+  assert.equal(existe(recente), true);
+
+  // Rodar de novo no mesmo dia não reenvia avisos nem remove mais ninguém.
+  const segunda = await executar();
+  assert.deepEqual(segunda, { avisados: 0, removidos: 0 });
 });

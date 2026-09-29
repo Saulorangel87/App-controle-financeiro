@@ -186,7 +186,7 @@ router.post('/login', async (req, res) => {
   const token = gerarTokenSessao(usuario);
   const refreshToken = criarRefreshToken(usuario.id);
   definirCookieRefresh(res, refreshToken);
-  db.prepare("UPDATE usuarios SET ultimo_login = datetime('now') WHERE id = ?").run(usuario.id);
+  db.prepare("UPDATE usuarios SET ultimo_login = datetime('now'), aviso_inatividade_em = NULL WHERE id = ?").run(usuario.id);
   res.json({ token, usuario: usuarioPublico(usuario) });
 });
 
@@ -200,7 +200,7 @@ router.post('/refresh', (req, res) => {
   }
   // Quem usa o app só pelo cookie de sessão nunca passa pelo /login, então
   // a renovação também conta como atividade (senão seria removido por inatividade).
-  db.prepare("UPDATE usuarios SET ultimo_login = datetime('now') WHERE id = ?").run(usuario.usuario_id);
+  db.prepare("UPDATE usuarios SET ultimo_login = datetime('now'), aviso_inatividade_em = NULL WHERE id = ?").run(usuario.usuario_id);
   res.json({ token: gerarTokenSessao(usuario), usuario: usuarioPublico(usuario) });
 });
 
