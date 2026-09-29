@@ -6,12 +6,15 @@
 
 .relatorio-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
 }
 
 .relatorio-controles {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
 }
@@ -19,6 +22,7 @@
 .relatorio-filtros,
 .relatorio-acoes {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
 }
@@ -65,8 +69,18 @@
 
 .cards-relatorio {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 20px;
+}
+
+.card-relatorio {
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.card-relatorio .valor {
+  font-size: clamp(16px, 1.4vw, 22px);
+  white-space: nowrap;
 }
 
 .bloco-tendencia {
