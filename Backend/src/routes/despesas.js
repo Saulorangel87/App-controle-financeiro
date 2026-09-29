@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { numeroMonetarioValido, dataISOValida } = require('../utils/validacao');
 const { paraCentavos, comValorEmReais, centavosOuNulo } = require('../utils/dinheiro');
+const { registrar: registrarHistorico } = require('../utils/historico');
 
 const router = express.Router();
 
@@ -225,6 +226,7 @@ router.post('/', (req, res) => {
   );
 
   const nova = db.prepare('SELECT * FROM despesas WHERE id = ?').get(info.lastInsertRowid);
+  registrarHistorico(req.usuarioId, 'despesas', nova.id, 'criar', null, nova);
   res.status(201).json(paraResposta(nova));
 });
 
@@ -289,6 +291,7 @@ router.put('/:id', (req, res) => {
   );
 
   const atualizada = db.prepare('SELECT * FROM despesas WHERE id = ?').get(id);
+  registrarHistorico(req.usuarioId, 'despesas', Number(id), 'editar', despesa, atualizada);
   res.json(paraResposta(atualizada));
 });
 
@@ -296,13 +299,16 @@ router.put('/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
   const { id } = req.params;
 
-  const info = db.prepare(
-    'DELETE FROM despesas WHERE id = ? AND usuario_id = ?'
-  ).run(id, req.usuarioId);
+  const despesa = db.prepare(
+    'SELECT * FROM despesas WHERE id = ? AND usuario_id = ?'
+  ).get(id, req.usuarioId);
 
-  if (info.changes === 0) {
+  if (!despesa) {
     return res.status(404).json({ erro: 'despesa não encontrada' });
   }
+
+  db.prepare('DELETE FROM despesas WHERE id = ? AND usuario_id = ?').run(id, req.usuarioId);
+  registrarHistorico(req.usuarioId, 'despesas', Number(id), 'excluir', despesa, null);
 
   res.status(204).send();
 });

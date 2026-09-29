@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { numeroMonetarioValido, dataISOValida } = require('../utils/validacao');
 const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
+const { registrar: registrarHistorico } = require('../utils/historico');
 
 const router = express.Router();
 
@@ -116,6 +117,8 @@ router.post('/', (req, res) => {
     return info;
   });
   const info = registrar();
+  const nova = db.prepare('SELECT * FROM entradas WHERE id = ?').get(info.lastInsertRowid);
+  registrarHistorico(req.usuarioId, 'entradas', nova.id, 'criar', null, nova);
 
   res.status(201).json({ id: info.lastInsertRowid, origem, descricao, valor, data });
 });
@@ -138,6 +141,7 @@ router.delete('/:id', (req, res) => {
       : entrada.valor));
   });
   excluir();
+  registrarHistorico(req.usuarioId, 'entradas', entrada.id, 'excluir', entrada, null);
 
   res.status(204).send();
 });

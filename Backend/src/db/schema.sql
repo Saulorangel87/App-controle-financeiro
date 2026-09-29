@@ -183,6 +183,23 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
 );
 CREATE INDEX IF NOT EXISTS idx_push_subscriptions_usuario ON push_subscriptions(usuario_id);
 
+-- Histórico de alterações: guarda o estado antes/depois de criar, editar ou
+-- excluir despesas e entradas, pra consulta/auditoria futura (sem tela
+-- própria ainda — os dados já ficam disponíveis pra quando for pedida).
+-- dados_antes/dados_depois são o registro inteiro serializado em JSON.
+CREATE TABLE IF NOT EXISTS historico_alteracoes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  usuario_id INTEGER NOT NULL,
+  tabela TEXT NOT NULL CHECK (tabela IN ('despesas', 'entradas')),
+  registro_id INTEGER NOT NULL,
+  acao TEXT NOT NULL CHECK (acao IN ('criar', 'editar', 'excluir')),
+  dados_antes TEXT,
+  dados_depois TEXT,
+  criado_em TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_historico_usuario ON historico_alteracoes(usuario_id);
+
 -- Impede o reenvio do mesmo aviso para o mesmo evento mensal.
 CREATE TABLE IF NOT EXISTS push_notificacoes_enviadas (
   usuario_id INTEGER NOT NULL,

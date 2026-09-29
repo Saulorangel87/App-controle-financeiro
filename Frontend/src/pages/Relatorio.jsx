@@ -107,13 +107,11 @@ export default function Relatorio() {
   const totalPaginas = Math.max(1, Math.ceil(dados.despesas.length / POR_PAGINA));
   const totalPaginasEntradas = Math.max(1, Math.ceil((dados.entradas?.length || 0) / POR_PAGINA_ENTRADAS));
 
-  async function exportarExcel() {
-    const moduloXLSX = await import('xlsx-js-style');
-    const XLSX = moduloXLSX.default || moduloXLSX;
+  function montarLinhas() {
     const totalDespesas = Number(dados.totalAtual || 0);
     const totalEntradas = Number(dados.totalEntradas || 0);
     const saldo = totalEntradas - totalDespesas;
-    const linhas = [
+    return [
       ['RELATÓRIO FINANCEIRO', rotuloMes(mesSelecionado)],
       ['Gerado em', new Date().toLocaleDateString('pt-BR')],
       [],
@@ -128,6 +126,30 @@ export default function Relatorio() {
       ...dados.despesas.map((d) => ['Despesa', d.data, d.descricao, d.categoria_nome, -Number(d.valor || 0)]),
       ...(dados.entradas || []).map((e) => ['Entrada', e.data, e.descricao || '', e.origem, Number(e.valor || 0)]),
     ];
+  }
+
+  async function exportarCSV() {
+    const moduloXLSX = await import('xlsx-js-style');
+    const XLSX = moduloXLSX.default || moduloXLSX;
+    const planilha = XLSX.utils.aoa_to_sheet(montarLinhas());
+    const csv = XLSX.utils.sheet_to_csv(planilha);
+    // BOM no início garante acentuação correta ao abrir no Excel.
+    const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `relatorio-${mesSelecionado}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function exportarExcel() {
+    const moduloXLSX = await import('xlsx-js-style');
+    const XLSX = moduloXLSX.default || moduloXLSX;
+    const totalDespesas = Number(dados.totalAtual || 0);
+    const totalEntradas = Number(dados.totalEntradas || 0);
+    const saldo = totalEntradas - totalDespesas;
+    const linhas = montarLinhas();
     const planilha = XLSX.utils.aoa_to_sheet(linhas);
     const corCabecalho = '1F2937';
     const corAcento = 'C6FF2E';
@@ -223,6 +245,9 @@ export default function Relatorio() {
               onClick={() => window.print()}
             >
               <Printer size={14} /> Imprimir
+            </button>
+            <button type="button" className="botao-exportar" onClick={exportarCSV}>
+              <Download size={14} /> CSV
             </button>
             <button type="button" className="botao-exportar" onClick={exportarExcel}>
               <Download size={14} /> Excel
