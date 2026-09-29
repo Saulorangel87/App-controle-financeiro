@@ -161,12 +161,14 @@ docker compose up -d --build
 
 ## 🗺️ Roadmap
 
-### Próxima versão — v2.0: confiabilidade profissional
+### v2.0 — confiabilidade profissional (em andamento)
 - [x] Backup automático criptografado, envio externo e teste de integridade/restauração
-- [ ] Transações atômicas e validação financeira rigorosa no backend
-- [ ] Testes automatizados, smoke tests e CI
-- [ ] Sessão e headers de segurança reforçados
-- [ ] Fechamento mensal, filtros, exportação e histórico de alterações
+- [x] Transações atômicas e validação financeira rigorosa no backend
+- [x] Sessão e headers de segurança reforçados (access token curto + refresh token em cookie HttpOnly)
+- [x] CI (testes do backend, lint e build do frontend) e testes de integração da API
+- [x] Fechamento mensal (receitas, despesas, saldo e categorias excedidas) e filtros por período/categoria no Relatório
+- [ ] Smoke tests do frontend
+- [ ] Exportação CSV/PDF dedicada do relatório e histórico de alterações
 - [x] Notificações push no celular para despesas recorrentes (3 e 1 dia antes)
 
 - [x] CRUD de despesas e categorias
@@ -178,7 +180,6 @@ docker compose up -d --build
 - [x] Versão instalável (PWA)
 - [ ] Opção de excluir a própria conta
 - [ ] Exclusão automática de usuários inativos há mais de 90 dias
-- [ ] Registro independente de VA/VR (vale alimentação/refeição), sem misturar com o orçamento e gastos atuais
 - [ ] Migração para PostgreSQL (caso o uso simultâneo cresça)
 
 ## 👤 Autor
