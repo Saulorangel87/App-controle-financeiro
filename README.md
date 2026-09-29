@@ -100,7 +100,7 @@ Alguns cuidados aplicados antes de colocar o app em produção:
 - `JWT_SECRET` obrigatório em produção — o servidor recusa iniciar sem um valor definido
 - Cadastro exige confirmação de email antes de liberar o login (evita contas com email inexistente)
 - Recuperação de senha com token de uso único e validade curta
-- Rate limiting no login/cadastro e nos envios de email (proteção contra força bruta e spam)
+- Rate limiting no login/cadastro e nos envios de email (proteção contra força bruta e spam) — por IP real do cliente (`trust proxy` de 1 salto atrás do Cloudflare Tunnel, sem aceitar `X-Forwarded-For` forjado)
 - CORS restrito por domínio, não aberto para qualquer origem
 - Todas as queries SQL parametrizadas (proteção contra SQL Injection)
 - Isolamento de dados por usuário em todas as rotas autenticadas

@@ -24,6 +24,13 @@ const pushRouter = require('./routes/push');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// O app roda atrás do Cloudflare Tunnel, então o IP real do usuário vem no
+// X-Forwarded-For. Sem isso o rate limit enxerga todos os usuários como o
+// mesmo IP (o do túnel) e um só atacante bloquearia o login de todo mundo.
+// "1" = confiar apenas no último salto (o IP que o Cloudflare acrescenta),
+// o que impede o cliente de forjar o cabeçalho. Nunca usar `true` aqui.
+app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS ?? 1));
+
 // Headers básicos de segurança. O HSTS é aplicado somente em produção,
 // quando o acesso público acontece exclusivamente por HTTPS.
 app.use((req, res, next) => {
