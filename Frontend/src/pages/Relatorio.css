@@ -76,10 +76,13 @@
 .card-relatorio {
   justify-content: space-between;
   min-width: 0;
+  container-type: inline-size;
 }
 
+/* 12cqw = 12% da largura do próprio card: "+R$ 3.000,00" (12 caracteres
+   monoespaçados) sempre cabe, em qualquer largura de tela. */
 .card-relatorio .valor {
-  font-size: clamp(16px, 1.4vw, 22px);
+  font-size: clamp(11px, 12cqw, 22px);
   white-space: nowrap;
 }
 
