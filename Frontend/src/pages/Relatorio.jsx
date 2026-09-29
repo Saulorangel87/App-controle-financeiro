@@ -131,8 +131,13 @@ export default function Relatorio() {
   async function exportarCSV() {
     const moduloXLSX = await import('xlsx-js-style');
     const XLSX = moduloXLSX.default || moduloXLSX;
-    const planilha = XLSX.utils.aoa_to_sheet(montarLinhas());
-    const csv = XLSX.utils.sheet_to_csv(planilha);
+    // Excel em pt-BR espera ";" como separador e "," como decimal — sem isso
+    // abre tudo numa coluna só e trata os valores como texto.
+    const linhas = montarLinhas().map((linha) => linha.map((celula) => (
+      typeof celula === 'number' ? celula.toFixed(2).replace('.', ',') : celula
+    )));
+    const planilha = XLSX.utils.aoa_to_sheet(linhas);
+    const csv = XLSX.utils.sheet_to_csv(planilha, { FS: ';' });
     // BOM no início garante acentuação correta ao abrir no Excel.
     const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
