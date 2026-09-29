@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Printer, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import api from '../services/api';
@@ -34,10 +35,13 @@ function rotuloMesCurto(mesISO) {
 }
 
 export default function Relatorio() {
+  // Alertas de categoria excedida linkam pra cá com ?categoria_id=... —
+  // chegar já filtrado é o que torna aquele alerta "acionável".
+  const [searchParams] = useSearchParams();
   const [meses, setMeses] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [mesSelecionado, setMesSelecionado] = useState('');
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState('');
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState(searchParams.get('categoria_id') || '');
   const [formaPagamentoSelecionada, setFormaPagamentoSelecionada] = useState('');
   const [dados, setDados] = useState(null);
   const [carregando, setCarregando] = useState(true);

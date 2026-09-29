@@ -45,6 +45,12 @@
   color: var(--text-secondary);
 }
 
+.alerta-acoes {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .botao-ajustar {
   margin-top: 16px;
   display: inline-block;

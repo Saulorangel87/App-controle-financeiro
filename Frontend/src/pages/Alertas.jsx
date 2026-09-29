@@ -149,9 +149,14 @@ export default function Alertas() {
               ))}
             </ul>
 
-            <Link to="/categorias" className="botao-ajustar">
-              Ajustar Limite
-            </Link>
+            <div className="alerta-acoes">
+              <Link to="/categorias" className="botao-ajustar">
+                Ajustar Limite
+              </Link>
+              <Link to={`/relatorio?categoria_id=${c.id}`} className="botao-ajustar">
+                Ver no Relatório
+              </Link>
+            </div>
           </div>
         );
       })}
