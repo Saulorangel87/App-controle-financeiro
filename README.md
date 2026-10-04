@@ -36,7 +36,9 @@ financeiros, que sempre vêm direto da API.
 
 Na tela **Alertas**, o usuário também pode ativar notificações push neste
 celular. Os avisos de despesas recorrentes são enviados 3 e 1 dia antes do
-vencimento. No iPhone, é necessário instalar o PWA na Tela de Início antes de
+vencimento, inclusive quando o vencimento cai no início do mês seguinte, e
+cada conta gera sua própria notificação (duas contas no mesmo dia não se
+sobrescrevem). No iPhone, é necessário instalar o PWA na Tela de Início antes de
 autorizar as notificações.
 
 ## ✨ Funcionalidades

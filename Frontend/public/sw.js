@@ -19,7 +19,10 @@ self.addEventListener("push", (evento) => {
     // O badge é o símbolo pequeno da barra do Android e precisa ser
     // monocromático, com fundo transparente, para o sistema aplicar a cor.
     badge: "/notification-badge-96.png?v=2",
-    tag: dados.tipo || "controle-despesas",
+    // Tag por conta (vinda do backend) e renotify: um aviso novo que substitui
+    // outro com a mesma tag ainda toca/vibra, em vez de trocar o texto em silêncio.
+    tag: dados.tag || dados.tipo || "controle-despesas",
+    renotify: true,
     data: { url: dados.url || "/recorrentes" },
   }));
 });

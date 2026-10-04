@@ -43,7 +43,9 @@ async function enviarPush(inscricao, payload) {
     await webpush.sendNotification({
       endpoint: inscricao.endpoint,
       keys: { p256dh: inscricao.p256dh, auth: inscricao.auth },
-    }, JSON.stringify(payload), { TTL: 86400 });
+    // urgency "high": com "normal" (padrão), o Android pode segurar a entrega
+    // enquanto o celular está ocioso/em economia de bateria (modo Doze).
+    }, JSON.stringify(payload), { TTL: 86400, urgency: 'high' });
     return true;
   } catch (erro) {
     if (erro.statusCode === 404 || erro.statusCode === 410) {
