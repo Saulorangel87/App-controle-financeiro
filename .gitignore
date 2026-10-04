@@ -20,3 +20,5 @@ Frontend/dist/
 # Notas de Deploy
 NOTAS-DEPLOY.md
 docs/DEPLOY-GITHUB.md
+# Configuração local do Claude Code (permissões pessoais)
+.claude/settings.local.json
