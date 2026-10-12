@@ -10,6 +10,9 @@ sudo docker compose exec -T backend npm run backup:verify
 BACKUP_BUCKET="$(sed -n 's/^BACKUP_BUCKET=//p' .env 2>/dev/null | head -n 1)"
 OCI_REGION="$(sed -n 's/^OCI_REGION=//p' .env 2>/dev/null | head -n 1)"
 OCI_REGION="${OCI_REGION:-sa-vinhedo-1}"
+# Pasta do projeto dentro do bucket compartilhado (um bucket, uma pasta por projeto).
+BACKUP_PREFIX="$(sed -n 's/^BACKUP_PREFIX=//p' .env 2>/dev/null | head -n 1)"
+BACKUP_PREFIX="${BACKUP_PREFIX:-despesas/}"
 
 if [[ -n "$BACKUP_BUCKET" ]]; then
   OCI_CLI="${OCI_CLI_PATH:-$(command -v oci || true)}"
@@ -21,9 +24,9 @@ if [[ -n "$BACKUP_BUCKET" ]]; then
   [[ -n "$ARQUIVO_BACKUP" ]] || { echo "Nenhum backup criptografado encontrado para envio." >&2; exit 1; }
   "$OCI_CLI" os object put --auth instance_principal --region "$OCI_REGION" \
     --bucket-name "$BACKUP_BUCKET" \
-    --name "$(basename "$ARQUIVO_BACKUP")" \
+    --name "${BACKUP_PREFIX}$(basename "$ARQUIVO_BACKUP")" \
     --file "$ARQUIVO_BACKUP" --force
-  echo "Backup enviado ao bucket: $BACKUP_BUCKET"
+  echo "Backup enviado ao bucket: $BACKUP_BUCKET (pasta ${BACKUP_PREFIX})"
 fi
 
 echo "Backup criado e verificado com sucesso."
