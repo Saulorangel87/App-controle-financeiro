@@ -4,7 +4,7 @@ Aplicação full-stack de gerenciamento de finanças pessoais, com autenticaçã
 
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![Node.js](https://img.shields.io/badge/Node.js-24-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![Express](https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white)](https://expressjs.com)
+[![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)](https://expressjs.com)
 [![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white)](https://sqlite.org)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com)
 [![License](https://img.shields.io/badge/license-MIT-green)](#licença)
@@ -81,7 +81,7 @@ para a configuração da infraestrutura.
 - Axios
 
 **Backend**
-- Node.js + Express
+- Node.js + Express 5 (erros em rotas assíncronas chegam ao tratamento central, nunca derrubam o processo)
 - SQLite (better-sqlite3, modo WAL, índices otimizados)
 - JWT (jsonwebtoken) para autenticação
 - bcryptjs para hash de senha

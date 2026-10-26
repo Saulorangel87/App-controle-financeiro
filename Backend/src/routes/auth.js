@@ -19,9 +19,10 @@ const LIMITE_SENHA = 128;
 const SENHA_MINIMA = 6;
 
 // Os campos chegam do JSON sem garantia de tipo: um email numérico, por
-// exemplo, fazia email.toLowerCase() lançar dentro de uma rota async — e no
-// Express 4 isso vira uma promise rejeitada sem tratamento, que encerra o
-// processo Node. Por isso todo campo é checado como string antes do uso.
+// exemplo, fazia email.toLowerCase() lançar dentro de uma rota async — no
+// Express 4 isso encerrava o processo Node. O Express 5 já encaminha o erro
+// ao tratamento central (500), mas a resposta certa é 400: por isso todo
+// campo é checado como string antes do uso.
 function emailInformado(email) {
   return typeof email === 'string' && email.trim().length > 0 && email.length <= LIMITE_EMAIL;
 }

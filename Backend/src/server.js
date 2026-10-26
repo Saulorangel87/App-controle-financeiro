@@ -63,6 +63,14 @@ app.use((req, res, next) => {
   return corpoJsonPadrao(req, res, next);
 });
 
+// No Express 5, req.body fica undefined quando a requisição não traz JSON
+// (no 4 era sempre {}). As rotas desestruturam req.body direto, então um
+// pedido sem corpo cairia em erro 500 em vez da validação normal (400).
+app.use((req, res, next) => {
+  if (req.body === undefined) req.body = {};
+  next();
+});
+
 app.get('/api/health', (req, res) => {
   try {
     const banco = require('./db');

@@ -62,6 +62,10 @@ test('payloads com tipos errados recebem 400 e não derrubam a API', async (t) =
     assert.ok(resultado.corpo.erro);
   }
 
+  // Sem corpo nenhum: no Express 5 req.body viria undefined (ver server.js).
+  const semCorpo = await requisitar(baseUrl, '/api/auth/login', { method: 'POST' });
+  assert.equal(semCorpo.status, 400);
+
   const jsonInvalido = await requisitar(baseUrl, '/api/auth/login', { method: 'POST', corpoBruto: '{"email":' });
   assert.equal(jsonInvalido.status, 400);
   assert.match(jsonInvalido.tipo, /application\/json/);
@@ -89,6 +93,9 @@ test('payloads com tipos errados recebem 400 e não derrubam a API', async (t) =
     const resultado = await requisitar(baseUrl, rota, { method: metodo, headers: autenticado, body: corpo });
     assert.equal(resultado.status, 400, `${metodo} ${rota} ${JSON.stringify(corpo)}`);
   }
+
+  const categoriaSemCorpo = await requisitar(baseUrl, '/api/categorias', { method: 'POST', headers: autenticado });
+  assert.equal(categoriaSemCorpo.status, 400);
 
   const filtroInvalido = await requisitar(baseUrl, '/api/despesas?forma_pagamento=cheque', { headers: autenticado });
   assert.equal(filtroInvalido.status, 400);
