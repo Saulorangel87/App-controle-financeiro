@@ -1,9 +1,9 @@
 # Estágio 1: compila o app React (gera arquivos estáticos em /app/dist)
-FROM node:20-slim AS build
+FROM node:24-slim AS build
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 COPY . .
 
 # A URL da API precisa estar "embutida" no JavaScript compilado, já que

@@ -1,6 +1,9 @@
 {
   "name": "controle-despesas-backend",
   "version": "1.9.0",
+  "engines": {
+    "node": ">=24"
+  },
   "main": "src/server.js",
   "scripts": {
     "seed": "node src/db/seed.js",
@@ -18,7 +21,7 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^11.3.0",
+    "better-sqlite3": "^12.11.1",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.21.1",

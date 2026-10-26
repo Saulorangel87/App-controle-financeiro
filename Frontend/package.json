@@ -2,6 +2,9 @@
   "name": "frontend",
   "private": true,
   "version": "1.9.0",
+  "engines": {
+    "node": ">=24"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

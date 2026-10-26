@@ -3,7 +3,7 @@
 Aplicação full-stack de gerenciamento de finanças pessoais, com autenticação multiusuário, categorização de gastos, orçamento mensal editável, alertas de limite e relatórios comparativos entre meses.
 
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
-[![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![Node.js](https://img.shields.io/badge/Node.js-24-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![Express](https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white)](https://expressjs.com)
 [![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white)](https://sqlite.org)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com)
@@ -133,7 +133,7 @@ Auditado com Lighthouse/PageSpeed Insights e ajustado continuamente:
 ## 🚀 Como rodar localmente
 
 ### Pré-requisitos
-- Node.js 20+
+- Node.js 24+ (LTS)
 - Docker e Docker Compose (opcional, para rodar via container)
 
 ### Modo desenvolvimento
