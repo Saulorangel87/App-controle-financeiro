@@ -47,6 +47,7 @@ export default function VisaoGeral() {
   const [carregando, setCarregando] = useState(true);
   const [editandoOrcamento, setEditandoOrcamento] = useState(false);
   const [novoOrcamento, setNovoOrcamento] = useState('');
+  const [orcamentoRecorrente, setOrcamentoRecorrente] = useState(false);
   const [modalEntradaAberto, setModalEntradaAberto] = useState(false);
   const [paginaEntradas, setPaginaEntradas] = useState(1);
   const { abrirEdicao } = useDespesaModal();
@@ -105,12 +106,18 @@ export default function VisaoGeral() {
 
   function abrirEdicaoOrcamento() {
     setNovoOrcamento(String(resumo.orcamentoTotal));
+    setOrcamentoRecorrente(Boolean(resumo.orcamentoRecorrente));
     setEditandoOrcamento(true);
   }
 
   async function salvarOrcamento() {
-    await api.put('/orcamento', { valor: Number(novoOrcamento) });
+    await api.put('/orcamento', { valor: Number(novoOrcamento), recorrente: orcamentoRecorrente });
     setEditandoOrcamento(false);
+    carregarResumo();
+  }
+
+  async function repetirOrcamentoAnterior() {
+    await api.put('/orcamento', { valor: resumo.orcamentoMesAnterior, recorrente: true });
     carregarResumo();
   }
 
@@ -162,23 +169,48 @@ export default function VisaoGeral() {
             )}
           </div>
           {editandoOrcamento ? (
-            <div className="edicao-orcamento">
-              <label className="sr-only" htmlFor="input-orcamento-total">Novo orçamento total</label>
-              <input
-                id="input-orcamento-total"
-                type="number"
-                step="0.01"
-                value={novoOrcamento}
-                onChange={(e) => setNovoOrcamento(e.target.value)}
-                className="input-limite"
-                autoFocus
-              />
-              <button className="btn-primary" onClick={salvarOrcamento}>Salvar</button>
+            <div className="edicao-orcamento-bloco">
+              <div className="edicao-orcamento">
+                <label className="sr-only" htmlFor="input-orcamento-total">Novo orçamento total</label>
+                <input
+                  id="input-orcamento-total"
+                  type="number"
+                  step="0.01"
+                  value={novoOrcamento}
+                  onChange={(e) => setNovoOrcamento(e.target.value)}
+                  className="input-limite"
+                  autoFocus
+                />
+                <button className="btn-primary" onClick={salvarOrcamento}>Salvar</button>
+              </div>
+              <label className="checkbox-orcamento-recorrente" htmlFor="check-orcamento-recorrente">
+                <input
+                  id="check-orcamento-recorrente"
+                  type="checkbox"
+                  checked={orcamentoRecorrente}
+                  onChange={(e) => setOrcamentoRecorrente(e.target.checked)}
+                />
+                Repetir todo mês
+              </label>
             </div>
           ) : (
-            <strong className="valor" style={{ color: 'var(--ok)' }}>
-              {formatarMoeda(resumo.orcamentoTotal)}
-            </strong>
+            <>
+              <strong className="valor" style={{ color: 'var(--ok)' }}>
+                {formatarMoeda(resumo.orcamentoTotal)}
+              </strong>
+              {resumo.orcamentoRecorrente && (
+                <span className="label legenda-orcamento">repete todo mês</span>
+              )}
+              {resumo.orcamentoTotal === 0 && resumo.orcamentoMesAnterior > 0 && (
+                <button
+                  type="button"
+                  className="botao-editar-inline botao-repetir-orcamento"
+                  onClick={repetirOrcamentoAnterior}
+                >
+                  Repetir mês anterior ({formatarMoeda(resumo.orcamentoMesAnterior)})
+                </button>
+              )}
+            </>
           )}
         </div>
         <div className="panel card-resumo">

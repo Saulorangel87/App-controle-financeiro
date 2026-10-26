@@ -128,4 +128,11 @@ if (!colunasRecorrentesPagamento.some((c) => c.name === 'despesa_paga_id')) {
   db.exec('ALTER TABLE despesas_recorrentes ADD COLUMN despesa_paga_id INTEGER REFERENCES despesas(id) ON DELETE SET NULL');
 }
 
+// Migração idempotente: permite ao usuário marcar o orçamento mensal para
+// repetir automaticamente o valor do último mês positivo quando o mês vira.
+const colunasUsuariosOrcamento = db.prepare('PRAGMA table_info(usuarios)').all();
+if (!colunasUsuariosOrcamento.some((c) => c.name === 'orcamento_recorrente')) {
+  db.exec('ALTER TABLE usuarios ADD COLUMN orcamento_recorrente INTEGER NOT NULL DEFAULT 0');
+}
+
 module.exports = db;

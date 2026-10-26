@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { comValorEmReais, somaEmReaisSQL } = require('../utils/dinheiro');
 const { mesAtualISO, intervaloDosMeses } = require('../utils/datas');
+const { obterOrcamentoDoMes } = require('./orcamento');
 
 const router = express.Router();
 
@@ -31,15 +32,10 @@ router.get('/', (req, res) => {
   const totalGasto = categoriasComValores.reduce((soma, c) => soma + c.gasto, 0);
 
   // Orçamento total é definido manualmente pelo usuário, por mês (tabela
-  // orcamento_mensal) — não é mais calculado como soma dos limites das
-  // categorias, e não carrega o valor do mês anterior pro mês novo.
-  db.prepare(`
-    INSERT OR IGNORE INTO orcamento_mensal (usuario_id, mes, valor, valor_centavos) VALUES (?, ?, 0, 0)
-  `).run(req.usuarioId, mesAtual);
-  const orcamento = db.prepare(
-    'SELECT valor, valor_centavos FROM orcamento_mensal WHERE usuario_id = ? AND mes = ?'
-  ).get(req.usuarioId, mesAtual);
-  const orcamentoTotal = comValorEmReais({ valor: orcamento.valor, valor_centavos: orcamento.valor_centavos }).valor;
+  // orcamento_mensal). Quando orcamento_recorrente está ativo no usuário,
+  // um mês novo herda automaticamente o valor do último mês positivo.
+  const orcamento = obterOrcamentoDoMes(req.usuarioId, mesAtual);
+  const orcamentoTotal = orcamento.valor;
 
   const disponivel = orcamentoTotal - totalGasto;
   const categoriasComAlerta = categoriasComValores.filter((c) => c.gasto > c.limite).length;
@@ -49,6 +45,8 @@ router.get('/', (req, res) => {
     mes: mesAtual,
     totalGasto,
     orcamentoTotal,
+    orcamentoRecorrente: orcamento.recorrente,
+    orcamentoMesAnterior: orcamento.valorMesAnterior,
     disponivel,
     categoriasComAlerta,
     percentualUtilizado: Number(percentualUtilizado.toFixed(1)),

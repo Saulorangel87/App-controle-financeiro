@@ -4,6 +4,7 @@ const { numeroMonetarioValido, dataISOValida, mesISOValido } = require('../utils
 const { paraCentavos, comValorEmReais, somaEmReaisSQL } = require('../utils/dinheiro');
 const { registrar: registrarHistorico } = require('../utils/historico');
 const { hojeISO, mesAtualISO, intervaloDosMeses } = require('../utils/datas');
+const { garantirOrcamentoDoMes } = require('./orcamento');
 
 const router = express.Router();
 
@@ -23,6 +24,7 @@ router.get('/meses', (req, res) => {
 // à data informada, criando a linha do mês se ainda não existir.
 function ajustarOrcamentoDoMes(usuarioId, data, delta) {
   const mes = data.slice(0, 7); // "YYYY-MM-DD" -> "YYYY-MM"
+  garantirOrcamentoDoMes(usuarioId, mes);
   db.prepare(`
     INSERT INTO orcamento_mensal (usuario_id, mes, valor, valor_centavos)
     VALUES (?, ?, ?, ?)
