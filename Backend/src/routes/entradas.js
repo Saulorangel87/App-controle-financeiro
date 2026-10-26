@@ -3,6 +3,7 @@ const db = require('../db');
 const { numeroMonetarioValido, dataISOValida } = require('../utils/validacao');
 const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
 const { registrar: registrarHistorico } = require('../utils/historico');
+const { hojeISO, mesAtualISO } = require('../utils/datas');
 
 const router = express.Router();
 
@@ -52,7 +53,8 @@ router.get('/', (req, res) => {
     params.push(mes);
   } else if (pagina === undefined && porPagina === undefined) {
     // Comportamento antigo, sem nenhum parâmetro: só o mês corrente.
-    filtros.push("strftime('%Y-%m', data) = strftime('%Y-%m', 'now')");
+    filtros.push("strftime('%Y-%m', data) = ?");
+    params.push(mesAtualISO());
   }
   const whereSql = filtros.join(' AND ');
   const baseSql = `FROM entradas WHERE ${whereSql}`;
@@ -102,8 +104,7 @@ router.post('/', (req, res) => {
   if (!origem || !String(origem).trim() || !numeroMonetarioValido(valor) || !dataISOValida(data)) {
     return res.status(400).json({ erro: 'origem, valor e data são obrigatórios' });
   }
-  const hoje = db.prepare(`SELECT date('now') AS hoje`).get().hoje;
-  if (data > hoje) {
+  if (data > hojeISO()) {
     return res.status(400).json({ erro: 'não é possível registrar uma entrada com data futura' });
   }
 

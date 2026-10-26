@@ -1,8 +1,5 @@
 import { useEffect, useRef } from 'react';
-
-function mesAtualISO() {
-  return new Date().toISOString().slice(0, 7);
-}
+import { mesAtualISO } from './datas';
 
 /**
  * Detecta quando o mês vira (relógio do navegador) enquanto a aba continua

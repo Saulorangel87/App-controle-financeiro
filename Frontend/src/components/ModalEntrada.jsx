@@ -1,14 +1,10 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import { hojeISO as hoje } from '../utils/datas';
 import './ModalEntrada.css';
 
 const LIMITE_DESCRICAO = 80;
 const LIMITE_ORIGEM = 40;
-
-function hoje() {
-  const d = new Date();
-  return d.toISOString().slice(0, 10);
-}
 
 export default function ModalEntrada({ aberto, onFechar, onSalvo }) {
   const [origem, setOrigem] = useState('');

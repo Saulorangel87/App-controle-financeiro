@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import { hojeISO as hoje } from '../utils/datas';
 import './ModalNovaDespesa.css';
 
 const LIMITE_DESCRICAO = 80;
@@ -13,11 +14,6 @@ const FORMAS_PAGAMENTO = [
   { valor: 'boleto', rotulo: 'Boleto' },
   { valor: 'outro', rotulo: 'Outro' },
 ];
-
-function hoje() {
-  const d = new Date();
-  return d.toISOString().slice(0, 10);
-}
 
 export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, onSalvo }) {
   const editando = Boolean(despesaEditando);

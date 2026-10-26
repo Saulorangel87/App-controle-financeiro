@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { comValorEmReais } = require('../utils/dinheiro');
+const { mesAtualISO } = require('../utils/datas');
 
 const router = express.Router();
 
@@ -10,6 +11,7 @@ const router = express.Router();
 // Assim como em /categorias, o gasto considera só o mês corrente — o
 // dashboard reflete o mês em andamento, não a soma histórica de tudo.
 router.get('/', (req, res) => {
+  const mesAtual = mesAtualISO();
   const categorias = db.prepare(`
     SELECT
       c.id,
@@ -20,10 +22,10 @@ router.get('/', (req, res) => {
     FROM categorias c
     LEFT JOIN despesas d
       ON d.categoria_id = c.id
-      AND strftime('%Y-%m', d.data) = strftime('%Y-%m', 'now')
+      AND strftime('%Y-%m', d.data) = ?
     WHERE c.usuario_id = ?
     GROUP BY c.id
-  `).all(req.usuarioId);
+  `).all(mesAtual, req.usuarioId);
 
   const categoriasComValores = categorias.map((linha) => comValorEmReais(linha, 'limite'));
   const totalGasto = categoriasComValores.reduce((soma, c) => soma + c.gasto, 0);
@@ -31,7 +33,6 @@ router.get('/', (req, res) => {
   // Orçamento total é definido manualmente pelo usuário, por mês (tabela
   // orcamento_mensal) — não é mais calculado como soma dos limites das
   // categorias, e não carrega o valor do mês anterior pro mês novo.
-  const mesAtual = db.prepare(`SELECT strftime('%Y-%m', 'now') AS mes`).get().mes;
   db.prepare(`
     INSERT OR IGNORE INTO orcamento_mensal (usuario_id, mes, valor, valor_centavos) VALUES (?, ?, 0, 0)
   `).run(req.usuarioId, mesAtual);

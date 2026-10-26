@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import api from '../services/api';
+import { mesAtualISO as mesAtual } from '../utils/datas';
 import { formatarMoeda } from '../utils/formatters';
 import './Metas.css';
 
@@ -11,10 +12,6 @@ const STATUS_LABEL = {
   EM_ANDAMENTO: 'Em andamento',
   NAO_ATINGIDA: 'Não atingida',
 };
-
-function mesAtual() {
-  return new Date().toISOString().slice(0, 7);
-}
 
 export default function Metas() {
   const [metas, setMetas] = useState([]);

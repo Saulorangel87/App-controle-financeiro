@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { comValorEmReais, centavosOuNulo } = require('../utils/dinheiro');
 const { FORMAS_PAGAMENTO_VALIDAS, formaPagamentoValida } = require('../utils/validacao');
+const { mesAtualISO } = require('../utils/datas');
 
 const router = express.Router();
 
@@ -37,7 +38,7 @@ function totalDoMes(usuarioId, mes, categoriaId, formaPagamento) {
 // Lista os meses (YYYY-MM) que têm ao menos uma despesa, mais recentes primeiro.
 // Sempre inclui o mês atual, mesmo que ainda esteja vazio.
 router.get('/meses', (req, res) => {
-  const mesAtual = new Date().toISOString().slice(0, 7);
+  const mesAtual = mesAtualISO();
 
   const meses = db.prepare(`
     SELECT DISTINCT strftime('%Y-%m', data) AS mes
@@ -75,7 +76,7 @@ router.get('/historico', (req, res) => {
     if (!categoria) return res.status(400).json({ erro: 'categoria inválida' });
   }
 
-  const mesAtual = new Date().toISOString().slice(0, 7);
+  const mesAtual = mesAtualISO();
   const meses = [];
   for (let i = quantidadeMeses - 1; i >= 0; i -= 1) {
     meses.push(deslocarMes(mesAtual, -i));
@@ -91,7 +92,7 @@ router.get('/historico', (req, res) => {
 
 // GET /api/relatorio?mes=YYYY-MM
 router.get('/', (req, res) => {
-  const mes = req.query.mes || new Date().toISOString().slice(0, 7);
+  const mes = req.query.mes || mesAtualISO();
   const categoriaId = req.query.categoria_id ? Number(req.query.categoria_id) : null;
   const formaPagamento = req.query.forma_pagamento || null;
 

@@ -2,15 +2,12 @@ const express = require('express');
 const db = require('../db');
 const { numeroMonetarioValido, dataISOValida } = require('../utils/validacao');
 const { paraCentavos } = require('../utils/dinheiro');
+const { hojeISO } = require('../utils/datas');
 
 const router = express.Router();
 
 const LIMITE_LANCAMENTOS = 500;
 const LIMITE_DESCRICAO = 80;
-
-function hojeISO() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 // Mesma lógica de POST /api/entradas: uma entrada importada também precisa
 // somar no orçamento do mês da sua data, senão o "disponível" do dashboard

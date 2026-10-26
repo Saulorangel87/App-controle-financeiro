@@ -1,23 +1,19 @@
 const db = require('../db');
 const { enviarPush, pushConfigurado } = require('../services/push');
-
-const TIME_ZONE = process.env.APP_TIMEZONE || 'America/Sao_Paulo';
+const { hojeISO } = require('../utils/datas');
 
 function ultimoDiaDoMes(ano, mesNumero) {
   return new Date(Date.UTC(ano, mesNumero, 0)).getUTCDate();
 }
 
 function contextoHoje(agora = new Date()) {
-  const partes = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
-    timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
-  }).formatToParts(agora).filter(({ type }) => type !== 'literal').map(({ type, value }) => [type, value]));
-  const ano = Number(partes.year);
-  const mesNumero = Number(partes.month);
+  const hoje = hojeISO(agora);
+  const [ano, mesNumero, dia] = hoje.split('-').map(Number);
   return {
     ano,
     mesNumero,
-    mes: `${partes.year}-${partes.month}`,
-    dia: Number(partes.day),
+    mes: hoje.slice(0, 7),
+    dia,
     ultimoDia: ultimoDiaDoMes(ano, mesNumero),
   };
 }

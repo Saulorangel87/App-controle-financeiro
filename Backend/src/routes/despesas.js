@@ -10,6 +10,7 @@ const {
 } = require('../utils/validacao');
 const { paraCentavos, comValorEmReais, centavosOuNulo } = require('../utils/dinheiro');
 const { registrar: registrarHistorico } = require('../utils/historico');
+const { hojeISO } = require('../utils/datas');
 
 const router = express.Router();
 
@@ -49,14 +50,6 @@ function validarDivisao(body, valorReferencia) {
   }
 
   return { alterar: true, dividida_com: dividida_com.trim(), divisaoValorCentavos: paraCentavos(divisao_valor) };
-}
-
-// Data de hoje no formato YYYY-MM-DD (mesmo formato salvo no banco), usada
-// pra bloquear datas futuras. Comparação é feita por string porque o campo
-// "data" é sempre YYYY-MM-DD (comparação lexicográfica funciona igual a
-// comparação cronológica nesse formato).
-function hojeISO() {
-  return new Date().toISOString().slice(0, 10);
 }
 
 // GET /api/despesas

@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db');
+const { hojeISO, mesAtualISO } = require('../utils/datas');
 const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
 const { numeroMonetarioValido, textoValido, textoOpcionalValido } = require('../utils/validacao');
 
@@ -26,9 +27,8 @@ function erroDosCampos({ descricao, valor, dia_vencimento, observacao }) {
   return null;
 }
 
-function mesAtual() {
-  return db.prepare(`SELECT strftime('%Y-%m', 'now') AS mes`).get().mes;
-}
+// Mês corrente no fuso do app (ver utils/datas.js), não em UTC.
+const mesAtual = mesAtualISO;
 
 // Diferença em meses entre dois "YYYY-MM" (ex: 2026-08 - 2026-05 = 3)
 function diferencaMeses(mesInicio, mesFim) {
@@ -37,11 +37,15 @@ function diferencaMeses(mesInicio, mesFim) {
   return (anoF - anoI) * 12 + (mesF - mesI);
 }
 
-function alertaVencimento(dia, pago, concluida, hoje = new Date()) {
+// "Hoje" vem no fuso do app: em UTC, às 21h de Brasília a conta que vence
+// amanhã já aparecia como "Vence hoje". Vencimento no dia 31 (ou 29/30 em
+// fevereiro) cai no último dia do mês, igual ao job de push — antes virava
+// o dia 1º do mês seguinte e o alerta chegava atrasado.
+function alertaVencimento(dia, pago, concluida, agora = new Date()) {
   if (!dia || pago || concluida) return null;
-  const vencimento = new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), Number(dia)));
-  const inicioHoje = Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), hoje.getUTCDate());
-  const dias = Math.round((vencimento.getTime() - inicioHoje) / 86400000);
+  const [ano, mes, diaHoje] = hojeISO(agora).split('-').map(Number);
+  const ultimoDiaDoMes = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+  const dias = Math.min(Number(dia), ultimoDiaDoMes) - diaHoje;
   if (dias < 0) return { nivel: 'vencida', dias, texto: 'Vencida' };
   if (dias === 0) return { nivel: 'urgente', dias, texto: 'Vence hoje' };
   if (dias === 1) return { nivel: 'urgente', dias, texto: 'Vence amanhã' };

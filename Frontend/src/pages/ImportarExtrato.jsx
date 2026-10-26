@@ -4,11 +4,8 @@ import { Upload, ArrowLeft } from 'lucide-react';
 import api from '../services/api';
 import { formatarMoeda } from '../utils/formatters';
 import { analisarCSV, detectarColunas, analisarValor, analisarData } from '../utils/csv';
+import { hojeISO } from '../utils/datas';
 import './ImportarExtrato.css';
-
-function hojeISO() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 let proximoId = 1;
 

@@ -5,11 +5,8 @@ import IconeCategoria from '../components/IconeCategoria';
 import { formatarMoeda } from '../utils/formatters';
 import { useRecarregarAoVirarMes } from '../utils/useRecarregarAoVirarMes';
 import { ativarNotificacoes, desativarNotificacoes, estadoNotificacoes, pushDisponivel } from '../services/notificacoes';
+import { mesAtualISO } from '../utils/datas';
 import './Alertas.css';
-
-function mesAtualISO() {
-  return new Date().toISOString().slice(0, 7);
-}
 
 export default function Alertas() {
   const [categorias, setCategorias] = useState([]);

@@ -107,7 +107,7 @@ Alguns cuidados aplicados antes de colocar o app em produção:
 - Todas as queries SQL parametrizadas (proteção contra SQL Injection)
 - Validação de tipo e tamanho em todos os campos recebidos pela API e tratamento central de erros: um payload malformado recebe `400` em JSON, nunca derruba o servidor
 - Isolamento de dados por usuário em todas as rotas autenticadas
-- Validação de data futura em despesas (frontend + backend)
+- Validação de data futura em despesas e entradas (frontend + backend), sempre no horário de Brasília (`APP_TIMEZONE`) — o servidor roda em UTC, mas "hoje" e "mês atual" nunca viram às 21h
 
 ### Backup do banco
 

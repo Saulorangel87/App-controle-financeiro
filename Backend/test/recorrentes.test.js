@@ -50,4 +50,9 @@ test('gera alertas de vencimento em 3, 1 e 0 dias, mas ignora contas pagas', () 
   assert.equal(alertaVencimento(9, false, false, hoje).nivel, 'vencida');
   assert.equal(alertaVencimento(10, true, false, hoje), null);
   assert.equal(alertaVencimento(10, false, true, hoje), null);
+
+  // 23h de 09/09 em Brasília já é 10/09 em UTC: o dia 10 ainda é "amanhã".
+  assert.equal(alertaVencimento(10, false, false, new Date('2026-09-10T02:00:00.000Z')).texto, 'Vence amanhã');
+  // Setembro tem 30 dias: vencimento no dia 31 cai no dia 30.
+  assert.equal(alertaVencimento(31, false, false, new Date('2026-09-29T12:00:00.000Z')).texto, 'Vence amanhã');
 });

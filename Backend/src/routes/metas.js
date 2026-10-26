@@ -1,15 +1,15 @@
 const express = require('express');
 const db = require('../db');
 const { numeroMonetarioValido, mesISOValido } = require('../utils/validacao');
+const { mesAtualISO } = require('../utils/datas');
 const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
 
 const router = express.Router();
 
 const LIMITE_NOME = 60;
 
-function mesAtual() {
-  return db.prepare(`SELECT strftime('%Y-%m', 'now') AS mes`).get().mes;
-}
+// Mês corrente no fuso do app (ver utils/datas.js), não em UTC.
+const mesAtual = mesAtualISO;
 
 // Progresso = entradas menos despesas dos meses do período (inclusive nas
 // duas pontas). É a mesma ideia de "sobrou" usada no saldo do Relatório,

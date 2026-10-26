@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
 const { numeroMonetarioValido, textoValido } = require('../utils/validacao');
+const { mesAtualISO } = require('../utils/datas');
 
 const router = express.Router();
 
@@ -40,11 +41,11 @@ router.get('/', (req, res) => {
     FROM categorias c
     LEFT JOIN despesas d
       ON d.categoria_id = c.id
-      AND strftime('%Y-%m', d.data) = strftime('%Y-%m', 'now')
+      AND strftime('%Y-%m', d.data) = ?
     WHERE c.usuario_id = ?
     GROUP BY c.id
     ORDER BY c.id
-  `).all(req.usuarioId);
+  `).all(mesAtualISO(), req.usuarioId);
 
   const resultado = categorias.map((linha) => {
     const c = comValorEmReais(linha, 'limite');

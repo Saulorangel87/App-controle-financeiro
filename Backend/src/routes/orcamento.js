@@ -1,13 +1,13 @@
 const express = require('express');
 const db = require('../db');
 const { numeroMonetarioValido } = require('../utils/validacao');
+const { mesAtualISO } = require('../utils/datas');
 const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
 
 const router = express.Router();
 
-function mesAtual() {
-  return db.prepare(`SELECT strftime('%Y-%m', 'now') AS mes`).get().mes;
-}
+// Mês corrente no fuso do app (ver utils/datas.js), não em UTC.
+const mesAtual = mesAtualISO;
 
 // Garante que existe uma linha de orçamento pro usuário no mês atual (caso
 // ele nunca tenha definido nada nesse mês) — é assim que o valor "reseta"
