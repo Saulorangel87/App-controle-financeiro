@@ -56,7 +56,7 @@ autorizar as notificações.
 - ⬇️ **Instalação pelo rodapé** quando o navegador oferecer a instalação e o app ainda não estiver instalado
 - 🔔 **Notificações push opcionais** para despesas recorrentes próximas do vencimento
 - 🔁 **Despesas recorrentes integradas aos gastos do mês** — ao marcar uma conta fixa ou prestação como paga, o app abre a confirmação para já lançá-la como despesa do mês (lembrando categoria e forma de pagamento para o próximo mês), e desmarcar desfaz o lançamento
-- 🆕 **Notas da versão** em `/novidades`, com as novidades da v1.9.0 e o planejamento das próximas evoluções
+- 🆕 **Notas da versão** em `/novidades`, com as novidades da v2.0.0 e o resumo das entregas de arquitetura e segurança
 - 💵 **CRUD completo de entradas em aba própria**, com criação, edição, exclusão, filtro mensal, total do período e ajuste automático do orçamento do mês
 - 📥 **Importação de extrato bancário (.csv e .ofx)** com pré-visualização, classificação automática entre despesas e entradas e detecção automática de lançamentos duplicados (já importados ou repetidos no próprio arquivo)
 - 🌗 **Tema claro e escuro**, com detecção automática da preferência do sistema e alternância manual salva por dispositivo, com transição suave de cores
@@ -170,7 +170,7 @@ docker compose up -d --build
 
 ## 🗺️ Roadmap
 
-### v2.0 — confiabilidade profissional (em andamento)
+### v2.0 — confiabilidade profissional (concluída)
 - [x] Backup automático criptografado, envio externo e teste de integridade/restauração
 - [x] Transações atômicas e validação financeira rigorosa no backend
 - [x] Sessão e headers de segurança reforçados (access token curto + refresh token em cookie HttpOnly)

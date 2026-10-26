@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import './AvisoNovidades.css';
 
-const VERSAO_ATUAL = 'v1.9.0';
+const VERSAO_ATUAL = 'v2.0.0';
 const CHAVE_VISTA = `controle-despesas:novidades:${VERSAO_ATUAL}`;
 
 const destaques = [
-  'Tema claro e escuro, com alternância pelo cabeçalho',
-  'Metas de economia com progresso calculado automaticamente',
-  'Divisão de despesas com outra pessoa e importação de extrato bancário',
+  'Contas recorrentes pagas já viram despesas do mês e orçamento pode repetir sozinho',
+  'Projeção de fechamento do mês, fatura aberta do cartão de crédito e desfazer exclusões',
+  'Gerenciamento completo de categorias, edição de entradas e importação OFX sem duplicar',
 ];
 
 function jaFoiVista() {
@@ -64,9 +64,9 @@ export default function AvisoNovidades() {
 
         <span className="aviso-novidades-selo">Nova versão</span>
         <span className="label">Controle de Despesas · {VERSAO_ATUAL}</span>
-        <h2 id="titulo-aviso-novidades">Mais clareza para cuidar do seu dinheiro.</h2>
+        <h2 id="titulo-aviso-novidades">Confiabilidade profissional e controle completo.</h2>
         <p className="aviso-novidades-intro">
-          Tema claro/escuro, metas de economia, divisão de despesas e importação de extrato — tudo numa entrega só.
+          A v2.0.0 automatiza o que era repetitivo no dia a dia e traz segurança reforçada em toda a aplicação.
         </p>
 
         <ul className="aviso-novidades-lista">

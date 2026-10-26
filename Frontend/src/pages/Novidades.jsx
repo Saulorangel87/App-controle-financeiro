@@ -1,11 +1,21 @@
 import {
-  ArrowRight, Bell, CheckCircle2, CircleDot, ShieldCheck, Sparkles,
-  SunMoon, Wand2, TrendingUp, PiggyBank, Users, FileUp,
+  ArrowRight, CheckCircle2, CreditCard, FileUp, FolderKanban,
+  History, Repeat, Search, ShieldCheck, Sparkles, SunMoon,
+  TrendingUp, PiggyBank, Users, Wand2,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './Novidades.css';
 
 const novidades = [
+  ['Conta recorrente paga vira despesa', 'Ao marcar uma conta fixa ou parcela como paga, confirme categoria e forma de pagamento para já lançá-la nas despesas do mês. Se desmarcar, o lançamento é desfeito sozinho.', <Repeat size={18} />],
+  ['Orçamento recorrente todo mês', 'Ative "Repetir todo mês" no orçamento ou copie o valor do mês anterior com um clique quando o mês começar.', <Sparkles size={18} />],
+  ['Projeção do mês e fatura do cartão', 'Acompanhe na Visão Geral a projeção de fechamento do mês no ritmo atual e o total da fatura aberta do cartão de crédito com dia de fechamento configurável.', <CreditCard size={18} />],
+  ['Gerenciar categorias e editar entradas', 'Crie novas categorias com escolha de ícone e cor, edite ou exclua categorias sem gastos e edite entradas com ajuste automático do orçamento.', <FolderKanban size={18} />],
+  ['Busca, filtros e desfazer exclusão', 'Busque despesas por descrição, filtre por categoria e forma de pagamento e desfaça exclusões acidentais de despesas ou entradas com um clique.', <Search size={18} />],
+  ['Extrato OFX, sem duplicados e mais segurança', 'Importe arquivos .csv e .ofx com detecção automática de lançamentos repetidos, troque sua senha logado e encerre sessões em todos os dispositivos.', <History size={18} />],
+];
+
+const novidadesAnteriores = [
   ['Tema claro e escuro', 'Alterne o visual do app pelo ícone no cabeçalho. A escolha fica salva neste dispositivo e, na primeira vez, respeita a preferência do seu sistema.', <SunMoon size={18} />],
   ['Categoria sugerida automaticamente', 'Ao repetir uma descrição já usada antes (ex: "Uber"), a categoria certa é sugerida sozinha — só confirme ou troque se quiser.', <Wand2 size={18} />],
   ['Comparativo ano a ano no relatório', 'Veja como o mês atual se compara ao mesmo mês do ano passado, além de um gráfico de tendência dos últimos 6 meses.', <TrendingUp size={18} />],
@@ -14,23 +24,11 @@ const novidades = [
   ['Importar extrato bancário', 'Envie o extrato do seu banco, revise os lançamentos detectados e importe despesas e entradas de uma vez, com categoria já sugerida.', <FileUp size={18} />],
 ];
 
-const novidadesAnteriores = [
-  ['Entradas em aba própria', 'Consulte salários, bônus, freelas e reembolsos em uma área separada das despesas, sem misturar dinheiro recebido com dinheiro gasto.', <ArrowRight size={18} />],
-  ['Filtro mensal de entradas', 'Selecione um mês para ver somente os lançamentos daquele período ou mantenha Todos os meses para consultar o total completo.', <CheckCircle2 size={18} />],
-  ['Notificações no celular', 'Ative o push na tela Alertas e receba avisos automáticos 3 e 1 dia antes do vencimento das suas despesas recorrentes.', <Bell size={18} />],
-  ['Fechamento mensal', 'Confira no relatório quais categorias ultrapassaram o limite no mês selecionado e encerre sua conferência com mais clareza.', <CheckCircle2 size={18} />],
-  ['Mais precisão financeira', 'A API passou a priorizar valores em centavos, reduzindo efeitos de arredondamento em somas, saldos e relatórios.', <Sparkles size={18} />],
-  ['Qualidade de produção', 'Backups criptografados com verificação, CI automatizada e testes cobrindo os fluxos financeiros mais importantes.', <ShieldCheck size={18} />],
-  ['Compras parceladas', 'Cadastre o total de parcelas e acompanhe automaticamente a parcela atual a cada virada de mês.', <CircleDot size={18} />],
-  ['Recorrentes mais completas', 'Veja o total das contas ativas e mantenha o histórico das despesas fixas e parcelamentos quitados.', <CheckCircle2 size={18} />],
-  ['Orçamento por mês', 'O orçamento começa de forma independente a cada mês, sem carregar valores antigos por engano.', <Sparkles size={18} />],
-];
-
-const plano = [
-  'Preferências de horário e tipos de notificação',
-  'Operações financeiras protegidas por transações',
-  'Testes automatizados para API e fluxos principais',
-  'Sessão e headers de segurança reforçados',
+const entreguesV2 = [
+  'Node.js 24 LTS, Express 5, Content-Security-Policy (CSP) e container sem privilégios de root',
+  'Fuso horário configurável (America/Sao_Paulo) evitando virada de dia antecipada às 21h',
+  'Somas monetárias em centavos inteiros no banco e índices compostos nas consultas por mês',
+  'Rotação de sessão resiliente a abas simultâneas, troca de senha e encerramento global de sessões',
 ];
 
 export default function Novidades() {
@@ -38,13 +36,13 @@ export default function Novidades() {
     <div className="novidades">
       <section className="novidades-hero">
         <span className="label">Notas da versão</span>
-        <h2>Mais clareza para cuidar do seu dinheiro.</h2>
-        <p>A versão <strong>v1.9.0</strong> traz metas de economia, divisão de despesas, importação de extrato e mais inteligência no relatório.</p>
+        <h2>Confiabilidade profissional e controle completo.</h2>
+        <p>A versão <strong>v2.0.0</strong> integra contas recorrentes às despesas, traz projeção mensal, fatura do cartão, gerenciamento completo de categorias, opção de desfazer exclusões e segurança reforçada.</p>
         <span className="novidades-status"><span /> Versão atual em produção</span>
       </section>
 
       <section className="novidades-secao">
-        <div className="novidades-secao-titulo"><span className="label">v1.9.0 · O que mudou</span><h3>Novidades desta versão</h3></div>
+        <div className="novidades-secao-titulo"><span className="label">v2.0.0 · O que mudou</span><h3>Novidades desta versão</h3></div>
         <div className="novidades-grid">
           {novidades.map(([titulo, texto, icone]) => (
             <article className="panel novidade-card" key={titulo}>
@@ -55,7 +53,7 @@ export default function Novidades() {
       </section>
 
       <section className="novidades-secao">
-        <div className="novidades-secao-titulo"><span className="label">v1.8.0 · Versão anterior</span><h3>Também disponível</h3></div>
+        <div className="novidades-secao-titulo"><span className="label">v1.9.0 · Versão anterior</span><h3>Também disponível</h3></div>
         <div className="novidades-grid">
           {novidadesAnteriores.map(([titulo, texto, icone]) => (
             <article className="panel novidade-card" key={titulo}>
@@ -66,9 +64,9 @@ export default function Novidades() {
       </section>
 
       <section className="panel plano-v2">
-        <div className="plano-v2-cabecalho"><span className="novidade-icone"><ShieldCheck size={18} /></span><div><span className="label">Próxima evolução</span><h3>Plano v2.0 · Confiabilidade profissional</h3></div></div>
-        <p className="plano-intro">O próximo ciclo prioriza segurança, consistência e tranquilidade para que os dados financeiros continuem corretos mesmo em situações de erro.</p>
-        <ul className="plano-lista">{plano.map((item) => <li key={item}><CheckCircle2 size={15} /> {item}</li>)}</ul>
+        <div className="plano-v2-cabecalho"><span className="novidade-icone"><ShieldCheck size={18} /></span><div><span className="label">Arquitetura e segurança</span><h3>Ciclo v2.0 · Base concluída</h3></div></div>
+        <p className="plano-intro">Além das novas funcionalidades, a fundação do app foi atualizada de ponta a ponta para garantir precisão financeira, proteção de sessão e estabilidade em produção.</p>
+        <ul className="plano-lista">{entreguesV2.map((item) => <li key={item}><CheckCircle2 size={15} /> {item}</li>)}</ul>
         <Link to="/" className="link-destacado novidades-voltar">Voltar para a visão geral <ArrowRight size={14} /></Link>
       </section>
     </div>
