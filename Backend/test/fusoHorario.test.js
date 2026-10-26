@@ -15,6 +15,14 @@ process.env.APP_TIMEZONE = 'America/Sao_Paulo';
 const app = require('../src/server');
 const db = require('../src/db');
 const { hojeISO, mesAtualISO } = require('../src/utils/datas');
+const { calcularProjecaoMes } = require('../src/routes/resumo');
+
+test('calcularProjecaoMes projeta o gasto proporcional aos dias do mês', () => {
+  const projecao = calcularProjecaoMes(310, '2026-10-10');
+  assert.equal(projecao.diaAtual, 10);
+  assert.equal(projecao.diasNoMes, 31);
+  assert.equal(projecao.projecaoMes, 961);
+});
 
 async function jsonFetch(baseUrl, rota, opcoes = {}) {
   const resposta = await fetch(`${baseUrl}${rota}`, {
@@ -73,6 +81,9 @@ test('às 23h30 do último dia do mês a API ainda está no mês corrente', asyn
   resultado = await jsonFetch(baseUrl, '/api/resumo', { headers: autenticado });
   assert.equal(resultado.corpo.mes, '2026-10');
   assert.equal(resultado.corpo.totalGasto, 50, 'o dashboard ainda mostra outubro');
+  assert.equal(resultado.corpo.diaAtual, 31);
+  assert.equal(resultado.corpo.diasNoMes, 31);
+  assert.equal(resultado.corpo.projecaoMes, 50);
 
   resultado = await jsonFetch(baseUrl, '/api/categorias', { headers: autenticado });
   assert.equal(resultado.corpo.find((c) => c.id === categoriaId).gasto, 50);

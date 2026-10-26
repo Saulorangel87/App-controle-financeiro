@@ -243,6 +243,22 @@ export default function VisaoGeral() {
           <span className="label">{formatarMoeda(resumo.totalGasto)} gastos</span>
           <span className="label">limite {formatarMoeda(resumo.orcamentoTotal)}</span>
         </div>
+        {resumo.projecaoMes > 0 && (
+          <p
+            className="label projecao-mes"
+            style={{
+              color: resumo.orcamentoTotal > 0 && resumo.projecaoMes > resumo.orcamentoTotal
+                ? 'var(--danger)'
+                : 'var(--text-secondary)',
+            }}
+          >
+            No ritmo atual ({resumo.diaAtual}/{resumo.diasNoMes} dias), você fecha o mês com{' '}
+            <strong>{formatarMoeda(resumo.projecaoMes)}</strong>
+            {resumo.orcamentoTotal > 0 && resumo.projecaoMes > resumo.orcamentoTotal
+              ? ` (${formatarMoeda(resumo.projecaoMes - resumo.orcamentoTotal)} acima do orçamento)`
+              : ''}
+          </p>
+        )}
       </div>
 
       {entradas.length > 0 && (

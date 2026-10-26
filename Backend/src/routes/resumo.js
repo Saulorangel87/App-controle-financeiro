@@ -1,10 +1,19 @@
 const express = require('express');
 const db = require('../db');
 const { comValorEmReais, somaEmReaisSQL } = require('../utils/dinheiro');
-const { mesAtualISO, intervaloDosMeses } = require('../utils/datas');
+const { hojeISO, mesAtualISO, intervaloDosMeses } = require('../utils/datas');
 const { obterOrcamentoDoMes } = require('./orcamento');
 
 const router = express.Router();
+
+function calcularProjecaoMes(totalGasto, dataHoje = hojeISO()) {
+  const [ano, mes, diaAtual] = dataHoje.split('-').map(Number);
+  const diasNoMes = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+  const projecaoMes = totalGasto > 0 && diaAtual > 0
+    ? Number(((totalGasto / diaAtual) * diasNoMes).toFixed(2))
+    : 0;
+  return { projecaoMes, diaAtual, diasNoMes };
+}
 
 // GET /api/resumo
 // Retorna os totais usados na tela de Visão Geral: total gasto, orçamento
@@ -40,6 +49,7 @@ router.get('/', (req, res) => {
   const disponivel = orcamentoTotal - totalGasto;
   const categoriasComAlerta = categoriasComValores.filter((c) => c.gasto > c.limite).length;
   const percentualUtilizado = orcamentoTotal > 0 ? (totalGasto / orcamentoTotal) * 100 : 0;
+  const { projecaoMes, diaAtual, diasNoMes } = calcularProjecaoMes(totalGasto);
 
   res.json({
     mes: mesAtual,
@@ -50,6 +60,9 @@ router.get('/', (req, res) => {
     disponivel,
     categoriasComAlerta,
     percentualUtilizado: Number(percentualUtilizado.toFixed(1)),
+    projecaoMes,
+    diaAtual,
+    diasNoMes,
     gastoPorCategoria: categoriasComValores.map((c) => ({
       nome: c.nome,
       gasto: c.gasto,
@@ -59,3 +72,4 @@ router.get('/', (req, res) => {
 });
 
 module.exports = router;
+module.exports.calcularProjecaoMes = calcularProjecaoMes;
