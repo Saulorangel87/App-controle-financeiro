@@ -3,7 +3,15 @@ import { Link } from 'react-router-dom';
 import { Upload, ArrowLeft } from 'lucide-react';
 import api from '../services/api';
 import { formatarMoeda } from '../utils/formatters';
-import { analisarCSV, detectarColunas, analisarValor, analisarData } from '../utils/csv';
+import {
+  analisarCSV,
+  analisarOFX,
+  ehArquivoOFX,
+  chaveDuplicata,
+  detectarColunas,
+  analisarValor,
+  analisarData,
+} from '../utils/csv';
 import { hojeISO } from '../utils/datas';
 import './ImportarExtrato.css';
 
@@ -32,40 +40,83 @@ export default function ImportarExtrato() {
     setResultado(null);
     setNomeArquivo(arquivo.name);
 
-    const categoriasCarregadas = await garantirCategorias();
+    const [categoriasCarregadas, despesasExistentes, entradasExistentes] = await Promise.all([
+      garantirCategorias(),
+      api.get('/despesas').then((r) => (Array.isArray(r.data) ? r.data : [])).catch(() => []),
+      api.get('/entradas').then((r) => (Array.isArray(r.data) ? r.data : [])).catch(() => []),
+    ]);
     const texto = await arquivo.text();
-    const linhas = analisarCSV(texto);
-
-    if (linhas.length < 2) {
-      setErroArquivo('O arquivo não tem lançamentos (só cabeçalho ou vazio).');
-      setItens([]);
-      return;
-    }
-
-    const { indiceData, indiceDescricao, indiceValor, detectado } = detectarColunas(linhas[0]);
-    setAvisoColunas(!detectado);
-
-    const linhasDados = detectado ? linhas.slice(1) : linhas;
     const hoje = hojeISO();
     const categoriaPadraoId = categoriasCarregadas[0]?.id || '';
 
-    const novosItens = linhasDados.map((linha) => {
-      const descricaoBruta = (linha[indiceDescricao] || '').slice(0, 80) || 'Sem descrição';
-      const valorNumero = analisarValor(linha[indiceValor]);
-      const dataConvertida = analisarData(linha[indiceData]);
+    let brutos = [];
+    if (ehArquivoOFX(arquivo.name, texto)) {
+      setAvisoColunas(false);
+      brutos = analisarOFX(texto);
+      if (brutos.length === 0) {
+        setErroArquivo('O arquivo OFX não tem lançamentos válidos.');
+        setItens([]);
+        return;
+      }
+    } else {
+      const linhas = analisarCSV(texto);
+      if (linhas.length < 2) {
+        setErroArquivo('O arquivo não tem lançamentos (só cabeçalho ou vazio).');
+        setItens([]);
+        return;
+      }
+
+      const { indiceData, indiceDescricao, indiceValor, detectado } = detectarColunas(linhas[0]);
+      setAvisoColunas(!detectado);
+
+      const linhasDados = detectado ? linhas.slice(1) : linhas;
+      brutos = linhasDados.map((linha) => ({
+        descricao: (linha[indiceDescricao] || '').slice(0, 80) || 'Sem descrição',
+        valor: analisarValor(linha[indiceValor]),
+        data: analisarData(linha[indiceData]),
+      }));
+    }
+
+    const chavesNoBanco = new Set([
+      ...despesasExistentes.map((d) => chaveDuplicata('despesa', d.data, d.valor, d.descricao)),
+      ...entradasExistentes.map((e) => chaveDuplicata('entrada', e.data, e.valor, e.origem)),
+    ]);
+    const chavesNoArquivo = new Set();
+
+    const novosItens = brutos.map((registro) => {
+      const descricaoBruta = (registro.descricao || '').slice(0, 80) || 'Sem descrição';
+      const valorNumero = registro.valor;
+      const dataConvertida = registro.data;
 
       let erro = null;
       if (valorNumero === null || valorNumero === 0) erro = 'Valor inválido';
       else if (!dataConvertida) erro = 'Data inválida';
       else if (dataConvertida > hoje) erro = 'Data futura';
 
+      const tipo = valorNumero != null && valorNumero < 0 ? 'despesa' : 'entrada';
+      const valorAbs = valorNumero != null ? Math.abs(valorNumero) : 0;
+      const chave = chaveDuplicata(tipo, dataConvertida, valorAbs, descricaoBruta);
+      const jaNoBanco = !erro && chavesNoBanco.has(chave);
+      const repetidoNoArquivo = !erro && !jaNoBanco && chavesNoArquivo.has(chave);
+      if (!erro) {
+        chavesNoArquivo.add(chave);
+      }
+      const duplicado = jaNoBanco || repetidoNoArquivo;
+      const motivoDuplicado = jaNoBanco
+        ? 'Já importado'
+        : repetidoNoArquivo
+        ? 'Repetido no arquivo'
+        : null;
+
       return {
         id: proximoId++,
-        incluir: !erro,
+        incluir: !erro && !duplicado,
         erro,
-        tipo: valorNumero != null && valorNumero < 0 ? 'despesa' : 'entrada',
+        duplicado,
+        motivoDuplicado,
+        tipo,
         descricao: descricaoBruta,
-        valor: valorNumero != null ? Math.abs(valorNumero) : 0,
+        valor: valorAbs,
         data: dataConvertida || hoje,
         categoria_id: categoriaPadraoId,
       };
@@ -87,6 +138,7 @@ export default function ImportarExtrato() {
   }
 
   const itensIncluidos = itens.filter((item) => item.incluir && !item.erro);
+  const totalDuplicados = itens.filter((item) => item.duplicado).length;
   const totalDespesas = itensIncluidos.filter((i) => i.tipo === 'despesa').reduce((s, i) => s + i.valor, 0);
   const totalEntradas = itensIncluidos.filter((i) => i.tipo === 'entrada').reduce((s, i) => s + i.valor, 0);
 
@@ -127,8 +179,8 @@ export default function ImportarExtrato() {
 
       <div className="panel importar-upload">
         <p className="label">
-          Envie o arquivo do extrato exportado pelo seu banco (formato .csv), com data, descrição e valor.
-          Valores negativos viram despesas, positivos viram entradas — é o padrão da maioria dos extratos bancários.
+          Envie o arquivo do extrato exportado pelo seu banco (formatos .csv ou .ofx), com data, descrição e valor.
+          Valores negativos viram despesas, positivos viram entradas — lançamentos já existentes vêm desmarcados para evitar duplicidade.
         </p>
         <label className="btn-primary botao-upload" htmlFor="arquivo-csv">
           <Upload size={14} /> Escolher arquivo do extrato
@@ -137,7 +189,7 @@ export default function ImportarExtrato() {
           id="arquivo-csv"
           ref={inputRef}
           type="file"
-          accept=".csv,text/csv"
+          accept=".csv,.ofx,text/csv,application/x-ofx"
           onChange={selecionarArquivo}
           className="sr-only"
         />
@@ -162,6 +214,11 @@ export default function ImportarExtrato() {
         <div className="panel importar-preview">
           <div className="importar-preview-header">
             <span className="label">{itens.length} lançamentos encontrados — {itensIncluidos.length} serão importados</span>
+            {totalDuplicados > 0 && (
+              <span className="label aviso-duplicados">
+                {totalDuplicados} possível(is) duplicado(s) desmarcado(s) automaticamente (você pode remarcar se quiser importar mesmo assim).
+              </span>
+            )}
             <span className="label">
               Despesas: <strong style={{ color: 'var(--danger)' }}>-{formatarMoeda(totalDespesas)}</strong>
               {' · '}
@@ -183,7 +240,10 @@ export default function ImportarExtrato() {
               </thead>
               <tbody>
                 {itens.map((item) => (
-                  <tr key={item.id} className={item.erro ? 'linha-com-erro' : ''}>
+                  <tr
+                    key={item.id}
+                    className={item.erro ? 'linha-com-erro' : item.duplicado ? 'linha-duplicada' : ''}
+                  >
                     <td>
                       <input
                         type="checkbox"
@@ -202,12 +262,17 @@ export default function ImportarExtrato() {
                       />
                     </td>
                     <td>
-                      <input
-                        type="text"
-                        value={item.descricao}
-                        maxLength={80}
-                        onChange={(e) => atualizarItem(item.id, { descricao: e.target.value })}
-                      />
+                      <div className="celula-descricao-importar">
+                        <input
+                          type="text"
+                          value={item.descricao}
+                          maxLength={80}
+                          onChange={(e) => atualizarItem(item.id, { descricao: e.target.value })}
+                        />
+                        {item.duplicado && (
+                          <span className="badge-duplicado">{item.motivoDuplicado}</span>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <select value={item.tipo} onChange={(e) => atualizarItem(item.id, { tipo: e.target.value })}>

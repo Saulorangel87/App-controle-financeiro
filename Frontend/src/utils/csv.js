@@ -90,3 +90,52 @@ export function analisarData(bruto) {
 
   return null;
 }
+
+export function ehArquivoOFX(nomeArquivo = '', texto = '') {
+  if (String(nomeArquivo).toLowerCase().endsWith('.ofx')) return true;
+  return /<OFX|<STMTTRN>/i.test(String(texto));
+}
+
+function extrairTagOFX(bloco, tag) {
+  const regex = new RegExp(`<${tag}>\\s*([^<\\r\\n]+)`, 'i');
+  const m = bloco.match(regex);
+  return m ? m[1].trim() : '';
+}
+
+// Extrai transações (<STMTTRN>) de arquivos OFX 1.x (SGML sem tags de
+// fechamento) e OFX 2.x (XML). Retorna objetos { data, descricao, valor }.
+export function analisarOFX(texto) {
+  const partes = String(texto ?? '').split(/<STMTTRN>/i).slice(1);
+  if (partes.length === 0) return [];
+
+  return partes.map((parte) => {
+    const bloco = parte.split(/<\/STMTTRN>|<\/BANKTRANLIST>/i)[0];
+    const dtBruta = extrairTagOFX(bloco, 'DTPOSTED');
+    const trnAmt = extrairTagOFX(bloco, 'TRNAMT');
+    const trnType = extrairTagOFX(bloco, 'TRNTYPE').toUpperCase();
+    const memo = extrairTagOFX(bloco, 'MEMO');
+    const name = extrairTagOFX(bloco, 'NAME');
+
+    const mData = dtBruta.match(/^(\d{4})(\d{2})(\d{2})/);
+    const data = mData ? `${mData[1]}-${mData[2]}-${mData[3]}` : null;
+
+    let valor = analisarValor(trnAmt);
+    if (valor !== null && trnType === 'DEBIT' && valor > 0) {
+      valor = -valor;
+    }
+
+    const descricao = (memo || name || 'Sem descrição').slice(0, 80);
+    return { data, descricao, valor };
+  });
+}
+
+export function chaveDuplicata(tipo, data, valor, descricao) {
+  const textoNormalizado = String(descricao || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, ' ');
+  const centavos = Math.round(Math.abs(Number(valor) || 0) * 100);
+  return `${tipo}|${data || ''}|${centavos}|${textoNormalizado}`;
+}
