@@ -91,6 +91,7 @@ para a configuração da infraestrutura.
 
 **Infraestrutura**
 - Docker + Docker Compose (build multi-estágio, Nginx servindo o frontend com cache de assets)
+- Backend roda como usuário sem privilégios (`node`), com `init`, `no-new-privileges` e healthcheck nos dois containers
 - Deploy self-hosted em Oracle Cloud
 - Cloudflare Tunnel (HTTPS automático, sem exposição direta de portas)
 

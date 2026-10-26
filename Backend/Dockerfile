@@ -14,8 +14,13 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY src ./src
+COPY docker-entrypoint.sh /usr/local/bin/entrypoint-despesas.sh
+RUN chmod +x /usr/local/bin/entrypoint-despesas.sh
 
 ENV NODE_ENV=production
 EXPOSE 3001
 
+# O entrypoint acerta o dono de /app/data e troca para o usuário "node" antes
+# de iniciar o servidor (ver docker-entrypoint.sh).
+ENTRYPOINT ["entrypoint-despesas.sh"]
 CMD ["node", "src/server.js"]

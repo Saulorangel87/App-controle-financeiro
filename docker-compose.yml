@@ -3,6 +3,19 @@ services:
     build: ./Backend
     container_name: despesas-backend
     restart: unless-stopped
+    # tini como PID 1: repassa o SIGTERM do "docker compose up/down" ao Node,
+    # que encerra na hora em vez de esperar 10 s e levar SIGKILL.
+    init: true
+    # O entrypoint sobe como root só para acertar o dono de /app/data e já
+    # troca para o usuário "node"; daí em diante nada pode ganhar privilégio.
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
     environment:
       - NODE_ENV=production
       - JWT_SECRET=${JWT_SECRET}
@@ -31,6 +44,14 @@ services:
         VITE_API_URL: ${VITE_API_URL}
     container_name: despesas-frontend
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
     ports:
       - "8091:80"
     depends_on:

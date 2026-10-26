@@ -1,0 +1,3 @@
+# Scripts de shell rodam dentro de containers Linux e na VPS: precisam de LF
+# mesmo quando o repositório é clonado no Windows (core.autocrlf=true).
+*.sh text eol=lf
