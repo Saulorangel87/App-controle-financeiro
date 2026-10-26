@@ -1,8 +1,30 @@
 const express = require('express');
 const db = require('../db');
 const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
+const { numeroMonetarioValido, textoValido, textoOpcionalValido } = require('../utils/validacao');
 
 const router = express.Router();
+
+const LIMITE_DESCRICAO = 80;
+const LIMITE_OBSERVACAO = 200;
+
+function vazio(valor) {
+  return valor === undefined || valor === null || valor === '';
+}
+
+// Valida os campos comuns do cadastro e da edição. O valor é opcional (conta
+// de valor variável), mas quando vem precisa ser um número positivo — antes,
+// um texto virava NaN e estourava em paraCentavos com erro 500.
+function erroDosCampos({ descricao, valor, dia_vencimento, observacao }) {
+  if (!textoValido(descricao, LIMITE_DESCRICAO)) return `descrição é obrigatória (máximo ${LIMITE_DESCRICAO} caracteres)`;
+  if (!vazio(valor) && !numeroMonetarioValido(Number(valor))) return 'valor inválido';
+  if (!vazio(dia_vencimento)) {
+    const dia = Number(dia_vencimento);
+    if (!Number.isInteger(dia) || dia < 1 || dia > 31) return 'dia de vencimento deve ser entre 1 e 31';
+  }
+  if (!textoOpcionalValido(observacao, LIMITE_OBSERVACAO)) return `observação muito longa (máximo ${LIMITE_OBSERVACAO} caracteres)`;
+  return null;
+}
 
 function mesAtual() {
   return db.prepare(`SELECT strftime('%Y-%m', 'now') AS mes`).get().mes;
@@ -83,15 +105,8 @@ router.get('/', (req, res) => {
 router.post('/', (req, res) => {
   const { descricao, valor, dia_vencimento, observacao, parcela_total } = req.body;
 
-  if (!descricao || !descricao.trim()) {
-    return res.status(400).json({ erro: 'descrição é obrigatória' });
-  }
-  if (dia_vencimento !== undefined && dia_vencimento !== null && dia_vencimento !== '') {
-    const dia = Number(dia_vencimento);
-    if (!Number.isInteger(dia) || dia < 1 || dia > 31) {
-      return res.status(400).json({ erro: 'dia de vencimento deve ser entre 1 e 31' });
-    }
-  }
+  const erro = erroDosCampos(req.body);
+  if (erro) return res.status(400).json({ erro });
   let parcelaTotalNum = null;
   if (parcela_total !== undefined && parcela_total !== null && parcela_total !== '') {
     parcelaTotalNum = Number(parcela_total);
@@ -134,9 +149,8 @@ router.put('/:id', (req, res) => {
   if (!existente) return res.status(404).json({ erro: 'não encontrada' });
 
   const { descricao, valor, dia_vencimento, observacao } = req.body;
-  if (!descricao || !descricao.trim()) {
-    return res.status(400).json({ erro: 'descrição é obrigatória' });
-  }
+  const erro = erroDosCampos(req.body);
+  if (erro) return res.status(400).json({ erro });
 
   const valorFinal = valor ?? existente.valor;
   db.prepare(`

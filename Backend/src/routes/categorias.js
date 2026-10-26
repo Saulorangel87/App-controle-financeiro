@@ -1,8 +1,26 @@
 const express = require('express');
 const db = require('../db');
 const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
+const { numeroMonetarioValido, textoValido } = require('../utils/validacao');
 
 const router = express.Router();
+
+const LIMITE_NOME = 40;
+const LIMITE_ICONE = 40;
+
+function corValida(cor) {
+  return typeof cor === 'string' && /^#[0-9a-fA-F]{6}$/.test(cor);
+}
+
+// Valida os campos enviados (todos opcionais no PUT). Retorna a mensagem de
+// erro ou null — tipos errados viravam erro 500 em paraCentavos/.trim().
+function erroDosCampos({ nome, icone, cor, limite }) {
+  if (nome !== undefined && !textoValido(nome, LIMITE_NOME)) return `nome inválido (máximo ${LIMITE_NOME} caracteres)`;
+  if (icone !== undefined && !textoValido(icone, LIMITE_ICONE)) return 'ícone inválido';
+  if (cor !== undefined && !corValida(cor)) return 'cor inválida (use o formato #RRGGBB)';
+  if (limite !== undefined && !numeroMonetarioValido(limite, true)) return 'limite inválido';
+  return null;
+}
 
 // GET /api/categorias
 // Lista todas as categorias do usuário, já com total gasto, disponível e status.
@@ -48,14 +66,16 @@ router.get('/', (req, res) => {
 router.post('/', (req, res) => {
   const { nome, icone, cor, limite } = req.body;
 
-  if (!nome || limite === undefined) {
+  if (nome === undefined || limite === undefined) {
     return res.status(400).json({ erro: 'nome e limite são obrigatórios' });
   }
+  const erro = erroDosCampos(req.body);
+  if (erro) return res.status(400).json({ erro });
 
   const info = db.prepare(`
     INSERT INTO categorias (usuario_id, nome, icone, cor, limite, limite_centavos)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(req.usuarioId, nome, icone || 'circle', cor || '#c8f000', limite, paraCentavos(limite));
+  `).run(req.usuarioId, nome.trim(), icone || 'circle', cor || '#c8f000', limite, paraCentavos(limite));
 
   const nova = db.prepare('SELECT * FROM categorias WHERE id = ?').get(info.lastInsertRowid);
   res.status(201).json(comValorEmReais(nova, 'limite'));
@@ -74,6 +94,8 @@ router.put('/:id', (req, res) => {
   if (!categoria) {
     return res.status(404).json({ erro: 'categoria não encontrada' });
   }
+  const erro = erroDosCampos(req.body);
+  if (erro) return res.status(400).json({ erro });
 
   const limiteFinal = limite ?? categoria.limite;
   db.prepare(`
@@ -81,7 +103,7 @@ router.put('/:id', (req, res) => {
     SET nome = ?, icone = ?, cor = ?, limite = ?, limite_centavos = ?
     WHERE id = ? AND usuario_id = ?
   `).run(
-    nome ?? categoria.nome,
+    nome !== undefined ? nome.trim() : categoria.nome,
     icone ?? categoria.icone,
     cor ?? categoria.cor,
     limiteFinal,

@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { comValorEmReais, centavosOuNulo } = require('../utils/dinheiro');
+const { FORMAS_PAGAMENTO_VALIDAS, formaPagamentoValida } = require('../utils/validacao');
 
 const router = express.Router();
 
@@ -61,6 +62,9 @@ router.get('/historico', (req, res) => {
   const categoriaId = req.query.categoria_id ? Number(req.query.categoria_id) : null;
   const formaPagamento = req.query.forma_pagamento || null;
 
+  if (!formaPagamentoValida(formaPagamento)) {
+    return res.status(400).json({ erro: `forma_pagamento inválida (use: ${FORMAS_PAGAMENTO_VALIDAS.join(', ')})` });
+  }
   if (categoriaId !== null) {
     if (!Number.isInteger(categoriaId) || categoriaId < 1) {
       return res.status(400).json({ erro: 'parâmetro categoria_id inválido' });
@@ -93,6 +97,9 @@ router.get('/', (req, res) => {
 
   if (!/^\d{4}-\d{2}$/.test(mes)) {
     return res.status(400).json({ erro: 'parâmetro mes inválido, use o formato YYYY-MM' });
+  }
+  if (!formaPagamentoValida(formaPagamento)) {
+    return res.status(400).json({ erro: `forma_pagamento inválida (use: ${FORMAS_PAGAMENTO_VALIDAS.join(', ')})` });
   }
   if (categoriaId !== null && (!Number.isInteger(categoriaId) || categoriaId < 1)) {
     return res.status(400).json({ erro: 'parâmetro categoria_id inválido' });

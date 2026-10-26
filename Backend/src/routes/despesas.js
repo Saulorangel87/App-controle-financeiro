@@ -1,18 +1,20 @@
 const express = require('express');
 const db = require('../db');
-const { numeroMonetarioValido, dataISOValida } = require('../utils/validacao');
+const {
+  numeroMonetarioValido,
+  dataISOValida,
+  mesISOValido,
+  textoValido,
+  FORMAS_PAGAMENTO_VALIDAS,
+  formaPagamentoValida,
+} = require('../utils/validacao');
 const { paraCentavos, comValorEmReais, centavosOuNulo } = require('../utils/dinheiro');
 const { registrar: registrarHistorico } = require('../utils/historico');
 
 const router = express.Router();
 
+const LIMITE_DESCRICAO = 80;
 const LIMITE_DIVIDIDA_COM = 40;
-const FORMAS_PAGAMENTO_VALIDAS = ['dinheiro', 'debito', 'credito', 'pix', 'boleto', 'outro'];
-
-// forma_pagamento é opcional: undefined/null/'' significa "não informado".
-function formaPagamentoValida(valor) {
-  return valor === undefined || valor === null || valor === '' || FORMAS_PAGAMENTO_VALIDAS.includes(valor);
-}
 
 // Converte a despesa completa (valor + divisão) pro formato de resposta da
 // API: valor_centavos vira valor (comValorEmReais), divisao_valor_centavos
@@ -84,7 +86,7 @@ router.get('/meses', (req, res) => {
 // Sempre a categoria mais usada entre as que combinam, nunca a mais recente
 // isoladamente — evita que um cadastro avulso desvie a sugestão.
 router.get('/sugestao-categoria', (req, res) => {
-  const descricao = (req.query.descricao || '').trim();
+  const descricao = typeof req.query.descricao === 'string' ? req.query.descricao.trim() : '';
   if (!descricao) return res.json({ categoria_id: null });
 
   const normalizada = descricao.toLowerCase();
@@ -118,6 +120,13 @@ router.get('/sugestao-categoria', (req, res) => {
 
 router.get('/', (req, res) => {
   const { mes, pagina, porPagina, forma_pagamento } = req.query;
+
+  if (mes !== undefined && !mesISOValido(mes)) {
+    return res.status(400).json({ erro: 'parâmetro mes inválido, use o formato YYYY-MM' });
+  }
+  if (!formaPagamentoValida(forma_pagamento)) {
+    return res.status(400).json({ erro: `forma_pagamento inválida (use: ${FORMAS_PAGAMENTO_VALIDAS.join(', ')})` });
+  }
 
   const filtros = ['d.usuario_id = ?'];
   const params = [req.usuarioId];
@@ -186,13 +195,13 @@ router.get('/', (req, res) => {
 router.post('/', (req, res) => {
   const { descricao, valor, categoria_id, data, forma_pagamento } = req.body;
 
-  if (!descricao || !numeroMonetarioValido(valor) || !categoria_id || !dataISOValida(data)) {
+  if (typeof descricao !== 'string' || !descricao.trim() || !numeroMonetarioValido(valor) || !categoria_id || !dataISOValida(data)) {
     return res.status(400).json({
       erro: 'descricao, valor, categoria_id e data são obrigatórios',
     });
   }
-  if (descricao.length > 80) {
-    return res.status(400).json({ erro: 'descrição muito longa (máximo 80 caracteres)' });
+  if (descricao.length > LIMITE_DESCRICAO) {
+    return res.status(400).json({ erro: `descrição muito longa (máximo ${LIMITE_DESCRICAO} caracteres)` });
   }
   if (data > hojeISO()) {
     return res.status(400).json({ erro: 'não é possível cadastrar uma despesa com data futura' });
@@ -243,8 +252,8 @@ router.put('/:id', (req, res) => {
   if (!despesa) {
     return res.status(404).json({ erro: 'despesa não encontrada' });
   }
-  if (descricao !== undefined && descricao.length > 80) {
-    return res.status(400).json({ erro: 'descrição muito longa (máximo 80 caracteres)' });
+  if (descricao !== undefined && !textoValido(descricao, LIMITE_DESCRICAO)) {
+    return res.status(400).json({ erro: `descrição inválida (máximo ${LIMITE_DESCRICAO} caracteres)` });
   }
   if (data !== undefined && (!dataISOValida(data) || data > hojeISO())) {
     return res.status(400).json({ erro: 'não é possível cadastrar uma despesa com data futura' });

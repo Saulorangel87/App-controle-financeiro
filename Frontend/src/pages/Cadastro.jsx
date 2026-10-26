@@ -70,6 +70,7 @@ export default function Cadastro() {
             type="text"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
+            maxLength={80}
             placeholder="Seu nome"
             autoComplete="name"
             autoFocus
@@ -95,6 +96,7 @@ export default function Cadastro() {
             type="password"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
+            maxLength={128}
             placeholder="mínimo 6 caracteres"
             autoComplete="new-password"
           />

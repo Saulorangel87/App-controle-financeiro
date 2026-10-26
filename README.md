@@ -105,6 +105,7 @@ Alguns cuidados aplicados antes de colocar o app em produção:
 - Rate limiting no login/cadastro e nos envios de email (proteção contra força bruta e spam) — por IP real do cliente (`trust proxy` de 1 salto atrás do Cloudflare Tunnel, sem aceitar `X-Forwarded-For` forjado)
 - CORS restrito por domínio, não aberto para qualquer origem
 - Todas as queries SQL parametrizadas (proteção contra SQL Injection)
+- Validação de tipo e tamanho em todos os campos recebidos pela API e tratamento central de erros: um payload malformado recebe `400` em JSON, nunca derruba o servidor
 - Isolamento de dados por usuário em todas as rotas autenticadas
 - Validação de data futura em despesas (frontend + backend)
 

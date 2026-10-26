@@ -88,6 +88,22 @@ app.use('/api/metas', autenticar, metasRouter);
 app.use('/api/importacao', autenticar, importacaoRouter);
 app.use('/api/push', autenticar, pushRouter);
 
+// Tratamento central de erros: o padrão do Express responde HTML (e, fora de
+// produção, com a stack trace). Aqui a API sempre responde JSON, no mesmo
+// formato { erro } usado pelas rotas, e só registra o detalhe no log. Os
+// quatro parâmetros são obrigatórios: é assim que o Express reconhece um
+// middleware de erro, mesmo que "next" não seja usado.
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ erro: 'corpo da requisição não é um JSON válido' });
+  }
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ erro: 'corpo da requisição muito grande' });
+  }
+  console.error(`[erro] ${req.method} ${req.originalUrl}:`, err);
+  res.status(500).json({ erro: 'erro interno, tente novamente' });
+});
+
 // Exportar o app permite testes HTTP sem abrir uma porta fixa.
 module.exports = app;
 

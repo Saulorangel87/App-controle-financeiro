@@ -9,8 +9,34 @@ const autenticar = require('../middleware/autenticar');
 const limiteEmail = require('../middleware/limiteEmail');
 const { enviarEmailVerificacao, enviarEmailRecuperacaoSenha } = require('../services/email');
 const { paraCentavos } = require('../utils/dinheiro');
+const { textoValido } = require('../utils/validacao');
 
 const router = express.Router();
+
+const LIMITE_NOME = 80;
+const LIMITE_EMAIL = 254;
+const LIMITE_SENHA = 128;
+const SENHA_MINIMA = 6;
+
+// Os campos chegam do JSON sem garantia de tipo: um email numérico, por
+// exemplo, fazia email.toLowerCase() lançar dentro de uma rota async — e no
+// Express 4 isso vira uma promise rejeitada sem tratamento, que encerra o
+// processo Node. Por isso todo campo é checado como string antes do uso.
+function emailInformado(email) {
+  return typeof email === 'string' && email.trim().length > 0 && email.length <= LIMITE_EMAIL;
+}
+
+function emailValido(email) {
+  return emailInformado(email) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function senhaInformada(senha) {
+  return typeof senha === 'string' && senha.length > 0 && senha.length <= LIMITE_SENHA;
+}
+
+function tokenInformado(token) {
+  return typeof token === 'string' && /^[0-9a-f]{64}$/.test(token);
+}
 
 function gerarTokenSessao(usuario) {
   return jwt.sign(
@@ -112,11 +138,14 @@ function buscarTokenValido(token, tipo) {
 router.post('/registrar', async (req, res) => {
   const { nome, email, senha } = req.body;
 
-  if (!nome || !email || !senha) {
+  if (!textoValido(nome, LIMITE_NOME) || !emailInformado(email) || !senhaInformada(senha)) {
     return res.status(400).json({ erro: 'nome, email e senha são obrigatórios' });
   }
-  if (senha.length < 6) {
-    return res.status(400).json({ erro: 'a senha precisa ter pelo menos 6 caracteres' });
+  if (!emailValido(email)) {
+    return res.status(400).json({ erro: 'email inválido' });
+  }
+  if (senha.length < SENHA_MINIMA) {
+    return res.status(400).json({ erro: `a senha precisa ter pelo menos ${SENHA_MINIMA} caracteres` });
   }
 
   const existente = db.prepare('SELECT id FROM usuarios WHERE email = ?').get(email.toLowerCase());
@@ -129,7 +158,7 @@ router.post('/registrar', async (req, res) => {
   const info = db.prepare(`
     INSERT INTO usuarios (nome, email, senha_hash, email_verificado)
     VALUES (?, ?, ?, 0)
-  `).run(nome, email.toLowerCase(), senhaHash);
+  `).run(nome.trim(), email.toLowerCase(), senhaHash);
 
   const usuarioId = info.lastInsertRowid;
 
@@ -162,7 +191,7 @@ router.post('/registrar', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { email, senha } = req.body;
 
-  if (!email || !senha) {
+  if (!emailInformado(email) || !senhaInformada(senha)) {
     return res.status(400).json({ erro: 'email e senha são obrigatórios' });
   }
 
@@ -242,8 +271,8 @@ router.get('/me', (req, res) => {
 // "clicarem" no link antes da pessoa e queimarem o token à toa.
 router.post('/verificar-email', (req, res) => {
   const { token } = req.body;
-  if (!token) {
-    return res.status(400).json({ erro: 'token é obrigatório' });
+  if (!tokenInformado(token)) {
+    return res.status(400).json({ erro: 'link inválido ou expirado' });
   }
 
   const registro = buscarTokenValido(token, 'verificacao_email');
@@ -262,7 +291,7 @@ router.post('/verificar-email', (req, res) => {
 // evita que alguém use esse endpoint pra descobrir quais emails têm conta.
 router.post('/reenviar-verificacao', limiteEmail, async (req, res) => {
   const { email } = req.body;
-  if (!email) {
+  if (!emailInformado(email)) {
     return res.status(400).json({ erro: 'email é obrigatório' });
   }
 
@@ -283,7 +312,7 @@ router.post('/reenviar-verificacao', limiteEmail, async (req, res) => {
 // Mesma lógica de resposta genérica do reenvio de verificação.
 router.post('/esqueci-senha', limiteEmail, async (req, res) => {
   const { email } = req.body;
-  if (!email) {
+  if (!emailInformado(email)) {
     return res.status(400).json({ erro: 'email é obrigatório' });
   }
 
@@ -303,11 +332,14 @@ router.post('/esqueci-senha', limiteEmail, async (req, res) => {
 // POST /api/auth/redefinir-senha
 router.post('/redefinir-senha', async (req, res) => {
   const { token, novaSenha } = req.body;
-  if (!token || !novaSenha) {
+  if (typeof token !== 'string' || !senhaInformada(novaSenha)) {
     return res.status(400).json({ erro: 'token e novaSenha são obrigatórios' });
   }
-  if (novaSenha.length < 6) {
-    return res.status(400).json({ erro: 'a senha precisa ter pelo menos 6 caracteres' });
+  if (novaSenha.length < SENHA_MINIMA) {
+    return res.status(400).json({ erro: `a senha precisa ter pelo menos ${SENHA_MINIMA} caracteres` });
+  }
+  if (!tokenInformado(token)) {
+    return res.status(400).json({ erro: 'link inválido ou expirado' });
   }
 
   const registro = buscarTokenValido(token, 'recuperacao_senha');
@@ -328,7 +360,7 @@ router.post('/redefinir-senha', async (req, res) => {
 // despesas, orçamento, entradas, recorrentes, metas, tokens e sessões.
 router.delete('/conta', autenticar, async (req, res) => {
   const { senha } = req.body;
-  if (!senha) {
+  if (!senhaInformada(senha)) {
     return res.status(400).json({ erro: 'senha é obrigatória para confirmar a exclusão' });
   }
 
