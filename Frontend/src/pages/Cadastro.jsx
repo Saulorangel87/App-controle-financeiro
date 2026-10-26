@@ -17,8 +17,8 @@ export default function Cadastro() {
     e.preventDefault();
     setErro('');
 
-    if (senha.length < 6) {
-      setErro('A senha precisa ter pelo menos 6 caracteres.');
+    if (senha.length < 8) {
+      setErro('A senha precisa ter pelo menos 8 caracteres.');
       return;
     }
 
@@ -97,7 +97,7 @@ export default function Cadastro() {
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             maxLength={128}
-            placeholder="mínimo 6 caracteres"
+            placeholder="mínimo 8 caracteres"
             autoComplete="new-password"
           />
         </div>

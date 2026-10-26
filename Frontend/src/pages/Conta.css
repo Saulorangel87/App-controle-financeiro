@@ -12,6 +12,34 @@
   gap: 4px;
 }
 
+.conta-secao {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.botao-encerrar-sessoes {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel-alt);
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.botao-encerrar-sessoes:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.botao-encerrar-sessoes:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .conta-excluir {
   padding: 20px;
   display: flex;

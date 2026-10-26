@@ -17,7 +17,7 @@ const router = express.Router();
 const LIMITE_NOME = 80;
 const LIMITE_EMAIL = 254;
 const LIMITE_SENHA = 128;
-const SENHA_MINIMA = 6;
+const SENHA_MINIMA = 8;
 
 // Os campos chegam do JSON sem garantia de tipo: um email numérico, por
 // exemplo, fazia email.toLowerCase() lançar dentro de uma rota async — no
@@ -396,8 +396,58 @@ router.post('/redefinir-senha', async (req, res) => {
   const senhaHash = await bcrypt.hash(novaSenha, 10);
   db.prepare('UPDATE usuarios SET senha_hash = ? WHERE id = ?').run(senhaHash, registro.usuario_id);
   db.prepare('UPDATE tokens SET usado = 1 WHERE id = ?').run(registro.id);
+  db.prepare('UPDATE sessoes SET revogada = 1, rotacionada_em = NULL WHERE usuario_id = ?').run(registro.usuario_id);
 
   res.json({ mensagem: 'Senha redefinida! Você já pode entrar com a nova senha.' });
+});
+
+// POST /api/auth/alterar-senha — permite trocar a senha estando logado e
+// invalida outras sessões ativas da conta.
+router.post('/alterar-senha', autenticar, async (req, res) => {
+  const { senhaAtual, novaSenha } = req.body;
+  if (!senhaInformada(senhaAtual) || !senhaInformada(novaSenha)) {
+    return res.status(400).json({ erro: 'senhaAtual e novaSenha são obrigatórias' });
+  }
+  if (novaSenha.length < SENHA_MINIMA) {
+    return res.status(400).json({ erro: `a senha precisa ter pelo menos ${SENHA_MINIMA} caracteres` });
+  }
+
+  const usuario = db.prepare('SELECT * FROM usuarios WHERE id = ?').get(req.usuarioId);
+  if (!usuario) {
+    return res.status(401).json({ erro: 'não autenticado' });
+  }
+
+  const senhaCorreta = await bcrypt.compare(senhaAtual, usuario.senha_hash);
+  if (!senhaCorreta) {
+    return res.status(401).json({ erro: 'senha atual incorreta' });
+  }
+
+  const senhaHash = await bcrypt.hash(novaSenha, 10);
+  const tokenCookie = lerCookie(req, REFRESH_COOKIE);
+  const hashAtual = tokenCookie ? hashRefreshToken(tokenCookie) : null;
+
+  db.transaction(() => {
+    db.prepare('UPDATE usuarios SET senha_hash = ? WHERE id = ?').run(senhaHash, req.usuarioId);
+    if (hashAtual) {
+      db.prepare(
+        'UPDATE sessoes SET revogada = 1, rotacionada_em = NULL WHERE usuario_id = ? AND token_hash != ?'
+      ).run(req.usuarioId, hashAtual);
+    } else {
+      db.prepare(
+        'UPDATE sessoes SET revogada = 1, rotacionada_em = NULL WHERE usuario_id = ?'
+      ).run(req.usuarioId);
+    }
+  })();
+
+  res.json({ mensagem: 'Senha alterada com sucesso.' });
+});
+
+// POST /api/auth/encerrar-sessoes — revoga todas as sessões persistentes
+// do usuário (sair de todos os dispositivos).
+router.post('/encerrar-sessoes', autenticar, (req, res) => {
+  db.prepare('UPDATE sessoes SET revogada = 1, rotacionada_em = NULL WHERE usuario_id = ?').run(req.usuarioId);
+  limparCookieRefresh(res);
+  res.status(204).send();
 });
 
 // DELETE /api/auth/conta — exclui a própria conta e todos os dados

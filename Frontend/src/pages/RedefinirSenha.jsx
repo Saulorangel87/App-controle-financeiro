@@ -18,8 +18,8 @@ export default function RedefinirSenha() {
     e.preventDefault();
     setErro('');
 
-    if (novaSenha.length < 6) {
-      setErro('A senha precisa ter pelo menos 6 caracteres.');
+    if (novaSenha.length < 8) {
+      setErro('A senha precisa ter pelo menos 8 caracteres.');
       return;
     }
     if (novaSenha !== confirmacao) {
@@ -89,7 +89,7 @@ export default function RedefinirSenha() {
             type="password"
             value={novaSenha}
             onChange={(e) => setNovaSenha(e.target.value)}
-            placeholder="mínimo 6 caracteres"
+            placeholder="mínimo 8 caracteres"
             autoComplete="new-password"
             autoFocus
           />
