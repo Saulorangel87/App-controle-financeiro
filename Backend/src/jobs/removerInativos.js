@@ -1,4 +1,5 @@
 const db = require('../db');
+const { limparSessoes, limparTokens } = require('../db/limpeza');
 const { enviarEmailAvisoInatividade, enviarEmailContaRemovida } = require('../services/email');
 
 const DIAS_INATIVIDADE = 90;
@@ -44,8 +45,14 @@ async function executar() {
     }
   }
 
+  // Faxina diária de quem não renova sessão há tempo (as renovações já limpam
+  // as sessões de quem usa o app) e dos tokens de email usados ou vencidos.
+  const sessoesApagadas = limparSessoes();
+  const tokensApagados = limparTokens();
+
   console.log(`Inativos: ${avisados} aviso(s) enviado(s), ${paraRemover.length} conta(s) removida(s).`);
-  return { avisados, removidos: paraRemover.length };
+  console.log(`Limpeza: ${sessoesApagadas} sessão(ões) e ${tokensApagados} token(s) apagado(s).`);
+  return { avisados, removidos: paraRemover.length, sessoesApagadas, tokensApagados };
 }
 
 if (require.main === module) {

@@ -57,5 +57,5 @@ test('avisa quem está a 7 dias do limite e só remove quem já foi avisado', as
 
   // Rodar de novo no mesmo dia não reenvia avisos nem remove mais ninguém.
   const segunda = await executar();
-  assert.deepEqual(segunda, { avisados: 0, removidos: 0 });
+  assert.deepEqual({ avisados: segunda.avisados, removidos: segunda.removidos }, { avisados: 0, removidos: 0 });
 });

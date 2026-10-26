@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
+const { limparSessoes } = require('../db/limpeza');
 const CATEGORIAS_PADRAO = require('../db/categoriasPadrao');
 const { JWT_SECRET } = require('../config/jwt');
 const autenticar = require('../middleware/autenticar');
@@ -140,6 +141,9 @@ function renovarSessao(req, res) {
     return nova.token;
   });
   definirCookieRefresh(res, rotacionarSessao());
+  // Aproveita a renovação para apagar as sessões antigas desta pessoa: é
+  // barato (índice por usuário) e mantém a tabela pequena sem depender de job.
+  limparSessoes(sessao.usuario_id);
   return usuario;
 }
 
