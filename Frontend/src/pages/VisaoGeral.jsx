@@ -53,6 +53,7 @@ export default function VisaoGeral() {
   const [modalEntradaAberto, setModalEntradaAberto] = useState(false);
   const [entradaEditando, setEntradaEditando] = useState(null);
   const [paginaEntradas, setPaginaEntradas] = useState(1);
+  const [itemExcluido, setItemExcluido] = useState(null);
   const { abrirEdicao } = useDespesaModal();
   const ehMobile = useEhMobile();
 
@@ -81,7 +82,9 @@ export default function VisaoGeral() {
   }, []);
 
   async function excluirEntrada(id) {
+    const entrada = entradas.find((e) => e.id === id);
     await api.delete(`/entradas/${id}`);
+    setItemExcluido({ tabela: 'entradas', id, rotulo: `Entrada "${entrada?.origem || 'Entrada'}"` });
     carregarEntradas();
     carregarResumo();
     setPaginaEntradas(1);
@@ -90,6 +93,14 @@ export default function VisaoGeral() {
   async function excluirDespesa(despesa) {
     if (!window.confirm(`Tem certeza que deseja excluir a despesa "${despesa.descricao}"?`)) return;
     await api.delete(`/despesas/${despesa.id}`);
+    setItemExcluido({ tabela: 'despesas', id: despesa.id, rotulo: `Despesa "${despesa.descricao}"` });
+    carregarTudo();
+  }
+
+  async function desfazerExclusao() {
+    if (!itemExcluido) return;
+    await api.post('/historico/desfazer', { tabela: itemExcluido.tabela, registro_id: itemExcluido.id });
+    setItemExcluido(null);
     carregarTudo();
   }
 
@@ -158,6 +169,14 @@ export default function VisaoGeral() {
 
   return (
     <div className="visao-geral">
+      {itemExcluido && (
+        <div className="aviso-desfazer-dashboard" role="status">
+          <span className="label">{itemExcluido.rotulo} excluída.</span>
+          <button type="button" className="botao-desfazer-dashboard" onClick={desfazerExclusao}>
+            Desfazer
+          </button>
+        </div>
+      )}
       <div className="cards-resumo">
         <div className="panel card-resumo">
           <span className="label">Total Gasto</span>

@@ -99,4 +99,30 @@ test('criar/editar/excluir despesas e entradas registra histórico de alteraçõ
 
   const historicoEntrada = historicoDe('entradas', entradaCriada.corpo.id);
   assert.deepEqual(historicoEntrada.map((h) => h.acao), ['criar', 'editar', 'excluir']);
+
+  // Lista histórico pela API e desfaz exclusão da despesa e da entrada
+  const listaHistorico = await jsonFetch(baseUrl, '/api/historico?acao=excluir', { headers: autenticado });
+  assert.equal(listaHistorico.resposta.status, 200);
+  assert.equal(listaHistorico.corpo.length, 2);
+
+  const desfeitaDespesa = await jsonFetch(baseUrl, '/api/historico/desfazer', {
+    method: 'POST',
+    headers: autenticado,
+    body: JSON.stringify({ tabela: 'despesas', registro_id: despesaId }),
+  });
+  assert.equal(desfeitaDespesa.resposta.status, 201);
+  assert.equal(desfeitaDespesa.corpo.restaurado.descricao, 'Editada');
+  assert.equal(desfeitaDespesa.corpo.restaurado.valor, 50);
+
+  const desfeitaEntrada = await jsonFetch(baseUrl, '/api/historico/desfazer', {
+    method: 'POST',
+    headers: autenticado,
+    body: JSON.stringify({ tabela: 'entradas', registro_id: entradaCriada.corpo.id }),
+  });
+  assert.equal(desfeitaEntrada.resposta.status, 201);
+  assert.equal(desfeitaEntrada.corpo.restaurado.origem, 'Freela atualizado');
+  assert.equal(desfeitaEntrada.corpo.restaurado.valor, 350);
+
+  const orcamentoRestaurado = await jsonFetch(baseUrl, '/api/orcamento', { headers: autenticado });
+  assert.equal(orcamentoRestaurado.corpo.valor, 350);
 });

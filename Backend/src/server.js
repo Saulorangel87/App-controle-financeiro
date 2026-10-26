@@ -20,6 +20,7 @@ const relatorioRouter = require('./routes/relatorio');
 const metasRouter = require('./routes/metas');
 const importacaoRouter = require('./routes/importacao');
 const pushRouter = require('./routes/push');
+const historicoRouter = require('./routes/historico');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -95,6 +96,7 @@ app.use('/api/relatorio', autenticar, relatorioRouter);
 app.use('/api/metas', autenticar, metasRouter);
 app.use('/api/importacao', autenticar, importacaoRouter);
 app.use('/api/push', autenticar, pushRouter);
+app.use('/api/historico', autenticar, historicoRouter);
 
 // Tratamento central de erros: o padrão do Express responde HTML (e, fora de
 // produção, com a stack trace). Aqui a API sempre responde JSON, no mesmo

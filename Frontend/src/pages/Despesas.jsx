@@ -24,6 +24,7 @@ export default function Despesas() {
   const [busca, setBusca] = useState('');
   const [meses, setMeses] = useState([]);
   const [categorias, setCategorias] = useState([]);
+  const [itemExcluido, setItemExcluido] = useState(null);
   const { abrirEdicao } = useDespesaModal();
 
   const carregar = useCallback(async (paginaAlvo) => {
@@ -55,6 +56,7 @@ export default function Despesas() {
     const despesa = dados?.despesas.find((item) => item.id === id);
     if (!window.confirm(`Tem certeza que deseja excluir a despesa "${despesa?.descricao || ''}"?`)) return;
     await api.delete(`/despesas/${id}`);
+    setItemExcluido({ id, descricao: despesa?.descricao || 'Despesa' });
     // Se era o último registro da página (e não é a primeira página), volta
     // uma página — senão a tela fica "vazia" mostrando uma página inexistente.
     if (dados.despesas.length === 1 && pagina > 1) {
@@ -64,6 +66,13 @@ export default function Despesas() {
     }
   }
 
+  async function desfazerExclusao() {
+    if (!itemExcluido) return;
+    await api.post('/historico/desfazer', { tabela: 'despesas', registro_id: itemExcluido.id });
+    setItemExcluido(null);
+    carregar(pagina);
+  }
+
   if (carregando && !dados) return <p className="label">Carregando...</p>;
 
   const { despesas, total, totalGeral, totalPaginas } = dados;
@@ -71,6 +80,14 @@ export default function Despesas() {
   return (
     <div className="despesas-e-entradas">
       <div className="panel despesas-panel">
+        {itemExcluido && (
+          <div className="aviso-desfazer" role="status">
+            <span className="label">Despesa &ldquo;{itemExcluido.descricao}&rdquo; excluída.</span>
+            <button type="button" className="botao-desfazer" onClick={desfazerExclusao}>
+              Desfazer
+            </button>
+          </div>
+        )}
         <div className="despesas-header">
           <div className="despesas-header-titulo">
             <span className="label">{mesSelecionado ? `Despesas de ${rotuloMes(mesSelecionado)}` : 'Todas as Despesas'} — {total} registros</span>

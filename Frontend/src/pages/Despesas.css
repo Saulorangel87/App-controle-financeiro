@@ -152,6 +152,35 @@
   color: var(--danger);
 }
 
+.aviso-desfazer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  background: var(--panel-alt);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+}
+
+.botao-desfazer {
+  background: none;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.botao-desfazer:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
 @media (max-width: 700px) {
   .linha {
     grid-template-columns: 1fr auto auto;

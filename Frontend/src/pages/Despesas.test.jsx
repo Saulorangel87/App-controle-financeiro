@@ -54,4 +54,19 @@ test('renderiza a lista de despesas vinda da API e filtra por busca, categoria e
       },
     });
   });
+
+  vi.spyOn(window, 'confirm').mockReturnValue(true);
+  api.delete.mockResolvedValue({});
+  api.post.mockResolvedValue({ data: {} });
+
+  fireEvent.click(screen.getByRole('button', { name: 'Excluir despesa' }));
+  const botaoDesfazer = await screen.findByRole('button', { name: 'Desfazer' });
+  fireEvent.click(botaoDesfazer);
+
+  await waitFor(() => {
+    expect(api.post).toHaveBeenCalledWith('/historico/desfazer', {
+      tabela: 'despesas',
+      registro_id: 1,
+    });
+  });
 });

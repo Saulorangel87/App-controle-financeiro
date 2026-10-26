@@ -4,6 +4,34 @@
   gap: 20px;
 }
 
+.aviso-desfazer-dashboard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+}
+
+.botao-desfazer-dashboard {
+  background: none;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.botao-desfazer-dashboard:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
 .cards-resumo {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

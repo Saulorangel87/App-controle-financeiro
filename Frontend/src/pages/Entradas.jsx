@@ -19,6 +19,7 @@ export default function Entradas() {
   const [meses, setMeses] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [entradaEditando, setEntradaEditando] = useState(null);
+  const [itemExcluido, setItemExcluido] = useState(null);
 
   const carregar = useCallback(async (paginaAlvo) => {
     setCarregando(true);
@@ -64,12 +65,21 @@ export default function Entradas() {
     const entrada = dados?.entradas.find((item) => item.id === id);
     if (!window.confirm(`Tem certeza que deseja excluir a entrada "${entrada?.origem || ''}"?`)) return;
     await api.delete(`/entradas/${id}`);
+    setItemExcluido({ id, origem: entrada?.origem || 'Entrada' });
     carregarMeses();
     if (dados.entradas.length === 1 && pagina > 1) {
       setPagina((p) => p - 1);
     } else {
       carregar(pagina);
     }
+  }
+
+  async function desfazerExclusao() {
+    if (!itemExcluido) return;
+    await api.post('/historico/desfazer', { tabela: 'entradas', registro_id: itemExcluido.id });
+    setItemExcluido(null);
+    carregarMeses();
+    carregar(pagina);
   }
 
   if (carregando || !dados) return <p className="label">Carregando...</p>;
@@ -79,6 +89,14 @@ export default function Entradas() {
   return (
     <div className="despesas-e-entradas">
       <div className="panel despesas-panel entradas-registro">
+        {itemExcluido && (
+          <div className="aviso-desfazer" role="status">
+            <span className="label">Entrada &ldquo;{itemExcluido.origem}&rdquo; excluída.</span>
+            <button type="button" className="botao-desfazer" onClick={desfazerExclusao}>
+              Desfazer
+            </button>
+          </div>
+        )}
         <div className="despesas-header">
           <div className="despesas-header-titulo">
             <span className="label">{mesSelecionado ? `Entradas de ${rotuloMes(mesSelecionado)}` : 'Todas as Entradas'} — {total} registros</span>
