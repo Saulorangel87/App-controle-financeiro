@@ -13,7 +13,7 @@
 }
 
 .linha-entrada {
-  grid-template-columns: 90px 1fr 1fr 130px 28px;
+  grid-template-columns: 90px 1fr 1fr 130px 28px 28px;
 }
 
 .celula-descricao-entrada {
@@ -70,7 +70,7 @@
 }
 
 .linha.linha-entrada {
-  grid-template-columns: 90px 1fr 1fr 130px 28px;
+  grid-template-columns: 90px 1fr 1fr 130px 28px 28px;
 }
 
 .linha-cabecalho {
@@ -148,13 +148,14 @@
   .linha > .botao-excluir { display:flex; grid-area: excluir; }
 
   .linha-entrada {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr auto auto;
     grid-template-areas:
-      "desc valor"
-      "data excluir";
+      "desc valor editar"
+      "data valor excluir";
   }
   .linha-entrada .celula-origem-entrada { grid-area: desc; }
   .linha-entrada .celula-descricao-entrada { display: none; }
+  .linha-entrada > .botao-icone { display: flex; grid-area: editar; }
   .linha-entrada > .botao-excluir { grid-area: excluir; }
   .despesas-header { align-items:flex-start; gap:10px; flex-direction:column; }
   .despesas-header-titulo { width:100%; justify-content:space-between; gap:10px; }

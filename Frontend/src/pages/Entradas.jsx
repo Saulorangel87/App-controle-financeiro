@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react';
 import api from '../services/api';
+import ModalEntrada from '../components/ModalEntrada';
 import { formatarMoeda, formatarData } from '../utils/formatters';
 import './Despesas.css';
 
@@ -16,6 +17,8 @@ export default function Entradas() {
   const [carregando, setCarregando] = useState(true);
   const [mesSelecionado, setMesSelecionado] = useState('');
   const [meses, setMeses] = useState([]);
+  const [modalAberto, setModalAberto] = useState(false);
+  const [entradaEditando, setEntradaEditando] = useState(null);
 
   const carregar = useCallback(async (paginaAlvo) => {
     setCarregando(true);
@@ -41,6 +44,21 @@ export default function Entradas() {
   useEffect(() => {
     carregar(pagina);
   }, [carregar, pagina]);
+
+  function abrirNova() {
+    setEntradaEditando(null);
+    setModalAberto(true);
+  }
+
+  function abrirEdicao(entrada) {
+    setEntradaEditando(entrada);
+    setModalAberto(true);
+  }
+
+  function entradaSalva() {
+    carregarMeses();
+    carregar(pagina);
+  }
 
   async function excluir(id) {
     const entrada = dados?.entradas.find((item) => item.id === id);
@@ -70,9 +88,14 @@ export default function Entradas() {
               {meses.map((mes) => <option key={mes} value={mes}>{rotuloMes(mes)}</option>)}
             </select>
           </div>
-          <span className="label">
-            Total: <strong style={{ color: 'var(--ok)' }}>+{formatarMoeda(totalGeral)}</strong>
-          </span>
+          <div className="despesas-header-acoes">
+            <button type="button" className="botao-importar" onClick={abrirNova}>
+              <Plus size={14} /> Nova Entrada
+            </button>
+            <span className="label">
+              Total: <strong style={{ color: 'var(--ok)' }}>+{formatarMoeda(totalGeral)}</strong>
+            </span>
+          </div>
         </div>
 
         <div className="tabela-despesas">
@@ -82,6 +105,7 @@ export default function Entradas() {
             <span className="label">Descrição</span>
             <span className="label" style={{ textAlign: 'right' }}>Valor</span>
             <span />
+            <span />
           </div>
 
           {entradas.map((entrada) => (
@@ -90,6 +114,9 @@ export default function Entradas() {
               <strong className="celula-origem-entrada" title={entrada.origem}>{entrada.origem}</strong>
               <span className="celula-descricao-entrada">{entrada.descricao || '—'}</span>
               <span className="celula-valor" style={{ color: 'var(--ok)' }}>+{formatarMoeda(entrada.valor)}</span>
+              <button className="botao-icone" onClick={() => abrirEdicao(entrada)} aria-label={`Editar entrada ${entrada.origem}`}>
+                <Pencil size={14} />
+              </button>
               <button className="botao-excluir" onClick={() => excluir(entrada.id)} aria-label={`Excluir entrada ${entrada.origem}`}>
                 <Trash2 size={16} />
               </button>
@@ -113,6 +140,16 @@ export default function Entradas() {
           </div>
         )}
       </div>
+
+      <ModalEntrada
+        aberto={modalAberto}
+        entradaEditando={entradaEditando}
+        onFechar={() => {
+          setModalAberto(false);
+          setEntradaEditando(null);
+        }}
+        onSalvo={entradaSalva}
+      />
     </div>
   );
 }

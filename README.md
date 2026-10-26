@@ -57,7 +57,7 @@ autorizar as notificações.
 - 🔔 **Notificações push opcionais** para despesas recorrentes próximas do vencimento
 - 🔁 **Despesas recorrentes integradas aos gastos do mês** — ao marcar uma conta fixa ou prestação como paga, o app abre a confirmação para já lançá-la como despesa do mês (lembrando categoria e forma de pagamento para o próximo mês), e desmarcar desfaz o lançamento
 - 🆕 **Notas da versão** em `/novidades`, com as novidades da v1.9.0 e o planejamento das próximas evoluções
-- 💵 **Entradas em aba própria**, com filtro mensal, total do período e histórico separado das despesas
+- 💵 **CRUD completo de entradas em aba própria**, com criação, edição, exclusão, filtro mensal, total do período e ajuste automático do orçamento do mês
 - 🌗 **Tema claro e escuro**, com detecção automática da preferência do sistema e alternância manual salva por dispositivo, com transição suave de cores
 - 🧠 **Categoria sugerida automaticamente** ao repetir uma descrição já usada antes, com base no próprio histórico do usuário
 - 📈 **Comparativo ano a ano e gráfico de tendência** dos últimos 6 meses no Relatório

@@ -85,8 +85,18 @@ test('criar/editar/excluir despesas e entradas registra histórico de alteraçõ
     headers: autenticado,
     body: JSON.stringify({ origem: 'Freela', valor: 200, data: hoje }),
   });
+  const entradaEditada = await jsonFetch(baseUrl, `/api/entradas/${entradaCriada.corpo.id}`, {
+    method: 'PUT',
+    headers: autenticado,
+    body: JSON.stringify({ origem: 'Freela atualizado', valor: 350, data: hoje }),
+  });
+  assert.equal(entradaEditada.resposta.status, 200);
+  assert.equal(entradaEditada.corpo.valor, 350);
+  const orcamentoAposEdicao = await jsonFetch(baseUrl, '/api/orcamento', { headers: autenticado });
+  assert.equal(orcamentoAposEdicao.corpo.valor, 350);
+
   await jsonFetch(baseUrl, `/api/entradas/${entradaCriada.corpo.id}`, { method: 'DELETE', headers: autenticado });
 
   const historicoEntrada = historicoDe('entradas', entradaCriada.corpo.id);
-  assert.deepEqual(historicoEntrada.map((h) => h.acao), ['criar', 'excluir']);
+  assert.deepEqual(historicoEntrada.map((h) => h.acao), ['criar', 'editar', 'excluir']);
 });

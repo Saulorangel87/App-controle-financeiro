@@ -1,12 +1,21 @@
 const express = require('express');
 const db = require('../db');
-const { numeroMonetarioValido, dataISOValida, mesISOValido } = require('../utils/validacao');
+const {
+  numeroMonetarioValido,
+  dataISOValida,
+  mesISOValido,
+  textoValido,
+  textoOpcionalValido,
+} = require('../utils/validacao');
 const { paraCentavos, comValorEmReais, somaEmReaisSQL } = require('../utils/dinheiro');
 const { registrar: registrarHistorico } = require('../utils/historico');
 const { hojeISO, mesAtualISO, intervaloDosMeses } = require('../utils/datas');
 const { garantirOrcamentoDoMes } = require('./orcamento');
 
 const router = express.Router();
+
+const LIMITE_ORIGEM = 40;
+const LIMITE_DESCRICAO = 80;
 
 // GET /api/entradas/meses — meses que possuem pelo menos uma entrada,
 // em ordem decrescente para alimentar o filtro da aba Entradas.
@@ -128,6 +137,70 @@ router.post('/', (req, res) => {
   registrarHistorico(req.usuarioId, 'entradas', nova.id, 'criar', null, nova);
 
   res.status(201).json({ id: info.lastInsertRowid, origem, descricao, valor, data });
+});
+
+// PUT /api/entradas/:id — edita origem, descrição, valor e/ou data de uma
+// entrada e ajusta o orçamento mensal (inclusive quando a data muda de mês).
+router.put('/:id', (req, res) => {
+  const existente = db.prepare(
+    'SELECT * FROM entradas WHERE id = ? AND usuario_id = ?'
+  ).get(req.params.id, req.usuarioId);
+
+  if (!existente) {
+    return res.status(404).json({ erro: 'entrada não encontrada' });
+  }
+
+  const { origem, descricao, valor, data } = req.body;
+  const origemFinal = origem !== undefined ? origem : existente.origem;
+  const descricaoFinal = descricao !== undefined ? descricao : existente.descricao;
+  const valorAntigo = comValorEmReais(existente).valor;
+  const valorFinal = valor !== undefined ? valor : valorAntigo;
+  const dataFinal = data !== undefined ? data : existente.data;
+
+  if (!textoValido(origemFinal, LIMITE_ORIGEM)) {
+    return res.status(400).json({ erro: `origem inválida (máximo ${LIMITE_ORIGEM} caracteres)` });
+  }
+  if (!textoOpcionalValido(descricaoFinal, LIMITE_DESCRICAO)) {
+    return res.status(400).json({ erro: `descrição muito longa (máximo ${LIMITE_DESCRICAO} caracteres)` });
+  }
+  if (!numeroMonetarioValido(valorFinal)) {
+    return res.status(400).json({ erro: 'valor inválido' });
+  }
+  if (!dataISOValida(dataFinal)) {
+    return res.status(400).json({ erro: 'data inválida' });
+  }
+  if (dataFinal > hojeISO()) {
+    return res.status(400).json({ erro: 'não é possível registrar uma entrada com data futura' });
+  }
+
+  const descricaoLimpa = descricaoFinal && String(descricaoFinal).trim()
+    ? String(descricaoFinal).trim()
+    : null;
+
+  const atualizada = db.transaction(() => {
+    ajustarOrcamentoDoMes(req.usuarioId, existente.data, -valorAntigo);
+    ajustarOrcamentoDoMes(req.usuarioId, dataFinal, valorFinal);
+
+    db.prepare(`
+      UPDATE entradas
+      SET origem = ?, descricao = ?, valor = ?, valor_centavos = ?, data = ?
+      WHERE id = ? AND usuario_id = ?
+    `).run(
+      origemFinal.trim(),
+      descricaoLimpa,
+      valorFinal,
+      paraCentavos(valorFinal),
+      dataFinal,
+      req.params.id,
+      req.usuarioId
+    );
+
+    const linha = db.prepare('SELECT * FROM entradas WHERE id = ?').get(req.params.id);
+    registrarHistorico(req.usuarioId, 'entradas', linha.id, 'editar', existente, linha);
+    return linha;
+  })();
+
+  res.json(comValorEmReais(atualizada));
 });
 
 // DELETE /api/entradas/:id — remove a entrada e desfaz o efeito no orçamento

@@ -6,7 +6,8 @@ import './ModalEntrada.css';
 const LIMITE_DESCRICAO = 80;
 const LIMITE_ORIGEM = 40;
 
-export default function ModalEntrada({ aberto, onFechar, onSalvo }) {
+export default function ModalEntrada({ aberto, entradaEditando = null, onFechar, onSalvo }) {
+  const editando = Boolean(entradaEditando);
   const [origem, setOrigem] = useState('');
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
@@ -18,12 +19,19 @@ export default function ModalEntrada({ aberto, onFechar, onSalvo }) {
 
   useEffect(() => {
     if (!aberto) return;
-    setOrigem('');
-    setDescricao('');
-    setValor('');
-    setData(hoje());
+    if (entradaEditando) {
+      setOrigem(entradaEditando.origem || '');
+      setDescricao(entradaEditando.descricao || '');
+      setValor(entradaEditando.valor != null ? String(entradaEditando.valor) : '');
+      setData(entradaEditando.data || hoje());
+    } else {
+      setOrigem('');
+      setDescricao('');
+      setValor('');
+      setData(hoje());
+    }
     setErro('');
-  }, [aberto]);
+  }, [aberto, entradaEditando]);
 
   useEffect(() => {
     if (!aberto) return;
@@ -51,12 +59,17 @@ export default function ModalEntrada({ aberto, onFechar, onSalvo }) {
 
     setEnviando(true);
     try {
-      await api.post('/entradas', {
+      const payload = {
         origem: origem.trim(),
-        descricao: descricao.trim() || undefined,
+        descricao: descricao.trim() || null,
         valor: Number(valor),
         data,
-      });
+      };
+      if (editando) {
+        await api.put(`/entradas/${entradaEditando.id}`, payload);
+      } else {
+        await api.post('/entradas', payload);
+      }
       onSalvo();
       onFechar();
     } catch (err) {
@@ -70,7 +83,7 @@ export default function ModalEntrada({ aberto, onFechar, onSalvo }) {
     <div className="modal-overlay" onClick={onFechar}>
       <div className="modal panel" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <span className="label">Adicionar Valor ao Orçamento</span>
+          <span className="label">{editando ? 'Editar Entrada' : 'Adicionar Valor ao Orçamento'}</span>
           <button className="modal-fechar" onClick={onFechar} aria-label="Fechar">×</button>
         </div>
 
@@ -129,7 +142,7 @@ export default function ModalEntrada({ aberto, onFechar, onSalvo }) {
           {erro && <p className="erro-form" role="alert">{erro}</p>}
 
           <button type="submit" className="btn-primary" disabled={enviando || dataEhFutura} style={{ width: '100%', padding: 14 }}>
-            {enviando ? 'Salvando...' : 'Adicionar ao Orçamento'}
+            {enviando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Adicionar ao Orçamento'}
           </button>
         </form>
       </div>

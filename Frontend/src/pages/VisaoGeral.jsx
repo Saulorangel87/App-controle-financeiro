@@ -49,6 +49,7 @@ export default function VisaoGeral() {
   const [novoOrcamento, setNovoOrcamento] = useState('');
   const [orcamentoRecorrente, setOrcamentoRecorrente] = useState(false);
   const [modalEntradaAberto, setModalEntradaAberto] = useState(false);
+  const [entradaEditando, setEntradaEditando] = useState(null);
   const [paginaEntradas, setPaginaEntradas] = useState(1);
   const { abrirEdicao } = useDespesaModal();
   const ehMobile = useEhMobile();
@@ -156,7 +157,10 @@ export default function VisaoGeral() {
               <div className="acoes-orcamento">
                 <button
                   className="botao-icone botao-adicionar-valor"
-                  onClick={() => setModalEntradaAberto(true)}
+                  onClick={() => {
+                    setEntradaEditando(null);
+                    setModalEntradaAberto(true);
+                  }}
                   aria-label="Adicionar valor ao orçamento"
                   title="Adicionar valor"
                 >
@@ -259,6 +263,16 @@ export default function VisaoGeral() {
                     </span>
                   </div>
                   <span className="item-valor-entrada">+{formatarMoeda(e.valor)}</span>
+                  <button
+                    className="botao-icone"
+                    onClick={() => {
+                      setEntradaEditando(e);
+                      setModalEntradaAberto(true);
+                    }}
+                    aria-label={`Editar entrada ${e.origem}`}
+                  >
+                    <Pencil size={14} />
+                  </button>
                   <button
                     className="botao-icone"
                     onClick={() => excluirEntrada(e.id)}
@@ -396,7 +410,11 @@ export default function VisaoGeral() {
 
       <ModalEntrada
         aberto={modalEntradaAberto}
-        onFechar={() => setModalEntradaAberto(false)}
+        entradaEditando={entradaEditando}
+        onFechar={() => {
+          setModalEntradaAberto(false);
+          setEntradaEditando(null);
+        }}
         onSalvo={entradaSalva}
       />
     </div>
