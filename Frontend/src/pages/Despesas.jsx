@@ -5,6 +5,7 @@ import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
 import { useDespesaModal } from '../contexts/DespesaModalContext';
 import { formatarMoeda, formatarData } from '../utils/formatters';
+import { FORMAS_PAGAMENTO, rotuloFormaPagamento } from '../utils/formasPagamento';
 import './Despesas.css';
 
 const POR_PAGINA = 20;
@@ -18,18 +19,32 @@ export default function Despesas() {
   const [pagina, setPagina] = useState(1);
   const [carregando, setCarregando] = useState(true);
   const [mesSelecionado, setMesSelecionado] = useState('');
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState('');
+  const [formaSelecionada, setFormaSelecionada] = useState('');
+  const [busca, setBusca] = useState('');
   const [meses, setMeses] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const { abrirEdicao } = useDespesaModal();
 
   const carregar = useCallback(async (paginaAlvo) => {
     setCarregando(true);
-    const res = await api.get('/despesas', { params: { pagina: paginaAlvo, porPagina: POR_PAGINA, ...(mesSelecionado ? { mes: mesSelecionado } : {}) } });
+    const res = await api.get('/despesas', {
+      params: {
+        pagina: paginaAlvo,
+        porPagina: POR_PAGINA,
+        ...(mesSelecionado ? { mes: mesSelecionado } : {}),
+        ...(categoriaSelecionada ? { categoria_id: categoriaSelecionada } : {}),
+        ...(formaSelecionada ? { forma_pagamento: formaSelecionada } : {}),
+        ...(busca.trim() ? { busca: busca.trim() } : {}),
+      },
+    });
     setDados(res.data);
     setCarregando(false);
-  }, [mesSelecionado]);
+  }, [mesSelecionado, categoriaSelecionada, formaSelecionada, busca]);
 
   useEffect(() => {
     api.get('/despesas/meses').then((res) => setMeses(res.data)).catch(() => {});
+    api.get('/categorias').then((res) => setCategorias(res.data)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -49,7 +64,7 @@ export default function Despesas() {
     }
   }
 
-  if (carregando || !dados) return <p className="label">Carregando...</p>;
+  if (carregando && !dados) return <p className="label">Carregando...</p>;
 
   const { despesas, total, totalGeral, totalPaginas } = dados;
 
@@ -59,11 +74,6 @@ export default function Despesas() {
         <div className="despesas-header">
           <div className="despesas-header-titulo">
             <span className="label">{mesSelecionado ? `Despesas de ${rotuloMes(mesSelecionado)}` : 'Todas as Despesas'} — {total} registros</span>
-            <label className="sr-only" htmlFor="filtro-mes-despesas">Filtrar despesas por mês</label>
-            <select id="filtro-mes-despesas" className="filtro-mes" value={mesSelecionado} onChange={(evento) => { setMesSelecionado(evento.target.value); setPagina(1); }}>
-              <option value="">Todos os meses</option>
-              {meses.map((mes) => <option key={mes} value={mes}>{rotuloMes(mes)}</option>)}
-            </select>
           </div>
           <div className="despesas-header-acoes">
             <Link to="/importar" className="botao-importar">
@@ -71,6 +81,53 @@ export default function Despesas() {
             </Link>
             <span className="label">Total: <strong style={{ color: 'var(--text-primary)' }}>{formatarMoeda(totalGeral)}</strong></span>
           </div>
+        </div>
+
+        <div className="filtros-despesas">
+          <input
+            id="busca-despesas"
+            type="search"
+            className="filtro-busca-despesas"
+            placeholder="Buscar por descrição..."
+            aria-label="Buscar despesas por descrição"
+            value={busca}
+            onChange={(e) => {
+              setBusca(e.target.value);
+              setPagina(1);
+            }}
+          />
+          <label className="sr-only" htmlFor="filtro-mes-despesas">Filtrar despesas por mês</label>
+          <select
+            id="filtro-mes-despesas"
+            className="filtro-mes"
+            value={mesSelecionado}
+            onChange={(evento) => { setMesSelecionado(evento.target.value); setPagina(1); }}
+          >
+            <option value="">Todos os meses</option>
+            {meses.map((mes) => <option key={mes} value={mes}>{rotuloMes(mes)}</option>)}
+          </select>
+
+          <label className="sr-only" htmlFor="filtro-categoria-despesas">Filtrar despesas por categoria</label>
+          <select
+            id="filtro-categoria-despesas"
+            className="filtro-mes"
+            value={categoriaSelecionada}
+            onChange={(evento) => { setCategoriaSelecionada(evento.target.value); setPagina(1); }}
+          >
+            <option value="">Todas as categorias</option>
+            {categorias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+          </select>
+
+          <label className="sr-only" htmlFor="filtro-forma-pagamento-despesas">Filtrar despesas por forma de pagamento</label>
+          <select
+            id="filtro-forma-pagamento-despesas"
+            className="filtro-mes"
+            value={formaSelecionada}
+            onChange={(evento) => { setFormaSelecionada(evento.target.value); setPagina(1); }}
+          >
+            <option value="">Todas as formas</option>
+            {FORMAS_PAGAMENTO.map((op) => <option key={op.valor} value={op.valor}>{op.rotulo}</option>)}
+          </select>
         </div>
 
         <div className="tabela-despesas">
@@ -88,9 +145,11 @@ export default function Despesas() {
               <span className="celula-data">{formatarData(d.data)}</span>
               <div className="celula-descricao" title={d.descricao}>
                 <strong>{d.descricao}</strong>
-                {d.dividida_com && (
+                {(d.dividida_com || d.forma_pagamento) && (
                   <span className="info-divisao">
-                    Dividida com {d.dividida_com} · sua parte {formatarMoeda(d.valor - d.divisao_valor)}
+                    {d.forma_pagamento ? rotuloFormaPagamento(d.forma_pagamento) : ''}
+                    {d.forma_pagamento && d.dividida_com ? ' · ' : ''}
+                    {d.dividida_com ? `Dividida com ${d.dividida_com} · sua parte ${formatarMoeda(d.valor - d.divisao_valor)}` : ''}
                   </span>
                 )}
               </div>

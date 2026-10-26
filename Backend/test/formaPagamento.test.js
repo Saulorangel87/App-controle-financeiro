@@ -77,6 +77,13 @@ test('forma de pagamento é validada, salva e filtrável em despesas e relatóri
   assert.equal(resultado.corpo.length, 1);
   assert.equal(resultado.corpo[0].descricao, 'Pago no pix');
 
+  resultado = await jsonFetch(baseUrl, `/api/despesas?busca=pix&categoria_id=${categoriaId}`, { headers: autenticado });
+  assert.equal(resultado.corpo.length, 1);
+  assert.equal(resultado.corpo[0].descricao, 'Pago no pix');
+
+  resultado = await jsonFetch(baseUrl, '/api/despesas?categoria_id=abc', { headers: autenticado });
+  assert.equal(resultado.resposta.status, 400);
+
   resultado = await jsonFetch(baseUrl, `/api/relatorio?mes=${hoje.slice(0, 7)}&forma_pagamento=pix`, { headers: autenticado });
   assert.equal(resultado.corpo.totalAtual, 10);
   assert.equal(resultado.corpo.despesas.length, 1);

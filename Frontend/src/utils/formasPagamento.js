@@ -7,3 +7,7 @@ export const FORMAS_PAGAMENTO = [
   { valor: 'boleto', rotulo: 'Boleto' },
   { valor: 'outro', rotulo: 'Outro' },
 ];
+
+export function rotuloFormaPagamento(valor) {
+  return FORMAS_PAGAMENTO.find((f) => f.valor === valor)?.rotulo || valor;
+}

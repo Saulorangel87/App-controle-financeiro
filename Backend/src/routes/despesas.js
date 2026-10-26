@@ -112,13 +112,23 @@ router.get('/sugestao-categoria', (req, res) => {
 });
 
 router.get('/', (req, res) => {
-  const { mes, pagina, porPagina, forma_pagamento } = req.query;
+  const { mes, pagina, porPagina, forma_pagamento, categoria_id, busca } = req.query;
 
   if (mes !== undefined && !mesISOValido(mes)) {
     return res.status(400).json({ erro: 'parâmetro mes inválido, use o formato YYYY-MM' });
   }
   if (!formaPagamentoValida(forma_pagamento)) {
     return res.status(400).json({ erro: `forma_pagamento inválida (use: ${FORMAS_PAGAMENTO_VALIDAS.join(', ')})` });
+  }
+  let categoriaIdNum = null;
+  if (categoria_id !== undefined && categoria_id !== '') {
+    categoriaIdNum = Number(categoria_id);
+    if (!Number.isInteger(categoriaIdNum) || categoriaIdNum < 1) {
+      return res.status(400).json({ erro: 'parâmetro categoria_id inválido' });
+    }
+  }
+  if (busca !== undefined && (typeof busca !== 'string' || busca.length > LIMITE_DESCRICAO)) {
+    return res.status(400).json({ erro: 'parâmetro busca inválido' });
   }
 
   const filtros = ['d.usuario_id = ?'];
@@ -127,9 +137,17 @@ router.get('/', (req, res) => {
     filtros.push('d.data >= ? AND d.data < ?');
     params.push(...intervaloDosMeses(mes));
   }
+  if (categoriaIdNum !== null) {
+    filtros.push('d.categoria_id = ?');
+    params.push(categoriaIdNum);
+  }
   if (forma_pagamento) {
     filtros.push('d.forma_pagamento = ?');
     params.push(forma_pagamento);
+  }
+  if (busca && busca.trim()) {
+    filtros.push('LOWER(d.descricao) LIKE ?');
+    params.push(`%${busca.trim().toLowerCase()}%`);
   }
   const whereSql = filtros.join(' AND ');
 

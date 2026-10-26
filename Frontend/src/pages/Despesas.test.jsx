@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Despesas from './Despesas';
 import api from '../services/api';
@@ -10,15 +10,17 @@ vi.mock('../contexts/DespesaModalContext', () => ({
   useDespesaModal: () => ({ abrirEdicao: vi.fn(), abrirNovo: vi.fn() }),
 }));
 
-test('renderiza a lista de despesas vinda da API, sem quebrar', async () => {
+test('renderiza a lista de despesas vinda da API e filtra por busca, categoria e forma de pagamento', async () => {
   api.get.mockImplementation((rota) => {
     if (rota === '/despesas/meses') return Promise.resolve({ data: ['2026-09'] });
+    if (rota === '/categorias') return Promise.resolve({ data: [{ id: 1, nome: 'Alimentação' }] });
     if (rota === '/despesas') {
       return Promise.resolve({
         data: {
           despesas: [{
             id: 1, descricao: 'Supermercado', valor: 150, data: '2026-09-10',
             categoria_id: 1, categoria_nome: 'Alimentação', categoria_icone: 'circle', categoria_cor: '#000',
+            forma_pagamento: 'pix',
           }],
           total: 1,
           totalGeral: 150,
@@ -36,4 +38,20 @@ test('renderiza a lista de despesas vinda da API, sem quebrar', async () => {
   );
 
   expect(await screen.findByText('Supermercado')).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText('Buscar despesas por descrição'), { target: { value: 'mercado' } });
+  fireEvent.change(screen.getByLabelText('Filtrar despesas por categoria'), { target: { value: '1' } });
+  fireEvent.change(screen.getByLabelText('Filtrar despesas por forma de pagamento'), { target: { value: 'pix' } });
+
+  await waitFor(() => {
+    expect(api.get).toHaveBeenCalledWith('/despesas', {
+      params: {
+        pagina: 1,
+        porPagina: 20,
+        busca: 'mercado',
+        categoria_id: '1',
+        forma_pagamento: 'pix',
+      },
+    });
+  });
 });

@@ -60,6 +60,27 @@
 }
 .filtro-mes { min-width:150px; padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); background:var(--panel-alt); color:var(--text-primary); font:inherit; font-size:11px; }
 
+.filtros-despesas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 4px;
+}
+
+.filtro-busca-despesas {
+  flex: 1;
+  min-width: 180px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-alt);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 12px;
+}
+
 .linha {
   display: grid;
   grid-template-columns: 90px 1fr 160px 130px 28px 28px;
