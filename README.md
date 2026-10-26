@@ -106,6 +106,7 @@ Alguns cuidados aplicados antes de colocar o app em produção:
 - Refresh token rotativo em cookie `HttpOnly`: a cada renovação o token anterior é revogado (com 30 s de tolerância para abas/requisições que renovam ao mesmo tempo), e o logout invalida a sessão inteira
 - Rate limiting no login/cadastro e nos envios de email (proteção contra força bruta e spam) — por IP real do cliente (`trust proxy` de 1 salto atrás do Cloudflare Tunnel, sem aceitar `X-Forwarded-For` forjado)
 - CORS restrito por domínio, não aberto para qualquer origem
+- Content-Security-Policy no Nginx: scripts só do próprio domínio (o script inline do tema é liberado pelo hash, calculado no build da imagem), conexões só com a API e `frame-ancestors 'none'`; cabeçalhos de segurança em todas as respostas, inclusive no `index.html`
 - Todas as queries SQL parametrizadas (proteção contra SQL Injection)
 - Validação de tipo e tamanho em todos os campos recebidos pela API e tratamento central de erros: um payload malformado recebe `400` em JSON, nunca derruba o servidor
 - Isolamento de dados por usuário em todas as rotas autenticadas
