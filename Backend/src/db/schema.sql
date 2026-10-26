@@ -109,6 +109,12 @@ CREATE TABLE IF NOT EXISTS despesas_recorrentes (
   pago_em TEXT,
   parcela_total INTEGER,
   parcela_mes_inicio TEXT,
+  -- Ao marcar como paga, a conta pode virar uma despesa de verdade:
+  -- categoria/forma de pagamento ficam lembradas para o próximo mês e
+  -- despesa_paga_id aponta para a despesa lançada no mês de pago_mes.
+  categoria_id INTEGER REFERENCES categorias(id) ON DELETE SET NULL,
+  forma_pagamento TEXT,
+  despesa_paga_id INTEGER REFERENCES despesas(id) ON DELETE SET NULL,
   criado_em TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );

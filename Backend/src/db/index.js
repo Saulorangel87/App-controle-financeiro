@@ -113,4 +113,19 @@ if (!colunasSessoes.some((c) => c.name === 'substituida_por')) {
   db.exec('ALTER TABLE sessoes ADD COLUMN substituida_por INTEGER');
 }
 
+// Migração idempotente: conta recorrente paga pode gerar a despesa do mês
+// (routes/recorrentes.js). As três colunas são nulas nas contas existentes,
+// que continuam funcionando como antes até a próxima vez que forem pagas.
+// O SQLite aceita ADD COLUMN com REFERENCES desde que o padrão seja NULL.
+const colunasRecorrentesPagamento = db.prepare('PRAGMA table_info(despesas_recorrentes)').all();
+if (!colunasRecorrentesPagamento.some((c) => c.name === 'categoria_id')) {
+  db.exec('ALTER TABLE despesas_recorrentes ADD COLUMN categoria_id INTEGER REFERENCES categorias(id) ON DELETE SET NULL');
+}
+if (!colunasRecorrentesPagamento.some((c) => c.name === 'forma_pagamento')) {
+  db.exec('ALTER TABLE despesas_recorrentes ADD COLUMN forma_pagamento TEXT');
+}
+if (!colunasRecorrentesPagamento.some((c) => c.name === 'despesa_paga_id')) {
+  db.exec('ALTER TABLE despesas_recorrentes ADD COLUMN despesa_paga_id INTEGER REFERENCES despesas(id) ON DELETE SET NULL');
+}
+
 module.exports = db;

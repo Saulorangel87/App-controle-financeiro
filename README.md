@@ -55,6 +55,7 @@ autorizar as notificações.
 - 📱 **Totalmente responsivo e instalável (PWA)**, com menu hambúrguer e gráficos adaptados para telas menores
 - ⬇️ **Instalação pelo rodapé** quando o navegador oferecer a instalação e o app ainda não estiver instalado
 - 🔔 **Notificações push opcionais** para despesas recorrentes próximas do vencimento
+- 🔁 **Despesas recorrentes integradas aos gastos do mês** — ao marcar uma conta fixa ou prestação como paga, o app abre a confirmação para já lançá-la como despesa do mês (lembrando categoria e forma de pagamento para o próximo mês), e desmarcar desfaz o lançamento
 - 🆕 **Notas da versão** em `/novidades`, com as novidades da v1.9.0 e o planejamento das próximas evoluções
 - 💵 **Entradas em aba própria**, com filtro mensal, total do período e histórico separado das despesas
 - 🌗 **Tema claro e escuro**, com detecção automática da preferência do sistema e alternância manual salva por dispositivo, com transição suave de cores

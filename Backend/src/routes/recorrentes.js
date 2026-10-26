@@ -2,7 +2,15 @@ const express = require('express');
 const db = require('../db');
 const { hojeISO, mesAtualISO } = require('../utils/datas');
 const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
-const { numeroMonetarioValido, textoValido, textoOpcionalValido } = require('../utils/validacao');
+const {
+  numeroMonetarioValido,
+  dataISOValida,
+  textoValido,
+  textoOpcionalValido,
+  FORMAS_PAGAMENTO_VALIDAS,
+  formaPagamentoValida,
+} = require('../utils/validacao');
+const { registrar: registrarHistorico } = require('../utils/historico');
 
 const router = express.Router();
 
@@ -58,7 +66,7 @@ function alertaVencimento(dia, pago, concluida, agora = new Date()) {
 // atual (calculada a partir de parcela_mes_inicio, não armazenada — por
 // isso avança sozinha quando o mês vira, sem job nenhum).
 function comCamposCalculados(linha, mes) {
-  const { pago_mes, pago_em, parcela_total, parcela_mes_inicio, ...resto } = linha;
+  const { pago_mes, pago_em, parcela_total, parcela_mes_inicio, despesa_paga_id, ...resto } = linha;
 
   let parcelaAtual = null;
   let parcelaConcluida = false;
@@ -71,6 +79,9 @@ function comCamposCalculados(linha, mes) {
   return {
     ...resto,
     pago: pago_mes === mes,
+    // Só a despesa lançada no mês corrente interessa: a do mês passado já
+    // é um gasto fechado e não deve sumir ao desmarcar a conta deste mês.
+    despesa_paga_id: pago_mes === mes ? (despesa_paga_id ?? null) : null,
     parcela_total: parcela_total || null,
     parcela_atual: parcelaAtual,
     parcela_concluida: parcelaConcluida,
@@ -88,7 +99,8 @@ router.get('/', (req, res) => {
   const mes = mesAtual();
   const linhas = db.prepare(`
     SELECT id, descricao, valor, dia_vencimento, observacao,
-           pago_mes, pago_em, parcela_total, parcela_mes_inicio, valor_centavos
+           pago_mes, pago_em, parcela_total, parcela_mes_inicio, valor_centavos,
+           categoria_id, forma_pagamento, despesa_paga_id
     FROM despesas_recorrentes
     WHERE usuario_id = ?
     ORDER BY dia_vencimento IS NULL, dia_vencimento ASC, descricao ASC
@@ -177,7 +189,40 @@ router.put('/:id', (req, res) => {
   ));
 });
 
-// PATCH /api/recorrentes/:id/pago — marca/desmarca como paga NO MÊS CORRENTE
+// Descrição da despesa gerada: "Geladeira (3/12)" para prestações, para a
+// lista de despesas mostrar qual parcela foi paga. Corta o nome se preciso
+// para caber no limite de descrição das despesas (o mesmo daqui).
+function descricaoDaDespesa(recorrente, mes) {
+  const { parcela_total: total, parcela_atual: atual } = comCamposCalculados(recorrente, mes);
+  const sufixo = total ? ` (${atual}/${total})` : '';
+  return recorrente.descricao.slice(0, LIMITE_DESCRICAO - sufixo.length) + sufixo;
+}
+
+// Valida os dados da despesa que o pagamento vai lançar. Retorna a mensagem
+// de erro ou null.
+function erroDaDespesa(usuarioId, { valor, categoria_id, data, forma_pagamento }) {
+  if (!numeroMonetarioValido(valor)) return 'informe o valor pago';
+  if (!dataISOValida(data)) return 'data do pagamento inválida';
+  if (data > hojeISO()) return 'não é possível lançar um pagamento com data futura';
+  if (!formaPagamentoValida(forma_pagamento)) {
+    return `forma_pagamento inválida (use: ${FORMAS_PAGAMENTO_VALIDAS.join(', ')})`;
+  }
+  const categoria = db.prepare(
+    'SELECT id FROM categorias WHERE id = ? AND usuario_id = ?'
+  ).get(categoria_id, usuarioId);
+  return categoria ? null : 'categoria inválida';
+}
+
+// PATCH /api/recorrentes/:id/pago — marca/desmarca como paga NO MÊS CORRENTE.
+//
+// Com { pago: true, despesa: { valor, categoria_id, data, forma_pagamento } }
+// o pagamento também vira uma despesa de verdade (entra no total do mês, no
+// relatório e nos limites de categoria). A categoria e a forma de pagamento
+// ficam salvas na conta para virem preenchidas no mês seguinte.
+//
+// Desmarcar apaga a despesa que foi lançada por esse pagamento — é o
+// caminho de volta de um clique errado. Marcar de novo uma conta já paga não
+// lança uma segunda despesa.
 router.patch('/:id/pago', (req, res) => {
   const existente = db.prepare(
     'SELECT * FROM despesas_recorrentes WHERE id = ? AND usuario_id = ?'
@@ -186,22 +231,80 @@ router.patch('/:id/pago', (req, res) => {
 
   const mes = mesAtual();
   const pago = Boolean(req.body.pago);
+  const { despesa } = req.body;
+  const jaPagaEsteMes = existente.pago_mes === mes;
 
-  db.prepare(`
-    UPDATE despesas_recorrentes
-    SET pago_mes = ?, pago_em = ?
-    WHERE id = ? AND usuario_id = ?
-  `).run(
-    pago ? mes : null,
-    pago ? new Date().toISOString() : null,
-    req.params.id,
-    req.usuarioId,
-  );
+  if (despesa !== undefined && despesa !== null) {
+    if (typeof despesa !== 'object' || Array.isArray(despesa)) {
+      return res.status(400).json({ erro: 'dados da despesa inválidos' });
+    }
+    if (pago && !jaPagaEsteMes) {
+      const erro = erroDaDespesa(req.usuarioId, despesa);
+      if (erro) return res.status(400).json({ erro });
+    }
+  }
 
-  res.json(comCamposCalculados(
-    comValorEmReais(db.prepare('SELECT * FROM despesas_recorrentes WHERE id = ?').get(req.params.id)),
-    mes,
-  ));
+  let despesaLancada = null;
+  let despesaRemovida = false;
+
+  db.transaction(() => {
+    if (pago && jaPagaEsteMes) return;
+
+    if (pago) {
+      let despesaPagaId = null;
+      if (despesa) {
+        const info = db.prepare(`
+          INSERT INTO despesas (usuario_id, categoria_id, descricao, valor, valor_centavos, data, forma_pagamento)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          req.usuarioId, despesa.categoria_id, descricaoDaDespesa(existente, mes),
+          despesa.valor, paraCentavos(despesa.valor), despesa.data, despesa.forma_pagamento || null,
+        );
+        despesaPagaId = info.lastInsertRowid;
+        const nova = db.prepare('SELECT * FROM despesas WHERE id = ?').get(despesaPagaId);
+        registrarHistorico(req.usuarioId, 'despesas', nova.id, 'criar', null, nova);
+        despesaLancada = comValorEmReais(nova);
+      }
+
+      db.prepare(`
+        UPDATE despesas_recorrentes
+        SET pago_mes = ?, pago_em = ?, despesa_paga_id = ?,
+            categoria_id = COALESCE(?, categoria_id), forma_pagamento = COALESCE(?, forma_pagamento)
+        WHERE id = ? AND usuario_id = ?
+      `).run(
+        mes, new Date().toISOString(), despesaPagaId,
+        despesa ? despesa.categoria_id : null, despesa ? (despesa.forma_pagamento || null) : null,
+        req.params.id, req.usuarioId,
+      );
+      return;
+    }
+
+    if (jaPagaEsteMes && existente.despesa_paga_id) {
+      const lancada = db.prepare(
+        'SELECT * FROM despesas WHERE id = ? AND usuario_id = ?'
+      ).get(existente.despesa_paga_id, req.usuarioId);
+      if (lancada) {
+        db.prepare('DELETE FROM despesas WHERE id = ? AND usuario_id = ?').run(lancada.id, req.usuarioId);
+        registrarHistorico(req.usuarioId, 'despesas', lancada.id, 'excluir', lancada, null);
+        despesaRemovida = true;
+      }
+    }
+
+    db.prepare(`
+      UPDATE despesas_recorrentes
+      SET pago_mes = NULL, pago_em = NULL, despesa_paga_id = NULL
+      WHERE id = ? AND usuario_id = ?
+    `).run(req.params.id, req.usuarioId);
+  })();
+
+  res.json({
+    ...comCamposCalculados(
+      comValorEmReais(db.prepare('SELECT * FROM despesas_recorrentes WHERE id = ?').get(req.params.id)),
+      mes,
+    ),
+    despesa_lancada: despesaLancada,
+    despesa_removida: despesaRemovida,
+  });
 });
 
 // DELETE /api/recorrentes/:id

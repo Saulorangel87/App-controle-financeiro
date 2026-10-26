@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Check, Pencil, Trash2, Plus } from 'lucide-react';
 import api from '../services/api';
+import ModalPagarRecorrente from '../components/ModalPagarRecorrente';
 import { formatarMoeda } from '../utils/formatters';
 import './DespesasRecorrentes.css';
 
@@ -17,6 +18,7 @@ export default function DespesasRecorrentes() {
   const [form, setForm] = useState(VAZIO);
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [pagandoItem, setPagandoItem] = useState(null);
 
   const carregar = useCallback(async () => {
     const res = await api.get('/recorrentes');
@@ -107,7 +109,11 @@ export default function DespesasRecorrentes() {
   }
 
   async function alternarPago(item) {
-    await api.patch(`/recorrentes/${item.id}/pago`, { pago: !item.pago });
+    if (!item.pago) {
+      setPagandoItem(item);
+      return;
+    }
+    await api.patch(`/recorrentes/${item.id}/pago`, { pago: false });
     carregar();
   }
 
@@ -247,6 +253,7 @@ export default function DespesasRecorrentes() {
               <span className="label">
                 {item.dia_vencimento ? `vence dia ${item.dia_vencimento}` : 'sem dia fixo'}
                 {item.observacao ? ` · ${item.observacao}` : ''}
+                {item.despesa_paga_id ? ' · despesa lançada' : ''}
               </span>
             </div>
 
@@ -269,6 +276,17 @@ export default function DespesasRecorrentes() {
           </p>
         )}
       </ul>
+
+      {pagandoItem && (
+        <ModalPagarRecorrente
+          item={pagandoItem}
+          onFechar={() => setPagandoItem(null)}
+          onPago={() => {
+            setPagandoItem(null);
+            carregar();
+          }}
+        />
+      )}
     </div>
   );
 }

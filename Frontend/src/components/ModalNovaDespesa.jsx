@@ -1,19 +1,11 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { hojeISO as hoje } from '../utils/datas';
+import { FORMAS_PAGAMENTO } from '../utils/formasPagamento';
 import './ModalNovaDespesa.css';
 
 const LIMITE_DESCRICAO = 80;
 const LIMITE_DIVIDIDA_COM = 40;
-const FORMAS_PAGAMENTO = [
-  { valor: '', rotulo: 'Não informado' },
-  { valor: 'dinheiro', rotulo: 'Dinheiro' },
-  { valor: 'debito', rotulo: 'Débito' },
-  { valor: 'credito', rotulo: 'Crédito' },
-  { valor: 'pix', rotulo: 'Pix' },
-  { valor: 'boleto', rotulo: 'Boleto' },
-  { valor: 'outro', rotulo: 'Outro' },
-];
 
 export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, onSalvo }) {
   const editando = Boolean(despesaEditando);
@@ -233,6 +225,7 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
               value={formaPagamento}
               onChange={(e) => setFormaPagamento(e.target.value)}
             >
+              <option value="">Não informado</option>
               {FORMAS_PAGAMENTO.map((opcao) => (
                 <option key={opcao.valor} value={opcao.valor}>{opcao.rotulo}</option>
               ))}

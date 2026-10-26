@@ -36,7 +36,19 @@ function criarBancoAntigo(caminho) {
       revogada INTEGER NOT NULL DEFAULT 0,
       criado_em TEXT NOT NULL DEFAULT (datetime('now'))
     );
+    CREATE TABLE despesas_recorrentes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      usuario_id INTEGER NOT NULL,
+      descricao TEXT NOT NULL,
+      valor REAL,
+      dia_vencimento INTEGER,
+      observacao TEXT,
+      pago_mes TEXT,
+      pago_em TEXT,
+      criado_em TEXT NOT NULL DEFAULT (datetime('now'))
+    );
     INSERT INTO usuarios (nome, email, senha_hash) VALUES ('Migração Teste', 'migracao@example.com', 'hash-qualquer');
+    INSERT INTO despesas_recorrentes (usuario_id, descricao, valor, dia_vencimento) VALUES (1, 'Luz', 120, 10);
     INSERT INTO orcamento (usuario_id, valor) VALUES (1, 100);
     INSERT INTO sessoes (usuario_id, token_hash, expira_em) VALUES (1, 'hash-sessao', '2099-01-01T00:00:00.000Z');
   `);
@@ -73,6 +85,11 @@ test('migrações de schema são idempotentes e preservam dados pré-existentes'
       assert.ok(colunas('usuarios').includes('aviso_inatividade_em'));
       assert.ok(colunas('despesas_recorrentes').includes('parcela_total'));
       assert.ok(colunas('despesas_recorrentes').includes('parcela_mes_inicio'));
+      assert.ok(colunas('despesas_recorrentes').includes('categoria_id'));
+      assert.ok(colunas('despesas_recorrentes').includes('forma_pagamento'));
+      assert.ok(colunas('despesas_recorrentes').includes('despesa_paga_id'));
+      const recorrente = db.prepare('SELECT descricao, categoria_id, despesa_paga_id FROM despesas_recorrentes').get();
+      assert.deepEqual({ ...recorrente }, { descricao: 'Luz', categoria_id: null, despesa_paga_id: null });
       assert.ok(colunas('despesas').includes('dividida_com'));
       assert.ok(colunas('despesas').includes('divisao_valor_centavos'));
       assert.ok(colunas('sessoes').includes('rotacionada_em'));

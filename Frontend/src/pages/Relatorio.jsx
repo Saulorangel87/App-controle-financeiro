@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recha
 import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
 import { formatarMoeda, formatarData } from '../utils/formatters';
+import { FORMAS_PAGAMENTO } from '../utils/formasPagamento';
 import './Relatorio.css';
 
 const NOMES_MES = [
@@ -15,14 +16,6 @@ const NOMES_MES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago',
 const POR_PAGINA = 20;
 const POR_PAGINA_ENTRADAS = 10;
 const MESES_TENDENCIA = 6;
-const FORMAS_PAGAMENTO = [
-  { valor: 'dinheiro', rotulo: 'Dinheiro' },
-  { valor: 'debito', rotulo: 'Débito' },
-  { valor: 'credito', rotulo: 'Crédito' },
-  { valor: 'pix', rotulo: 'Pix' },
-  { valor: 'boleto', rotulo: 'Boleto' },
-  { valor: 'outro', rotulo: 'Outro' },
-];
 
 function rotuloMes(mesISO) {
   const [ano, mes] = mesISO.split('-').map(Number);
