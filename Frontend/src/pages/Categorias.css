@@ -1,3 +1,88 @@
+.pagina-categorias {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.categorias-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.botao-nova-categoria {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 12px;
+}
+
+.form-categoria {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.linha-campos-categoria {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.opcoes-icone,
+.opcoes-cor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.botao-opcao-icone {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel-alt);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.botao-opcao-icone.selecionado,
+.botao-opcao-icone:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.botao-opcao-cor {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+}
+
+.botao-opcao-cor.selecionado {
+  border-color: var(--text-primary);
+  transform: scale(1.1);
+}
+
+.acoes-form-categoria {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.acoes-form-categoria .botao-editar {
+  margin-top: 0;
+  width: auto;
+  padding: 10px 16px;
+}
+
 .grid-categorias {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -16,6 +101,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 6px;
+  gap: 8px;
 }
 
 .card-categoria-nome {
@@ -24,6 +110,16 @@
   gap: 8px;
   font-weight: 600;
   font-size: 15px;
+}
+
+.card-categoria-acoes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.botao-excluir-categoria:hover {
+  color: var(--danger);
 }
 
 .linha-valor {
@@ -59,6 +155,9 @@
 
 @media (max-width: 860px) {
   .grid-categorias {
+    grid-template-columns: 1fr;
+  }
+  .linha-campos-categoria {
     grid-template-columns: 1fr;
   }
 }

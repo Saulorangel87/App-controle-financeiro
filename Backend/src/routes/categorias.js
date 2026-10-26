@@ -73,10 +73,18 @@ router.post('/', (req, res) => {
   const erro = erroDosCampos(req.body);
   if (erro) return res.status(400).json({ erro });
 
+  const nomeLimpo = nome.trim();
+  const duplicada = db.prepare(
+    'SELECT id FROM categorias WHERE usuario_id = ? AND LOWER(nome) = LOWER(?)'
+  ).get(req.usuarioId, nomeLimpo);
+  if (duplicada) {
+    return res.status(400).json({ erro: 'já existe uma categoria com esse nome' });
+  }
+
   const info = db.prepare(`
     INSERT INTO categorias (usuario_id, nome, icone, cor, limite, limite_centavos)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(req.usuarioId, nome.trim(), icone || 'circle', cor || '#c8f000', limite, paraCentavos(limite));
+  `).run(req.usuarioId, nomeLimpo, icone || 'circle', cor || '#c8f000', limite, paraCentavos(limite));
 
   const nova = db.prepare('SELECT * FROM categorias WHERE id = ?').get(info.lastInsertRowid);
   res.status(201).json(comValorEmReais(nova, 'limite'));
@@ -98,13 +106,23 @@ router.put('/:id', (req, res) => {
   const erro = erroDosCampos(req.body);
   if (erro) return res.status(400).json({ erro });
 
+  const nomeFinal = nome !== undefined ? nome.trim() : categoria.nome;
+  if (nome !== undefined) {
+    const duplicada = db.prepare(
+      'SELECT id FROM categorias WHERE usuario_id = ? AND LOWER(nome) = LOWER(?) AND id != ?'
+    ).get(req.usuarioId, nomeFinal, id);
+    if (duplicada) {
+      return res.status(400).json({ erro: 'já existe uma categoria com esse nome' });
+    }
+  }
+
   const limiteFinal = limite ?? categoria.limite;
   db.prepare(`
     UPDATE categorias
     SET nome = ?, icone = ?, cor = ?, limite = ?, limite_centavos = ?
     WHERE id = ? AND usuario_id = ?
   `).run(
-    nome !== undefined ? nome.trim() : categoria.nome,
+    nomeFinal,
     icone ?? categoria.icone,
     cor ?? categoria.cor,
     limiteFinal,
@@ -115,6 +133,35 @@ router.put('/:id', (req, res) => {
 
   const atualizada = db.prepare('SELECT * FROM categorias WHERE id = ?').get(id);
   res.json(comValorEmReais(atualizada, 'limite'));
+});
+
+// DELETE /api/categorias/:id
+// Exclui uma categoria se não for a última do usuário e não tiver despesas.
+router.delete('/:id', (req, res) => {
+  const { id } = req.params;
+  const categoria = db.prepare(
+    'SELECT id FROM categorias WHERE id = ? AND usuario_id = ?'
+  ).get(id, req.usuarioId);
+  if (!categoria) {
+    return res.status(404).json({ erro: 'categoria não encontrada' });
+  }
+
+  const { totalCategorias } = db.prepare(
+    'SELECT COUNT(*) AS totalCategorias FROM categorias WHERE usuario_id = ?'
+  ).get(req.usuarioId);
+  if (totalCategorias <= 1) {
+    return res.status(400).json({ erro: 'mantenha pelo menos uma categoria' });
+  }
+
+  const { totalDespesas } = db.prepare(
+    'SELECT COUNT(*) AS totalDespesas FROM despesas WHERE categoria_id = ? AND usuario_id = ?'
+  ).get(id, req.usuarioId);
+  if (totalDespesas > 0) {
+    return res.status(400).json({ erro: 'não é possível excluir uma categoria que já tem despesas lançadas' });
+  }
+
+  db.prepare('DELETE FROM categorias WHERE id = ? AND usuario_id = ?').run(id, req.usuarioId);
+  res.status(204).send();
 });
 
 module.exports = router;
