@@ -15,6 +15,72 @@ function calcularProjecaoMes(totalGasto, dataHoje = hojeISO()) {
   return { projecaoMes, diaAtual, diasNoMes };
 }
 
+function dataFechamentoDoMes(ano, mes, diaFechamento) {
+  const ultimoDia = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+  const diaReal = Math.min(Math.max(1, diaFechamento), ultimoDia);
+  return `${String(ano).padStart(4, '0')}-${String(mes).padStart(2, '0')}-${String(diaReal).padStart(2, '0')}`;
+}
+
+function somarDiasISO(dataISO, dias) {
+  const [ano, mes, dia] = dataISO.split('-').map(Number);
+  const dt = new Date(Date.UTC(ano, mes - 1, dia + dias));
+  return dt.toISOString().slice(0, 10);
+}
+
+function calcularCicloCartao(diaFechamento, dataHoje = hojeISO()) {
+  const diaConfig = diaFechamento || 31;
+  const [ano, mes] = dataHoje.split('-').map(Number);
+  const fechamentoMesAtual = dataFechamentoDoMes(ano, mes, diaConfig);
+
+  if (dataHoje <= fechamentoMesAtual) {
+    const dataMesAnterior = new Date(Date.UTC(ano, mes - 2, 1));
+    const fechamentoAnterior = dataFechamentoDoMes(
+      dataMesAnterior.getUTCFullYear(),
+      dataMesAnterior.getUTCMonth() + 1,
+      diaConfig
+    );
+    return {
+      inicioCiclo: somarDiasISO(fechamentoAnterior, 1),
+      fimCiclo: fechamentoMesAtual,
+    };
+  }
+
+  const dataMesSeguinte = new Date(Date.UTC(ano, mes, 1));
+  const fechamentoSeguinte = dataFechamentoDoMes(
+    dataMesSeguinte.getUTCFullYear(),
+    dataMesSeguinte.getUTCMonth() + 1,
+    diaConfig
+  );
+  return {
+    inicioCiclo: somarDiasISO(fechamentoMesAtual, 1),
+    fimCiclo: fechamentoSeguinte,
+  };
+}
+
+function obterFaturaCartao(usuarioId, dataHoje = hojeISO()) {
+  const usuario = db.prepare('SELECT dia_fechamento_cartao FROM usuarios WHERE id = ?').get(usuarioId);
+  const diaFechamento = usuario?.dia_fechamento_cartao ?? null;
+  const { inicioCiclo, fimCiclo } = calcularCicloCartao(diaFechamento, dataHoje);
+  const limiteSuperiorExclusivo = somarDiasISO(fimCiclo, 1);
+  const linha = db.prepare(`
+    SELECT
+      ${somaEmReaisSQL('d')} AS total,
+      COUNT(*) AS quantidade
+    FROM despesas d
+    WHERE d.usuario_id = ?
+      AND d.forma_pagamento = 'credito'
+      AND d.data >= ? AND d.data < ?
+  `).get(usuarioId, inicioCiclo, limiteSuperiorExclusivo);
+
+  return {
+    diaFechamento,
+    inicioCiclo,
+    fimCiclo,
+    total: Number(linha?.total || 0),
+    quantidade: Number(linha?.quantidade || 0),
+  };
+}
+
 // GET /api/resumo
 // Retorna os totais usados na tela de Visão Geral: total gasto, orçamento
 // total, disponível e quantidade de categorias em alerta.
@@ -50,6 +116,7 @@ router.get('/', (req, res) => {
   const categoriasComAlerta = categoriasComValores.filter((c) => c.gasto > c.limite).length;
   const percentualUtilizado = orcamentoTotal > 0 ? (totalGasto / orcamentoTotal) * 100 : 0;
   const { projecaoMes, diaAtual, diasNoMes } = calcularProjecaoMes(totalGasto);
+  const faturaCartao = obterFaturaCartao(req.usuarioId);
 
   res.json({
     mes: mesAtual,
@@ -63,6 +130,7 @@ router.get('/', (req, res) => {
     projecaoMes,
     diaAtual,
     diasNoMes,
+    faturaCartao,
     gastoPorCategoria: categoriasComValores.map((c) => ({
       nome: c.nome,
       gasto: c.gasto,
@@ -73,3 +141,4 @@ router.get('/', (req, res) => {
 
 module.exports = router;
 module.exports.calcularProjecaoMes = calcularProjecaoMes;
+module.exports.calcularCicloCartao = calcularCicloCartao;

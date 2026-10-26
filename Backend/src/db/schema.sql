@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   email TEXT NOT NULL UNIQUE,
   senha_hash TEXT NOT NULL,
   orcamento_recorrente INTEGER NOT NULL DEFAULT 0,
+  dia_fechamento_cartao INTEGER,
   criado_em TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

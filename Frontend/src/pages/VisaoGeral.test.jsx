@@ -20,6 +20,13 @@ const resumoMock = {
   projecaoMes: 310,
   diaAtual: 10,
   diasNoMes: 31,
+  faturaCartao: {
+    diaFechamento: 10,
+    inicioCiclo: '2026-09-11',
+    fimCiclo: '2026-10-10',
+    total: 245.5,
+    quantidade: 2,
+  },
   gastoPorCategoria: [],
 };
 
@@ -42,6 +49,9 @@ test('renderiza o dashboard com os totais e a projeção do mês vindos da API, 
   expect(document.body.textContent).toContain('100,00');
   expect(document.body.textContent).toContain('No ritmo atual (10/31 dias), você fecha o mês com');
   expect(document.body.textContent).toContain('310,00');
+  expect(screen.getByText('Fatura do Cartão (Crédito)')).toBeInTheDocument();
+  expect(document.body.textContent).toContain('245,50');
+  expect(screen.getByRole('button', { name: /Configurar dia de fechamento do cartão/i })).toHaveTextContent('fecha dia 10');
 });
 
 test('permite repetir o orçamento do mês anterior com um clique quando o mês começa zerado', async () => {

@@ -88,6 +88,26 @@ router.put('/', (req, res) => {
   res.json(obterOrcamentoDoMes(req.usuarioId, mes));
 });
 
+// PUT /api/orcamento/cartao — define ou limpa o dia de fechamento da fatura
+// do cartão de crédito (1 a 31, ou null para usar o mês-calendário).
+router.put('/cartao', (req, res) => {
+  const { dia_fechamento } = req.body;
+
+  if (
+    dia_fechamento !== null &&
+    (!Number.isInteger(dia_fechamento) || dia_fechamento < 1 || dia_fechamento > 31)
+  ) {
+    return res.status(400).json({ erro: 'dia_fechamento deve ser um número inteiro entre 1 e 31' });
+  }
+
+  db.prepare('UPDATE usuarios SET dia_fechamento_cartao = ? WHERE id = ?').run(
+    dia_fechamento,
+    req.usuarioId
+  );
+
+  res.json({ diaFechamento: dia_fechamento });
+});
+
 module.exports = router;
 module.exports.garantirOrcamentoDoMes = garantirOrcamentoDoMes;
 module.exports.obterOrcamentoDoMes = obterOrcamentoDoMes;

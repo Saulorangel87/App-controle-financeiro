@@ -84,6 +84,7 @@ test('migrações de schema são idempotentes e preservam dados pré-existentes'
       assert.ok(colunas('usuarios').includes('ultimo_login'));
       assert.ok(colunas('usuarios').includes('aviso_inatividade_em'));
       assert.ok(colunas('usuarios').includes('orcamento_recorrente'));
+      assert.ok(colunas('usuarios').includes('dia_fechamento_cartao'));
       assert.ok(colunas('despesas_recorrentes').includes('parcela_total'));
       assert.ok(colunas('despesas_recorrentes').includes('parcela_mes_inicio'));
       assert.ok(colunas('despesas_recorrentes').includes('categoria_id'));

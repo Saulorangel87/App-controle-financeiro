@@ -135,4 +135,12 @@ if (!colunasUsuariosOrcamento.some((c) => c.name === 'orcamento_recorrente')) {
   db.exec('ALTER TABLE usuarios ADD COLUMN orcamento_recorrente INTEGER NOT NULL DEFAULT 0');
 }
 
+// Migração idempotente: dia de fechamento da fatura do cartão de crédito
+// (1 a 31, opcional) para somar as despesas com forma_pagamento = 'credito'
+// dentro do ciclo aberto do cartão.
+const colunasUsuariosCartao = db.prepare('PRAGMA table_info(usuarios)').all();
+if (!colunasUsuariosCartao.some((c) => c.name === 'dia_fechamento_cartao')) {
+  db.exec('ALTER TABLE usuarios ADD COLUMN dia_fechamento_cartao INTEGER');
+}
+
 module.exports = db;

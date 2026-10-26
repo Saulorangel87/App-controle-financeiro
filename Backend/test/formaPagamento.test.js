@@ -13,6 +13,18 @@ process.env.RESEND_API_KEY = '';
 
 const app = require('../src/server');
 const db = require('../src/db');
+const { calcularCicloCartao } = require('../src/routes/resumo');
+
+test('calcularCicloCartao calcula o ciclo aberto antes e depois do fechamento', () => {
+  assert.deepEqual(calcularCicloCartao(10, '2026-10-05'), {
+    inicioCiclo: '2026-09-11',
+    fimCiclo: '2026-10-10',
+  });
+  assert.deepEqual(calcularCicloCartao(10, '2026-10-15'), {
+    inicioCiclo: '2026-10-11',
+    fimCiclo: '2026-11-10',
+  });
+});
 
 async function jsonFetch(baseUrl, rota, opcoes = {}) {
   const resposta = await fetch(`${baseUrl}${rota}`, {
@@ -87,4 +99,31 @@ test('forma de pagamento é validada, salva e filtrável em despesas e relatóri
   resultado = await jsonFetch(baseUrl, `/api/relatorio?mes=${hoje.slice(0, 7)}&forma_pagamento=pix`, { headers: autenticado });
   assert.equal(resultado.corpo.totalAtual, 10);
   assert.equal(resultado.corpo.despesas.length, 1);
+
+  resultado = await jsonFetch(baseUrl, '/api/despesas', {
+    method: 'POST',
+    headers: autenticado,
+    body: JSON.stringify({ descricao: 'Compra no cartão', valor: 150, categoria_id: categoriaId, data: hoje, forma_pagamento: 'credito' }),
+  });
+  assert.equal(resultado.resposta.status, 201);
+
+  resultado = await jsonFetch(baseUrl, '/api/orcamento/cartao', {
+    method: 'PUT',
+    headers: autenticado,
+    body: JSON.stringify({ dia_fechamento: 40 }),
+  });
+  assert.equal(resultado.resposta.status, 400);
+
+  resultado = await jsonFetch(baseUrl, '/api/orcamento/cartao', {
+    method: 'PUT',
+    headers: autenticado,
+    body: JSON.stringify({ dia_fechamento: 25 }),
+  });
+  assert.equal(resultado.resposta.status, 200);
+  assert.equal(resultado.corpo.diaFechamento, 25);
+
+  resultado = await jsonFetch(baseUrl, '/api/resumo', { headers: autenticado });
+  assert.equal(resultado.corpo.faturaCartao.diaFechamento, 25);
+  assert.equal(resultado.corpo.faturaCartao.total, 150);
+  assert.equal(resultado.corpo.faturaCartao.quantidade, 1);
 });

@@ -44,7 +44,7 @@ autorizar as notificações.
 ## ✨ Funcionalidades
 
 - 🔐 **Cadastro e login** com senha criptografada (bcrypt), access token JWT curto com refresh token seguro, verificação de email obrigatória e recuperação de senha por email
-- 📊 **Dashboard** com total gasto, orçamento, disponível, **projeção de fechamento do mês** no ritmo atual e gráfico de gastos por categoria (pizza no mobile, barra no desktop)
+- 📊 **Dashboard** com total gasto, orçamento, disponível, **projeção de fechamento do mês** no ritmo atual, **fatura aberta do cartão de crédito** (com dia de fechamento configurável) e gráfico de gastos por categoria (pizza no mobile, barra no desktop)
 - 🏷️ **Gerenciamento completo de categorias** — criar, renomear, escolher ícone e cor, editar limite mensal e excluir categorias sem lançamentos, com indicador visual de status (OK / Excedido)
 - 💸 **CRUD completo de despesas** — criar, editar e excluir, com busca por descrição, filtros por mês/categoria/forma de pagamento, paginação e bloqueio de data futura
 - 🚨 **Alertas automáticos** para categorias que ultrapassaram o limite

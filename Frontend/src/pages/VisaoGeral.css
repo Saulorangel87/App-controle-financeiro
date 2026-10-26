@@ -105,10 +105,41 @@
 }
 
 .bloco-orcamento,
+.bloco-fatura-cartao,
 .bloco-grafico,
 .bloco-despesas,
 .bloco-entradas {
   padding: 20px;
+}
+
+.bloco-fatura-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.bloco-fatura-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.legenda-ciclo-cartao {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.bloco-fatura-direita {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.edicao-fechamento .input-limite {
+  width: 96px;
 }
 
 .lista-entradas {

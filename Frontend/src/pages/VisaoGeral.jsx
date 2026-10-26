@@ -48,6 +48,8 @@ export default function VisaoGeral() {
   const [editandoOrcamento, setEditandoOrcamento] = useState(false);
   const [novoOrcamento, setNovoOrcamento] = useState('');
   const [orcamentoRecorrente, setOrcamentoRecorrente] = useState(false);
+  const [editandoFechamento, setEditandoFechamento] = useState(false);
+  const [novoDiaFechamento, setNovoDiaFechamento] = useState('');
   const [modalEntradaAberto, setModalEntradaAberto] = useState(false);
   const [entradaEditando, setEntradaEditando] = useState(null);
   const [paginaEntradas, setPaginaEntradas] = useState(1);
@@ -119,6 +121,19 @@ export default function VisaoGeral() {
 
   async function repetirOrcamentoAnterior() {
     await api.put('/orcamento', { valor: resumo.orcamentoMesAnterior, recorrente: true });
+    carregarResumo();
+  }
+
+  function abrirEdicaoFechamento() {
+    setNovoDiaFechamento(resumo.faturaCartao?.diaFechamento ? String(resumo.faturaCartao.diaFechamento) : '');
+    setEditandoFechamento(true);
+  }
+
+  async function salvarFechamentoCartao() {
+    const limpo = novoDiaFechamento.trim();
+    const dia = limpo === '' ? null : Number(limpo);
+    await api.put('/orcamento/cartao', { dia_fechamento: dia });
+    setEditandoFechamento(false);
     carregarResumo();
   }
 
@@ -260,6 +275,55 @@ export default function VisaoGeral() {
           </p>
         )}
       </div>
+
+      {resumo.faturaCartao && (
+        <div className="panel bloco-fatura-cartao">
+          <div className="bloco-fatura-header">
+            <div className="bloco-fatura-info">
+              <span className="label">Fatura do Cartão (Crédito)</span>
+              <span className="label legenda-ciclo-cartao">
+                Ciclo: {formatarData(resumo.faturaCartao.inicioCiclo)} a {formatarData(resumo.faturaCartao.fimCiclo)}
+                {' · '}
+                {resumo.faturaCartao.quantidade} compra{resumo.faturaCartao.quantidade === 1 ? '' : 's'}
+              </span>
+            </div>
+            <div className="bloco-fatura-direita">
+              <strong className="valor" style={{ color: 'var(--accent)' }}>
+                {formatarMoeda(resumo.faturaCartao.total)}
+              </strong>
+              {!editandoFechamento ? (
+                <button
+                  type="button"
+                  className="botao-editar-inline"
+                  onClick={abrirEdicaoFechamento}
+                  aria-label="Configurar dia de fechamento do cartão"
+                >
+                  {resumo.faturaCartao.diaFechamento
+                    ? `fecha dia ${resumo.faturaCartao.diaFechamento}`
+                    : 'definir fechamento'}
+                </button>
+              ) : (
+                <div className="edicao-orcamento edicao-fechamento">
+                  <label className="sr-only" htmlFor="input-dia-fechamento">Dia de fechamento do cartão</label>
+                  <input
+                    id="input-dia-fechamento"
+                    type="number"
+                    min="1"
+                    max="31"
+                    placeholder="Dia (1-31)"
+                    value={novoDiaFechamento}
+                    onChange={(e) => setNovoDiaFechamento(e.target.value)}
+                    className="input-limite"
+                  />
+                  <button type="button" className="btn-primary" onClick={salvarFechamentoCartao}>
+                    Salvar
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {entradas.length > 0 && (
         <div className="panel bloco-entradas">
