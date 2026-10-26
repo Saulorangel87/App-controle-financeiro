@@ -49,6 +49,13 @@ function gerarTokenSessao(usuario) {
 const REFRESH_COOKIE = 'refresh_token';
 const REFRESH_DIAS = 30;
 
+// Quando o access token expira, várias requisições (ou abas) podem tentar
+// renovar ao mesmo tempo com o MESMO cookie. A primeira troca o token; sem
+// tolerância, as outras encontrariam o token já revogado, responderiam 401 e
+// apagariam o cookie novo — deslogando a pessoa. Por isso o token recém-trocado
+// ainda vale por alguns segundos (só gera access token, não rotaciona de novo).
+const TOLERANCIA_REUSO_MS = 30 * 1000;
+
 function hashRefreshToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
@@ -80,31 +87,59 @@ function lerCookie(req, nome) {
 function criarRefreshToken(usuarioId) {
   const token = crypto.randomBytes(48).toString('hex');
   const expiraEm = new Date(Date.now() + REFRESH_DIAS * 24 * 60 * 60 * 1000).toISOString();
-  db.prepare(`
+  const info = db.prepare(`
     INSERT INTO sessoes (usuario_id, token_hash, expira_em)
     VALUES (?, ?, ?)
   `).run(usuarioId, hashRefreshToken(token), expiraEm);
-  return token;
+  return { token, sessaoId: info.lastInsertRowid };
 }
 
+// Reuso dentro da tolerância: a sessão foi trocada por uma renovação (não por
+// logout) há poucos segundos, e a sucessora não foi encerrada por logout —
+// uma sucessora revogada só é aceitável se ela própria foi rotacionada.
+function reusoTolerado(sessao) {
+  if (!sessao.rotacionada_em) return false;
+  if (Date.now() - new Date(sessao.rotacionada_em).getTime() > TOLERANCIA_REUSO_MS) return false;
+  const sucessora = db.prepare('SELECT revogada, rotacionada_em FROM sessoes WHERE id = ?')
+    .get(sessao.substituida_por);
+  return Boolean(sucessora) && (!sucessora.revogada || Boolean(sucessora.rotacionada_em));
+}
+
+// Retorna o usuário dono do refresh token do cookie (ou null) e, se o token
+// ainda estava ativo, troca por um novo. As colunas são listadas uma a uma de
+// propósito: com "SELECT s.*, u.*" o id do usuário sobrescrevia o id da sessão,
+// e a rotação revogava a sessão errada em vez da apresentada.
 function renovarSessao(req, res) {
   const tokenAtual = lerCookie(req, REFRESH_COOKIE);
   if (!tokenAtual) return null;
 
   const sessao = db.prepare(`
-    SELECT s.*, u.* FROM sessoes s
+    SELECT s.id, s.usuario_id, s.expira_em, s.revogada, s.rotacionada_em, s.substituida_por,
+           u.nome, u.email
+    FROM sessoes s
     JOIN usuarios u ON u.id = s.usuario_id
-    WHERE s.token_hash = ? AND s.revogada = 0
+    WHERE s.token_hash = ?
   `).get(hashRefreshToken(tokenAtual));
   if (!sessao || new Date(sessao.expira_em) <= new Date()) return null;
 
+  const usuario = { id: sessao.usuario_id, nome: sessao.nome, email: sessao.email };
+
+  if (sessao.revogada) {
+    // O cookie novo já foi (ou está sendo) entregue pela renovação que venceu
+    // a corrida; aqui só sai um access token, sem mexer no cookie.
+    return reusoTolerado(sessao) ? usuario : null;
+  }
+
   const rotacionarSessao = db.transaction(() => {
-    db.prepare('UPDATE sessoes SET revogada = 1 WHERE id = ?').run(sessao.id);
-    return criarRefreshToken(sessao.usuario_id);
+    const nova = criarRefreshToken(sessao.usuario_id);
+    db.prepare(`
+      UPDATE sessoes SET revogada = 1, rotacionada_em = ?, substituida_por = ?
+      WHERE id = ?
+    `).run(new Date().toISOString(), nova.sessaoId, sessao.id);
+    return nova.token;
   });
-  const novoRefreshToken = rotacionarSessao();
-  definirCookieRefresh(res, novoRefreshToken);
-  return sessao;
+  definirCookieRefresh(res, rotacionarSessao());
+  return usuario;
 }
 
 function usuarioPublico(usuario) {
@@ -213,8 +248,7 @@ router.post('/login', async (req, res) => {
   }
 
   const token = gerarTokenSessao(usuario);
-  const refreshToken = criarRefreshToken(usuario.id);
-  definirCookieRefresh(res, refreshToken);
+  definirCookieRefresh(res, criarRefreshToken(usuario.id).token);
   db.prepare("UPDATE usuarios SET ultimo_login = datetime('now'), aviso_inatividade_em = NULL WHERE id = ?").run(usuario.id);
   res.json({ token, usuario: usuarioPublico(usuario) });
 });
@@ -229,16 +263,23 @@ router.post('/refresh', (req, res) => {
   }
   // Quem usa o app só pelo cookie de sessão nunca passa pelo /login, então
   // a renovação também conta como atividade (senão seria removido por inatividade).
-  db.prepare("UPDATE usuarios SET ultimo_login = datetime('now'), aviso_inatividade_em = NULL WHERE id = ?").run(usuario.usuario_id);
+  db.prepare("UPDATE usuarios SET ultimo_login = datetime('now'), aviso_inatividade_em = NULL WHERE id = ?").run(usuario.id);
   res.json({ token: gerarTokenSessao(usuario), usuario: usuarioPublico(usuario) });
 });
 
 // POST /api/auth/logout — revoga a sessão persistente atual.
 router.post('/logout', (req, res) => {
   const token = lerCookie(req, REFRESH_COOKIE);
-  if (token) {
-    db.prepare('UPDATE sessoes SET revogada = 1 WHERE token_hash = ?')
-      .run(hashRefreshToken(token));
+  const sessao = token
+    ? db.prepare('SELECT id, substituida_por FROM sessoes WHERE token_hash = ?').get(hashRefreshToken(token))
+    : null;
+  if (sessao) {
+    // rotacionada_em NULL marca a revogação como logout, então o token anterior
+    // (ainda na tolerância de reuso) também deixa de valer. A sucessora entra
+    // junto para o caso de o logout chegar com o cookie antigo, logo depois
+    // de uma renovação.
+    db.prepare('UPDATE sessoes SET revogada = 1, rotacionada_em = NULL WHERE id IN (?, ?)')
+      .run(sessao.id, sessao.substituida_por);
   }
   limparCookieRefresh(res);
   res.status(204).send();

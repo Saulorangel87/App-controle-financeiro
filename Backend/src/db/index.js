@@ -101,4 +101,16 @@ if (!colunasDespesasPagamento.some((c) => c.name === 'forma_pagamento')) {
   db.exec('ALTER TABLE despesas ADD COLUMN forma_pagamento TEXT');
 }
 
+// Migração idempotente: rastreia a rotação do refresh token (quando a sessão
+// foi trocada e por qual), usada pela tolerância a renovações simultâneas em
+// routes/auth.js. Sessões existentes ficam com NULL — tratadas como ativas
+// ou revogadas por logout, exatamente como antes.
+const colunasSessoes = db.prepare('PRAGMA table_info(sessoes)').all();
+if (!colunasSessoes.some((c) => c.name === 'rotacionada_em')) {
+  db.exec('ALTER TABLE sessoes ADD COLUMN rotacionada_em TEXT');
+}
+if (!colunasSessoes.some((c) => c.name === 'substituida_por')) {
+  db.exec('ALTER TABLE sessoes ADD COLUMN substituida_por INTEGER');
+}
+
 module.exports = db;

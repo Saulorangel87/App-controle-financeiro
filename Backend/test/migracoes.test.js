@@ -28,8 +28,17 @@ function criarBancoAntigo(caminho) {
       valor REAL NOT NULL DEFAULT 0,
       atualizado_em TEXT NOT NULL DEFAULT (datetime('now'))
     );
+    CREATE TABLE sessoes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      usuario_id INTEGER NOT NULL,
+      token_hash TEXT NOT NULL UNIQUE,
+      expira_em TEXT NOT NULL,
+      revogada INTEGER NOT NULL DEFAULT 0,
+      criado_em TEXT NOT NULL DEFAULT (datetime('now'))
+    );
     INSERT INTO usuarios (nome, email, senha_hash) VALUES ('Migração Teste', 'migracao@example.com', 'hash-qualquer');
     INSERT INTO orcamento (usuario_id, valor) VALUES (1, 100);
+    INSERT INTO sessoes (usuario_id, token_hash, expira_em) VALUES (1, 'hash-sessao', '2099-01-01T00:00:00.000Z');
   `);
   db.close();
 }
@@ -66,6 +75,10 @@ test('migrações de schema são idempotentes e preservam dados pré-existentes'
       assert.ok(colunas('despesas_recorrentes').includes('parcela_mes_inicio'));
       assert.ok(colunas('despesas').includes('dividida_com'));
       assert.ok(colunas('despesas').includes('divisao_valor_centavos'));
+      assert.ok(colunas('sessoes').includes('rotacionada_em'));
+      assert.ok(colunas('sessoes').includes('substituida_por'));
+      const sessao = db.prepare('SELECT revogada, rotacionada_em FROM sessoes WHERE token_hash = ?').get('hash-sessao');
+      assert.deepEqual({ ...sessao }, { revogada: 0, rotacionada_em: null }, 'sessão existente continua ativa');
 
       // Migração one-shot orcamento -> orcamento_mensal: o valor antigo
       // aparece uma vez só no mês corrente, sem duplicar na segunda rodada.

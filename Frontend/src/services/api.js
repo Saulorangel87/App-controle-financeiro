@@ -10,10 +10,23 @@ export function definirToken(token) {
   accessToken = token;
 }
 
-export async function renovarSessao() {
-  const res = await axios.post(`${baseURL}/auth/refresh`, {}, { withCredentials: true });
-  accessToken = res.data.token;
-  return res.data;
+let renovacaoEmAndamento = null;
+
+// Quando o access token expira, várias requisições falham com 401 ao mesmo
+// tempo (a Visão Geral dispara 4–6 em paralelo). Todas esperam a MESMA
+// renovação em vez de cada uma trocar o refresh token por conta própria.
+export function renovarSessao() {
+  if (!renovacaoEmAndamento) {
+    renovacaoEmAndamento = axios.post(`${baseURL}/auth/refresh`, {}, { withCredentials: true })
+      .then((res) => {
+        accessToken = res.data.token;
+        return res.data;
+      })
+      .finally(() => {
+        renovacaoEmAndamento = null;
+      });
+  }
+  return renovacaoEmAndamento;
 }
 
 const api = axios.create({ baseURL, withCredentials: true });

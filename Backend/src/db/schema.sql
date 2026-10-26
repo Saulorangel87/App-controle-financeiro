@@ -158,12 +158,18 @@ CREATE INDEX IF NOT EXISTS idx_tokens_usuario ON tokens(usuario_id);
 -- Sessões persistentes: o access token JWT é curto e o refresh token bruto
 -- nunca é salvo no banco, apenas seu hash SHA-256. A rotação revoga o token
 -- anterior a cada renovação e permite invalidar sessões no logout.
+-- rotacionada_em/substituida_por: quando e por qual sessão o token foi trocado
+-- numa renovação (NULL = revogada por logout ou ainda ativa). Permitem aceitar
+-- por alguns segundos o token recém-trocado, quando várias requisições/abas
+-- renovam ao mesmo tempo com o mesmo cookie (ver routes/auth.js).
 CREATE TABLE IF NOT EXISTS sessoes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   usuario_id INTEGER NOT NULL,
   token_hash TEXT NOT NULL UNIQUE,
   expira_em TEXT NOT NULL,
   revogada INTEGER NOT NULL DEFAULT 0,
+  rotacionada_em TEXT,
+  substituida_por INTEGER,
   criado_em TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
