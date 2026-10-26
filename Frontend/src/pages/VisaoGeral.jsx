@@ -286,10 +286,12 @@ export default function VisaoGeral() {
                 : 'var(--text-secondary)',
             }}
           >
-            No ritmo atual ({resumo.diaAtual}/{resumo.diasNoMes} dias), você fecha o mês com{' '}
-            <strong>{formatarMoeda(resumo.projecaoMes)}</strong>
-            {resumo.orcamentoTotal > 0 && resumo.projecaoMes > resumo.orcamentoTotal
-              ? ` (${formatarMoeda(resumo.projecaoMes - resumo.orcamentoTotal)} acima do orçamento)`
+            No ritmo atual ({resumo.diaAtual}/{resumo.diasNoMes} dias), você deve gastar{' '}
+            <strong>{formatarMoeda(resumo.projecaoMes)}</strong> até o fim do mês
+            {resumo.orcamentoTotal > 0
+              ? resumo.projecaoMes > resumo.orcamentoTotal
+                ? ` (${formatarMoeda(resumo.projecaoMes - resumo.orcamentoTotal)} acima do orçamento)`
+                : ` (${formatarMoeda(resumo.orcamentoTotal - resumo.projecaoMes)} abaixo do orçamento)`
               : ''}
           </p>
         )}

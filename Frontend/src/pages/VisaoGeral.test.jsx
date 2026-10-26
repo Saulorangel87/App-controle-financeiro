@@ -47,8 +47,9 @@ test('renderiza o dashboard com os totais e a projeção do mês vindos da API, 
 
   expect(await screen.findByText('Total Gasto')).toBeInTheDocument();
   expect(document.body.textContent).toContain('100,00');
-  expect(document.body.textContent).toContain('No ritmo atual (10/31 dias), você fecha o mês com');
+  expect(document.body.textContent).toContain('No ritmo atual (10/31 dias), você deve gastar');
   expect(document.body.textContent).toContain('310,00');
+  expect(document.body.textContent).toContain('190,00 abaixo do orçamento');
   expect(screen.getByText('Fatura do Cartão (Crédito)')).toBeInTheDocument();
   expect(document.body.textContent).toContain('245,50');
   expect(screen.getByRole('button', { name: /Configurar dia de fechamento do cartão/i })).toHaveTextContent('fecha dia 10');
