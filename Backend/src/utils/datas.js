@@ -25,4 +25,14 @@ function mesAtualISO(agora = new Date()) {
   return hojeISO(agora).slice(0, 7);
 }
 
-module.exports = { TIME_ZONE, hojeISO, mesAtualISO };
+// Intervalo [primeiro dia de mesInicio, primeiro dia do mês seguinte a
+// mesFim) em "YYYY-MM-DD", para filtrar com "data >= ? AND data < ?". Essa
+// comparação usa os índices (usuario_id, data); strftime('%Y-%m', data) = ?
+// obrigava o SQLite a ler todos os lançamentos do usuário.
+function intervaloDosMeses(mesInicio, mesFim = mesInicio) {
+  const [ano, mes] = mesFim.split('-').map(Number);
+  const seguinte = mes === 12 ? `${ano + 1}-01` : `${ano}-${String(mes + 1).padStart(2, '0')}`;
+  return [`${mesInicio}-01`, `${seguinte}-01`];
+}
+
+module.exports = { TIME_ZONE, hojeISO, mesAtualISO, intervaloDosMeses };

@@ -11,8 +11,10 @@ function dataISOValida(data) {
     && dataConvertida.toISOString().slice(0, 10) === data;
 }
 
+// "YYYY-MM" com mês de 01 a 12: um "2026-13" viraria um intervalo de datas
+// que nunca casa com nada e a tela mostraria o mês vazio sem explicar o erro.
 function mesISOValido(mes) {
-  return typeof mes === 'string' && /^\d{4}-\d{2}$/.test(mes);
+  return typeof mes === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(mes);
 }
 
 // Texto obrigatório: precisa ser string de verdade (um número ou objeto no

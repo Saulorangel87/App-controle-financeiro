@@ -1,8 +1,8 @@
 const express = require('express');
 const db = require('../db');
 const { numeroMonetarioValido, mesISOValido } = require('../utils/validacao');
-const { mesAtualISO } = require('../utils/datas');
-const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
+const { mesAtualISO, intervaloDosMeses } = require('../utils/datas');
+const { paraCentavos, comValorEmReais, somaEmReaisSQL } = require('../utils/dinheiro');
 
 const router = express.Router();
 
@@ -15,17 +15,18 @@ const mesAtual = mesAtualISO;
 // duas pontas). É a mesma ideia de "sobrou" usada no saldo do Relatório,
 // só que somada ao longo de vários meses em vez de um só.
 function saldoDoPeriodo(usuarioId, mesInicio, mesFim) {
+  const intervalo = intervaloDosMeses(mesInicio, mesFim);
   const totalEntradas = db.prepare(`
-    SELECT COALESCE(SUM(COALESCE(valor_centavos, ROUND(valor * 100)) / 100.0), 0) AS total
+    SELECT ${somaEmReaisSQL()} AS total
     FROM entradas
-    WHERE usuario_id = ? AND strftime('%Y-%m', data) BETWEEN ? AND ?
-  `).get(usuarioId, mesInicio, mesFim).total;
+    WHERE usuario_id = ? AND data >= ? AND data < ?
+  `).get(usuarioId, ...intervalo).total;
 
   const totalDespesas = db.prepare(`
-    SELECT COALESCE(SUM(COALESCE(valor_centavos, ROUND(valor * 100)) / 100.0), 0) AS total
+    SELECT ${somaEmReaisSQL()} AS total
     FROM despesas
-    WHERE usuario_id = ? AND strftime('%Y-%m', data) BETWEEN ? AND ?
-  `).get(usuarioId, mesInicio, mesFim).total;
+    WHERE usuario_id = ? AND data >= ? AND data < ?
+  `).get(usuarioId, ...intervalo).total;
 
   return totalEntradas - totalDespesas;
 }

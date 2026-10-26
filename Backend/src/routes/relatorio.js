@@ -1,8 +1,8 @@
 const express = require('express');
 const db = require('../db');
-const { comValorEmReais, centavosOuNulo } = require('../utils/dinheiro');
-const { FORMAS_PAGAMENTO_VALIDAS, formaPagamentoValida } = require('../utils/validacao');
-const { mesAtualISO } = require('../utils/datas');
+const { comValorEmReais, centavosOuNulo, somaEmReaisSQL } = require('../utils/dinheiro');
+const { FORMAS_PAGAMENTO_VALIDAS, formaPagamentoValida, mesISOValido } = require('../utils/validacao');
+const { mesAtualISO, intervaloDosMeses } = require('../utils/datas');
 
 const router = express.Router();
 
@@ -23,13 +23,13 @@ function mesAnterior(mes) {
 function totalDoMes(usuarioId, mes, categoriaId, formaPagamento) {
   const filtroCategoria = categoriaId ? 'AND categoria_id = ?' : '';
   const filtroFormaPagamento = formaPagamento ? 'AND forma_pagamento = ?' : '';
-  const parametros = [usuarioId, mes];
+  const parametros = [usuarioId, ...intervaloDosMeses(mes)];
   if (categoriaId) parametros.push(categoriaId);
   if (formaPagamento) parametros.push(formaPagamento);
   const row = db.prepare(`
-    SELECT COALESCE(SUM(COALESCE(valor_centavos, ROUND(valor * 100)) / 100.0), 0) AS total
+    SELECT ${somaEmReaisSQL()} AS total
     FROM despesas
-    WHERE usuario_id = ? AND strftime('%Y-%m', data) = ? ${filtroCategoria} ${filtroFormaPagamento}
+    WHERE usuario_id = ? AND data >= ? AND data < ? ${filtroCategoria} ${filtroFormaPagamento}
   `).get(...parametros);
   return row.total;
 }
@@ -96,7 +96,7 @@ router.get('/', (req, res) => {
   const categoriaId = req.query.categoria_id ? Number(req.query.categoria_id) : null;
   const formaPagamento = req.query.forma_pagamento || null;
 
-  if (!/^\d{4}-\d{2}$/.test(mes)) {
+  if (!mesISOValido(mes)) {
     return res.status(400).json({ erro: 'parâmetro mes inválido, use o formato YYYY-MM' });
   }
   if (!formaPagamentoValida(formaPagamento)) {
@@ -128,7 +128,8 @@ router.get('/', (req, res) => {
 
   const filtroCategoria = categoriaId ? 'AND d.categoria_id = ?' : '';
   const filtroFormaPagamento = formaPagamento ? 'AND d.forma_pagamento = ?' : '';
-  const parametrosDespesas = [req.usuarioId, mes];
+  const intervalo = intervaloDosMeses(mes);
+  const parametrosDespesas = [req.usuarioId, ...intervalo];
   if (categoriaId) parametrosDespesas.push(categoriaId);
   if (formaPagamento) parametrosDespesas.push(formaPagamento);
   const despesas = db.prepare(`
@@ -138,7 +139,7 @@ router.get('/', (req, res) => {
       c.nome AS categoria_nome, c.icone AS categoria_icone, c.cor AS categoria_cor
     FROM despesas d
     JOIN categorias c ON c.id = d.categoria_id
-    WHERE d.usuario_id = ? AND strftime('%Y-%m', d.data) = ? ${filtroCategoria} ${filtroFormaPagamento}
+    WHERE d.usuario_id = ? AND d.data >= ? AND d.data < ? ${filtroCategoria} ${filtroFormaPagamento}
     ORDER BY d.data DESC, d.id DESC
   `).all(...parametrosDespesas);
 
@@ -147,9 +148,9 @@ router.get('/', (req, res) => {
   const entradas = db.prepare(`
     SELECT id, origem, descricao, valor, valor_centavos, data
     FROM entradas
-    WHERE usuario_id = ? AND strftime('%Y-%m', data) = ?
+    WHERE usuario_id = ? AND data >= ? AND data < ?
     ORDER BY data DESC, id DESC
-  `).all(req.usuarioId, mes);
+  `).all(req.usuarioId, ...intervalo);
   const despesasComValores = despesas.map((despesa) => {
     const { divisao_valor_centavos, ...resto } = comValorEmReais(despesa);
     return { ...resto, divisao_valor: centavosOuNulo(divisao_valor_centavos) };
@@ -158,17 +159,17 @@ router.get('/', (req, res) => {
   const totalEntradas = entradasComValores.reduce((soma, e) => soma + e.valor, 0);
   const categoriasExcedidas = db.prepare(`
     SELECT c.id, c.nome, c.limite, c.limite_centavos,
-           COALESCE(SUM(COALESCE(d.valor_centavos, ROUND(d.valor * 100)) / 100.0), 0) AS gasto
+           ${somaEmReaisSQL('d')} AS gasto
     FROM categorias c
     LEFT JOIN despesas d
       ON d.categoria_id = c.id
       AND d.usuario_id = c.usuario_id
-      AND strftime('%Y-%m', d.data) = ?
+      AND d.data >= ? AND d.data < ?
     WHERE c.usuario_id = ? ${categoriaId ? 'AND c.id = ?' : ''}
     GROUP BY c.id
     HAVING gasto > COALESCE(c.limite_centavos / 100.0, c.limite)
     ORDER BY gasto DESC, c.nome ASC
-  `).all(...(categoriaId ? [mes, req.usuarioId, categoriaId] : [mes, req.usuarioId]))
+  `).all(...intervalo, req.usuarioId, ...(categoriaId ? [categoriaId] : []))
     .map((categoria) => comValorEmReais(categoria, 'limite'));
 
   res.json({

@@ -8,9 +8,9 @@ const {
   FORMAS_PAGAMENTO_VALIDAS,
   formaPagamentoValida,
 } = require('../utils/validacao');
-const { paraCentavos, comValorEmReais, centavosOuNulo } = require('../utils/dinheiro');
+const { paraCentavos, comValorEmReais, centavosOuNulo, somaEmReaisSQL } = require('../utils/dinheiro');
 const { registrar: registrarHistorico } = require('../utils/historico');
-const { hojeISO } = require('../utils/datas');
+const { hojeISO, intervaloDosMeses } = require('../utils/datas');
 
 const router = express.Router();
 
@@ -124,8 +124,8 @@ router.get('/', (req, res) => {
   const filtros = ['d.usuario_id = ?'];
   const params = [req.usuarioId];
   if (mes) {
-    filtros.push("strftime('%Y-%m', d.data) = ?");
-    params.push(mes);
+    filtros.push('d.data >= ? AND d.data < ?');
+    params.push(...intervaloDosMeses(mes));
   }
   if (forma_pagamento) {
     filtros.push('d.forma_pagamento = ?');
@@ -160,7 +160,7 @@ router.get('/', (req, res) => {
 
   const { total } = db.prepare(`SELECT COUNT(*) AS total ${baseSql}`).get(...params);
   const { totalGeral } = db.prepare(`
-    SELECT COALESCE(SUM(COALESCE(d.valor_centavos, ROUND(d.valor * 100)) / 100.0), 0) AS totalGeral ${baseSql}
+    SELECT ${somaEmReaisSQL('d')} AS totalGeral ${baseSql}
   `).get(...params);
 
   const despesas = db.prepare(`

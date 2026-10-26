@@ -32,4 +32,13 @@ function centavosOuNulo(centavos) {
   return Number.isInteger(centavos) ? deCentavos(centavos) : null;
 }
 
-module.exports = { paraCentavos, deCentavos, comValorEmReais, centavosOuNulo };
+// Soma de uma coluna monetária em SQL, já em reais. Soma os centavos inteiros
+// e divide uma vez só, no fim — somar valores já divididos por 100 acumulava
+// erro de ponto flutuante. Linhas antigas sem *_centavos usam o valor decimal.
+// prefixo é o apelido da tabela na consulta (ex: 'd' → d.valor_centavos).
+function somaEmReaisSQL(prefixo = '', coluna = 'valor') {
+  const p = prefixo ? `${prefixo}.` : '';
+  return `COALESCE(SUM(COALESCE(${p}${coluna}_centavos, ROUND(${p}${coluna} * 100))), 0) / 100.0`;
+}
+
+module.exports = { paraCentavos, deCentavos, comValorEmReais, centavosOuNulo, somaEmReaisSQL };

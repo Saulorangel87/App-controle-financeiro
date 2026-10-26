@@ -1,9 +1,9 @@
 const express = require('express');
 const db = require('../db');
-const { numeroMonetarioValido, dataISOValida } = require('../utils/validacao');
-const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
+const { numeroMonetarioValido, dataISOValida, mesISOValido } = require('../utils/validacao');
+const { paraCentavos, comValorEmReais, somaEmReaisSQL } = require('../utils/dinheiro');
 const { registrar: registrarHistorico } = require('../utils/historico');
-const { hojeISO, mesAtualISO } = require('../utils/datas');
+const { hojeISO, mesAtualISO, intervaloDosMeses } = require('../utils/datas');
 
 const router = express.Router();
 
@@ -46,15 +46,19 @@ function ajustarOrcamentoDoMes(usuarioId, data, delta) {
 router.get('/', (req, res) => {
   const { mes, pagina, porPagina } = req.query;
 
+  if (mes !== undefined && !mesISOValido(mes)) {
+    return res.status(400).json({ erro: 'parâmetro mes inválido, use o formato YYYY-MM' });
+  }
+
   const filtros = ['usuario_id = ?'];
   const params = [req.usuarioId];
   if (mes) {
-    filtros.push("strftime('%Y-%m', data) = ?");
-    params.push(mes);
+    filtros.push('data >= ? AND data < ?');
+    params.push(...intervaloDosMeses(mes));
   } else if (pagina === undefined && porPagina === undefined) {
     // Comportamento antigo, sem nenhum parâmetro: só o mês corrente.
-    filtros.push("strftime('%Y-%m', data) = ?");
-    params.push(mesAtualISO());
+    filtros.push('data >= ? AND data < ?');
+    params.push(...intervaloDosMeses(mesAtualISO()));
   }
   const whereSql = filtros.join(' AND ');
   const baseSql = `FROM entradas WHERE ${whereSql}`;
@@ -76,7 +80,7 @@ router.get('/', (req, res) => {
 
   const { total } = db.prepare(`SELECT COUNT(*) AS total ${baseSql}`).get(...params);
   const { totalGeral } = db.prepare(`
-    SELECT COALESCE(SUM(COALESCE(valor_centavos, ROUND(valor * 100)) / 100.0), 0) AS totalGeral ${baseSql}
+    SELECT ${somaEmReaisSQL()} AS totalGeral ${baseSql}
   `).get(...params);
 
   const entradas = db.prepare(`

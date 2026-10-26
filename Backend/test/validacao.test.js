@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { numeroMonetarioValido, dataISOValida } = require('../src/utils/validacao');
+const { numeroMonetarioValido, dataISOValida, mesISOValido } = require('../src/utils/validacao');
 
 test('aceita valores monetários finitos e positivos', () => {
   assert.equal(numeroMonetarioValido(10.5), true);
@@ -15,4 +15,13 @@ test('valida datas no formato ISO e rejeita datas impossíveis', () => {
   assert.equal(dataISOValida('2026-02-30'), false);
   assert.equal(dataISOValida('09/09/2026'), false);
   assert.equal(dataISOValida(20260909), false);
+});
+
+test('valida meses no formato YYYY-MM só de 01 a 12', () => {
+  assert.equal(mesISOValido('2026-01'), true);
+  assert.equal(mesISOValido('2026-12'), true);
+  assert.equal(mesISOValido('2026-00'), false);
+  assert.equal(mesISOValido('2026-13'), false);
+  assert.equal(mesISOValido('2026-1'), false);
+  assert.equal(mesISOValido(['2026-01']), false);
 });

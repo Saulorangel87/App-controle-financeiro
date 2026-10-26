@@ -1,8 +1,8 @@
 const express = require('express');
 const db = require('../db');
-const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
+const { paraCentavos, comValorEmReais, somaEmReaisSQL } = require('../utils/dinheiro');
 const { numeroMonetarioValido, textoValido } = require('../utils/validacao');
-const { mesAtualISO } = require('../utils/datas');
+const { mesAtualISO, intervaloDosMeses } = require('../utils/datas');
 
 const router = express.Router();
 
@@ -37,15 +37,15 @@ router.get('/', (req, res) => {
       c.cor,
       c.limite,
       c.limite_centavos,
-      COALESCE(SUM(COALESCE(d.valor_centavos, ROUND(d.valor * 100)) / 100.0), 0) AS gasto
+      ${somaEmReaisSQL('d')} AS gasto
     FROM categorias c
     LEFT JOIN despesas d
       ON d.categoria_id = c.id
-      AND strftime('%Y-%m', d.data) = ?
+      AND d.data >= ? AND d.data < ?
     WHERE c.usuario_id = ?
     GROUP BY c.id
     ORDER BY c.id
-  `).all(mesAtualISO(), req.usuarioId);
+  `).all(...intervaloDosMeses(mesAtualISO()), req.usuarioId);
 
   const resultado = categorias.map((linha) => {
     const c = comValorEmReais(linha, 'limite');
