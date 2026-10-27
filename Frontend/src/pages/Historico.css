@@ -1,0 +1,114 @@
+.historico-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.historico-filtros {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.historico-status {
+  min-height: 1.4em;
+  margin: 10px 0;
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.historico-vazio {
+  padding: 24px 0;
+}
+
+.lista-historico {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item-historico {
+  display: grid;
+  grid-template-columns: 130px 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.item-historico-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.item-historico-info strong {
+  overflow-wrap: anywhere;
+}
+
+.badge-acao {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.badge-acao.acao-excluir {
+  color: var(--danger);
+}
+
+.badge-acao.acao-criar {
+  color: var(--ok);
+}
+
+/* Estilos próprios (e não os de Despesas.css): a página carrega sozinha
+   quando aberta direto pelo endereço, sem o CSS das outras telas. */
+.historico-filtro {
+  min-width: 150px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-alt);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 11px;
+}
+
+.botao-restaurar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.botao-restaurar:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+@media (max-width: 640px) {
+  .item-historico {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "badge quando"
+      "info botao";
+    row-gap: 4px;
+  }
+
+  .badge-acao { grid-area: badge; }
+  .item-historico-info { grid-area: info; }
+  .item-historico-quando { grid-area: quando; }
+  .item-historico > :last-child { grid-area: botao; }
+}

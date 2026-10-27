@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Pencil, Trash2, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
+import { Pencil, Trash2, ChevronLeft, ChevronRight, Upload, History } from 'lucide-react';
 import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
 import { useDespesaModal } from '../contexts/DespesaModalContext';
@@ -54,7 +54,6 @@ export default function Despesas() {
 
   async function excluir(id) {
     const despesa = dados?.despesas.find((item) => item.id === id);
-    if (!window.confirm(`Tem certeza que deseja excluir a despesa "${despesa?.descricao || ''}"?`)) return;
     await api.delete(`/despesas/${id}`);
     setItemExcluido({ id, descricao: despesa?.descricao || 'Despesa' });
     // Se era o último registro da página (e não é a primeira página), volta
@@ -95,6 +94,9 @@ export default function Despesas() {
           <div className="despesas-header-acoes">
             <Link to="/importar" className="botao-importar">
               <Upload size={13} /> Importar extrato
+            </Link>
+            <Link to="/historico" className="botao-importar">
+              <History size={13} /> Histórico
             </Link>
             <span className="label">Total: <strong style={{ color: 'var(--text-primary)' }}>{formatarMoeda(totalGeral)}</strong></span>
           </div>

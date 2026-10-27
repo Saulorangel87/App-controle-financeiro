@@ -55,11 +55,14 @@ test('renderiza a lista de despesas vinda da API e filtra por busca, categoria e
     });
   });
 
-  vi.spyOn(window, 'confirm').mockReturnValue(true);
+  // Excluir não pergunta mais "tem certeza?": o aviso com "Desfazer" é o
+  // caminho de volta.
+  const confirmar = vi.spyOn(window, 'confirm');
   api.delete.mockResolvedValue({});
   api.post.mockResolvedValue({ data: {} });
 
   fireEvent.click(screen.getByRole('button', { name: 'Excluir despesa' }));
+  expect(confirmar).not.toHaveBeenCalled();
   const botaoDesfazer = await screen.findByRole('button', { name: 'Desfazer' });
   fireEvent.click(botaoDesfazer);
 

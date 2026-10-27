@@ -91,7 +91,6 @@ export default function VisaoGeral() {
   }
 
   async function excluirDespesa(despesa) {
-    if (!window.confirm(`Tem certeza que deseja excluir a despesa "${despesa.descricao}"?`)) return;
     await api.delete(`/despesas/${despesa.id}`);
     setItemExcluido({ tabela: 'despesas', id: despesa.id, rotulo: `Despesa "${despesa.descricao}"` });
     carregarTudo();

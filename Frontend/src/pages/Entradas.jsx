@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, History, Pencil, Plus, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import ModalEntrada from '../components/ModalEntrada';
 import { formatarMoeda, formatarData } from '../utils/formatters';
@@ -63,7 +64,6 @@ export default function Entradas() {
 
   async function excluir(id) {
     const entrada = dados?.entradas.find((item) => item.id === id);
-    if (!window.confirm(`Tem certeza que deseja excluir a entrada "${entrada?.origem || ''}"?`)) return;
     await api.delete(`/entradas/${id}`);
     setItemExcluido({ id, origem: entrada?.origem || 'Entrada' });
     carregarMeses();
@@ -110,6 +110,9 @@ export default function Entradas() {
             <button type="button" className="botao-importar" onClick={abrirNova}>
               <Plus size={14} /> Nova Entrada
             </button>
+            <Link to="/historico" className="botao-importar">
+              <History size={13} /> Histórico
+            </Link>
             <span className="label">
               Total: <strong style={{ color: 'var(--ok)' }}>+{formatarMoeda(totalGeral)}</strong>
             </span>

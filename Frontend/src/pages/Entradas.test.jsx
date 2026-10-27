@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import Entradas from './Entradas';
 import api from '../services/api';
 
@@ -25,7 +26,7 @@ test('permite editar uma entrada existente pela tela de entradas', async () => {
   });
   api.put.mockResolvedValue({ data: {} });
 
-  render(<Entradas />);
+  render(<MemoryRouter><Entradas /></MemoryRouter>);
 
   expect(await screen.findByText('Freelance')).toBeInTheDocument();
 
