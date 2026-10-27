@@ -44,13 +44,13 @@ autorizar as notificações.
 ## ✨ Funcionalidades
 
 - 🔐 **Cadastro e login** com senha criptografada (bcrypt, mínimo de 8 caracteres), access token JWT curto com refresh token seguro, verificação de email obrigatória, recuperação de senha por email, **troca de senha logado** e opção de **sair de todos os dispositivos**
-- 📊 **Dashboard** com total gasto, orçamento, disponível, **projeção de fechamento do mês** no ritmo atual, **fatura aberta do cartão de crédito** (com dia de fechamento configurável) e gráfico de gastos por categoria (pizza no mobile, barra no desktop)
+- 📊 **Dashboard** com total gasto, orçamento, disponível, **projeção de fechamento do mês** (gastos do dia a dia no ritmo atual + contas fixas pagas contadas uma vez só), **fatura aberta do cartão de crédito** (com dia de fechamento configurável) e gráfico de gastos por categoria (pizza no mobile, barra no desktop)
 - 🏷️ **Gerenciamento completo de categorias** — criar, renomear, escolher ícone e cor, editar limite mensal e excluir categorias sem lançamentos, com indicador visual de status (OK / Excedido)
-- 💸 **CRUD completo de despesas** — criar, editar e excluir (com opção de **desfazer exclusão** em um clique), busca por descrição, filtros por mês/categoria/forma de pagamento, paginação e bloqueio de data futura
+- 💸 **CRUD completo de despesas** — criar, editar e excluir (sem pop-up de confirmação: a exclusão mostra **Desfazer** na hora), **tela de histórico** em `/historico` com tudo o que foi criado, editado e excluído e opção de restaurar exclusões, busca por descrição, filtros por mês/categoria/forma de pagamento, paginação e bloqueio de data futura
 - 🚨 **Alertas automáticos** para categorias que ultrapassaram o limite
 - 📅 **Relatório mensal** com filtro por período/categoria, comparação de gastos, entradas, saldo, paginação e opção de **imprimir**
 - 📤 **Exportação Excel** do relatório mensal, com resumo financeiro, totais, despesas, entradas e formatação profissional
-- 💰 **Orçamento total editável**, com opção de **repetir automaticamente todo mês** ou copiar com um clique o orçamento do mês anterior
+- 💰 **Orçamento total editável**, com opção de **repetir automaticamente todo mês** (repete o valor-base; entradas avulsas como bônus ficam só no mês delas) ou copiar com um clique o orçamento do mês anterior
 - 🔄 **Dashboard sempre atualizado** ao mês corrente, mesmo com a aba aberta na virada do mês
 - 📱 **Totalmente responsivo e instalável (PWA)**, com menu hambúrguer e gráficos adaptados para telas menores
 - ⬇️ **Instalação pelo rodapé** quando o navegador oferecer a instalação e o app ainda não estiver instalado

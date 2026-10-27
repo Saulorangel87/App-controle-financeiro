@@ -11,7 +11,7 @@ const novidades = [
   ['Orçamento recorrente todo mês', 'Ative "Repetir todo mês" no orçamento ou copie o valor do mês anterior com um clique quando o mês começar.', <Sparkles size={18} />],
   ['Projeção do mês e fatura do cartão', 'Acompanhe na Visão Geral a projeção de fechamento do mês no ritmo atual e o total da fatura aberta do cartão de crédito com dia de fechamento configurável.', <CreditCard size={18} />],
   ['Gerenciar categorias e editar entradas', 'Crie novas categorias com escolha de ícone e cor, edite ou exclua categorias sem gastos e edite entradas com ajuste automático do orçamento.', <FolderKanban size={18} />],
-  ['Busca, filtros e desfazer exclusão', 'Busque despesas por descrição, filtre por categoria e forma de pagamento e desfaça exclusões acidentais de despesas ou entradas com um clique.', <Search size={18} />],
+  ['Busca, filtros e desfazer exclusão', 'Busque despesas por descrição, filtre por categoria e forma de pagamento e desfaça exclusões acidentais de despesas ou entradas com um clique — ou restaure depois pela tela Histórico, que mostra tudo o que foi criado, editado e excluído.', <Search size={18} />],
   ['Extrato OFX, sem duplicados e mais segurança', 'Importe arquivos .csv e .ofx com detecção automática de lançamentos repetidos, troque sua senha logado e encerre sessões em todos os dispositivos.', <History size={18} />],
 ];
 
