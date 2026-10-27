@@ -92,6 +92,11 @@ test('marcar conta recorrente como paga lança a despesa e desmarcar a remove', 
   assert.equal(resultado.status, 200);
   assert.equal((await despesasDoMes()).length, 1);
 
+  // A conta paga entra uma vez só na projeção do mês, não no ritmo diário.
+  const resumo = (await jsonFetch(baseUrl, '/api/resumo', { headers: autenticado })).corpo;
+  assert.equal(resumo.totalGasto, 162.37);
+  assert.equal(resumo.projecaoMes, 162.37);
+
   // Prestação leva a parcela na descrição.
   resultado = await pagar(geladeira.id, { pago: true, despesa: { valor: 300, categoria_id: moradia.id, data: hoje } });
   assert.equal(resultado.corpo.despesa_lancada.descricao, 'Geladeira (1/10)');

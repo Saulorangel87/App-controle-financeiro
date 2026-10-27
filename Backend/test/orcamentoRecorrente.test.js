@@ -72,4 +72,14 @@ test('orçamento recorrente herda o último mês positivo ao virar o mês', asyn
   assert.equal(proximoMes.valor, 5000);
   assert.equal(proximoMes.recorrente, true);
   assert.equal(proximoMes.valorMesAnterior, 5000);
+
+  // Uma entrada avulsa (bônus) soma no orçamento do mês dela, mas não vira
+  // parte do valor que se repete nos meses seguintes.
+  db.prepare(`
+    INSERT INTO entradas (usuario_id, origem, valor, valor_centavos, data) VALUES (?, 'Bônus', 1000, 100000, '2099-01-15')
+  `).run(usuario.id);
+  db.prepare("UPDATE orcamento_mensal SET valor = 6000, valor_centavos = 600000 WHERE usuario_id = ? AND mes = '2099-01'").run(usuario.id);
+  const fevereiro = obterOrcamentoDoMes(usuario.id, '2099-02');
+  assert.equal(fevereiro.valor, 5000);
+  assert.equal(fevereiro.valorMesAnterior, 5000);
 });

@@ -6,13 +6,27 @@ const { obterOrcamentoDoMes } = require('./orcamento');
 
 const router = express.Router();
 
-function calcularProjecaoMes(totalGasto, dataHoje = hojeISO()) {
+// Projeção = gasto fixo + gasto variável no ritmo diário até o fim do mês.
+// "Fixo" são as despesas lançadas ao pagar uma conta recorrente: acontecem
+// uma vez por mês, então não podem ser multiplicadas pelo ritmo — um aluguel
+// pago no dia 2 projetaria quinze aluguéis.
+function calcularProjecaoMes(totalGasto, dataHoje = hojeISO(), gastoFixo = 0) {
   const [ano, mes, diaAtual] = dataHoje.split('-').map(Number);
   const diasNoMes = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+  const variavel = Math.max(0, totalGasto - gastoFixo);
   const projecaoMes = totalGasto > 0 && diaAtual > 0
-    ? Number(((totalGasto / diaAtual) * diasNoMes).toFixed(2))
+    ? Number((gastoFixo + (variavel / diaAtual) * diasNoMes).toFixed(2))
     : 0;
   return { projecaoMes, diaAtual, diasNoMes };
+}
+
+function gastoFixoDoMes(usuarioId, mes) {
+  return db.prepare(`
+    SELECT ${somaEmReaisSQL('d')} AS total
+    FROM despesas d
+    JOIN despesas_recorrentes r ON r.despesa_paga_id = d.id AND r.usuario_id = d.usuario_id
+    WHERE d.usuario_id = ? AND r.pago_mes = ? AND d.data >= ? AND d.data < ?
+  `).get(usuarioId, mes, ...intervaloDosMeses(mes)).total;
 }
 
 function dataFechamentoDoMes(ano, mes, diaFechamento) {
@@ -115,7 +129,9 @@ router.get('/', (req, res) => {
   const disponivel = orcamentoTotal - totalGasto;
   const categoriasComAlerta = categoriasComValores.filter((c) => c.gasto > c.limite).length;
   const percentualUtilizado = orcamentoTotal > 0 ? (totalGasto / orcamentoTotal) * 100 : 0;
-  const { projecaoMes, diaAtual, diasNoMes } = calcularProjecaoMes(totalGasto);
+  const { projecaoMes, diaAtual, diasNoMes } = calcularProjecaoMes(
+    totalGasto, hojeISO(), gastoFixoDoMes(req.usuarioId, mesAtual),
+  );
   const faturaCartao = obterFaturaCartao(req.usuarioId);
 
   res.json({

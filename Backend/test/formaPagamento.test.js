@@ -93,6 +93,12 @@ test('forma de pagamento é validada, salva e filtrável em despesas e relatóri
   assert.equal(resultado.corpo.length, 1);
   assert.equal(resultado.corpo[0].descricao, 'Pago no pix');
 
+  // "%" e "_" na busca são texto, não curingas do LIKE.
+  resultado = await jsonFetch(baseUrl, '/api/despesas?busca=%25', { headers: autenticado });
+  assert.equal(resultado.corpo.length, 0);
+  resultado = await jsonFetch(baseUrl, '/api/despesas?busca=_', { headers: autenticado });
+  assert.equal(resultado.corpo.length, 0);
+
   resultado = await jsonFetch(baseUrl, '/api/despesas?categoria_id=abc', { headers: autenticado });
   assert.equal(resultado.resposta.status, 400);
 

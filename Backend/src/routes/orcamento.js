@@ -13,14 +13,30 @@ const mesAtual = mesAtualISO;
 // Se o usuário ativou orcamento_recorrente, o mês novo começa copiando o
 // valor do último mês anterior que tinha orçamento > 0; caso contrário,
 // começa em 0 como antes.
+//
+// O valor guardado em orcamento_mensal já inclui as entradas lançadas no mês
+// (routes/entradas.js soma cada uma nele). O que se repete é só a base — o
+// valor menos essas entradas —, senão um bônus ou reembolso de um mês
+// passaria a fazer parte do orçamento de todos os meses seguintes.
 function ultimoOrcamentoAnterior(usuarioId, mes) {
-  return db.prepare(`
-    SELECT valor, valor_centavos
-    FROM orcamento_mensal
-    WHERE usuario_id = ? AND mes < ? AND COALESCE(valor_centavos, ROUND(valor * 100)) > 0
+  const linha = db.prepare(`
+    SELECT base_centavos FROM (
+      SELECT o.mes,
+             COALESCE(o.valor_centavos, ROUND(o.valor * 100)) - COALESCE((
+               SELECT SUM(COALESCE(e.valor_centavos, ROUND(e.valor * 100)))
+               FROM entradas e
+               WHERE e.usuario_id = o.usuario_id
+                 AND e.data >= o.mes || '-01'
+                 AND e.data < date(o.mes || '-01', '+1 month')
+             ), 0) AS base_centavos
+      FROM orcamento_mensal o
+      WHERE o.usuario_id = ? AND o.mes < ?
+    )
+    WHERE base_centavos > 0
     ORDER BY mes DESC
     LIMIT 1
   `).get(usuarioId, mes);
+  return linha ? { valor: linha.base_centavos / 100, valor_centavos: linha.base_centavos } : null;
 }
 
 function garantirOrcamentoDoMes(usuarioId, mes) {

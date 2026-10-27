@@ -24,6 +24,12 @@ test('calcularProjecaoMes projeta o gasto proporcional aos dias do mês', () => 
   assert.equal(projecao.projecaoMes, 961);
 });
 
+test('calcularProjecaoMes não multiplica contas fixas pelo ritmo diário', () => {
+  // Aluguel de 1500 pago no dia 2 + 40 de gastos do dia a dia.
+  const projecao = calcularProjecaoMes(1540, '2026-10-02', 1500);
+  assert.equal(projecao.projecaoMes, 2120);
+});
+
 async function jsonFetch(baseUrl, rota, opcoes = {}) {
   const resposta = await fetch(`${baseUrl}${rota}`, {
     ...opcoes,

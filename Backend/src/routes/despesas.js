@@ -146,8 +146,10 @@ router.get('/', (req, res) => {
     params.push(forma_pagamento);
   }
   if (busca && busca.trim()) {
-    filtros.push('LOWER(d.descricao) LIKE ?');
-    params.push(`%${busca.trim().toLowerCase()}%`);
+    // Escapa os curingas do LIKE: buscar "50%" acha "desconto 50%", não tudo.
+    const termo = busca.trim().toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`);
+    filtros.push("LOWER(d.descricao) LIKE ? ESCAPE '\\'");
+    params.push(`%${termo}%`);
   }
   const whereSql = filtros.join(' AND ');
 
