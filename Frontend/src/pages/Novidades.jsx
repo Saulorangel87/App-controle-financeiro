@@ -38,7 +38,7 @@ export default function Novidades() {
       <section className="novidades-hero">
         <span className="label">Notas da versão</span>
         <h2>Confiabilidade profissional e controle completo.</h2>
-        <p>A versão <strong>v2.1.0</strong> traz o seletor de mês: lance e acompanhe qualquer mês, sem esperar a virada. A base da v2.0 integra contas recorrentes às despesas, traz projeção mensal, fatura do cartão, gerenciamento completo de categorias, opção de desfazer exclusões e segurança reforçada.</p>
+        <p>A versão <strong>v2.1.1</strong> traz o seletor de mês: lance e acompanhe qualquer mês, sem esperar a virada. A base da v2.0 integra contas recorrentes às despesas, traz projeção mensal, fatura do cartão, gerenciamento completo de categorias, opção de desfazer exclusões e segurança reforçada.</p>
         <span className="novidades-status"><span /> Versão atual em produção</span>
       </section>
 
