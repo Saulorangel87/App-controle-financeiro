@@ -1,5 +1,5 @@
 import {
-  ArrowRight, CheckCircle2, CreditCard, FileUp, FolderKanban,
+  ArrowRight, CalendarDays, CheckCircle2, CreditCard, FileUp, FolderKanban,
   History, Repeat, Search, ShieldCheck, Sparkles, SunMoon,
   TrendingUp, PiggyBank, Users, Wand2,
 } from 'lucide-react';
@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import './Novidades.css';
 
 const novidades = [
+  ['Seletor de mês', 'Escolha o mês no topo da tela e o app inteiro acompanha: Visão Geral, orçamento, categorias, alertas, recorrentes e novos lançamentos. Dá para lançar as contas do mês seguinte antes de ele começar.', <CalendarDays size={18} />],
   ['Conta recorrente paga vira despesa', 'Ao marcar uma conta fixa ou parcela como paga, confirme categoria e forma de pagamento para já lançá-la nas despesas do mês. Se desmarcar, o lançamento é desfeito sozinho.', <Repeat size={18} />],
   ['Orçamento do mês anterior em um clique', 'Cada mês começa com o seu próprio orçamento; quando quiser, copie o valor do mês anterior com um clique.', <Sparkles size={18} />],
   ['Projeção do mês e fatura do cartão', 'Acompanhe na Visão Geral a projeção de fechamento do mês no ritmo atual e o total da fatura aberta do cartão de crédito com dia de fechamento configurável.', <CreditCard size={18} />],
@@ -37,12 +38,12 @@ export default function Novidades() {
       <section className="novidades-hero">
         <span className="label">Notas da versão</span>
         <h2>Confiabilidade profissional e controle completo.</h2>
-        <p>A versão <strong>v2.0.0</strong> integra contas recorrentes às despesas, traz projeção mensal, fatura do cartão, gerenciamento completo de categorias, opção de desfazer exclusões e segurança reforçada.</p>
+        <p>A versão <strong>v2.1.0</strong> traz o seletor de mês: lance e acompanhe qualquer mês, sem esperar a virada. A base da v2.0 integra contas recorrentes às despesas, traz projeção mensal, fatura do cartão, gerenciamento completo de categorias, opção de desfazer exclusões e segurança reforçada.</p>
         <span className="novidades-status"><span /> Versão atual em produção</span>
       </section>
 
       <section className="novidades-secao">
-        <div className="novidades-secao-titulo"><span className="label">v2.0.0 · O que mudou</span><h3>Novidades desta versão</h3></div>
+        <div className="novidades-secao-titulo"><span className="label">v2.1.0 · O que mudou</span><h3>Novidades desta versão</h3></div>
         <div className="novidades-grid">
           {novidades.map(([titulo, texto, icone]) => (
             <article className="panel novidade-card" key={titulo}>

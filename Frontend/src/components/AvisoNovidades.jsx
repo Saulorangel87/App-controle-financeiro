@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import './AvisoNovidades.css';
 
-const VERSAO_ATUAL = 'v2.0.0';
+const VERSAO_ATUAL = 'v2.1.0';
 const CHAVE_VISTA = `controle-despesas:novidades:${VERSAO_ATUAL}`;
 
 const destaques = [
-  'Contas recorrentes pagas já viram despesas do mês e orçamento pode repetir sozinho',
-  'Projeção de fechamento do mês, fatura aberta do cartão de crédito e desfazer exclusões',
-  'Gerenciamento completo de categorias, edição de entradas e importação OFX sem duplicar',
+  'Seletor de mês no topo: escolha novembro e lance as contas antes de o mês virar',
+  'Recorrentes com pagamento por mês — pagar o mês seguinte não desmarca o atual',
+  'Cada mês começa com o seu orçamento; copie o do mês anterior quando quiser',
 ];
 
 function jaFoiVista() {
@@ -64,9 +64,9 @@ export default function AvisoNovidades() {
 
         <span className="aviso-novidades-selo">Nova versão</span>
         <span className="label">Controle de Despesas · {VERSAO_ATUAL}</span>
-        <h2 id="titulo-aviso-novidades">Confiabilidade profissional e controle completo.</h2>
+        <h2 id="titulo-aviso-novidades">Escolha o mês e lance antes da virada.</h2>
         <p className="aviso-novidades-intro">
-          A v2.0.0 automatiza o que era repetitivo no dia a dia e traz segurança reforçada em toda a aplicação.
+          A v2.1.0 deixa você trabalhar em qualquer mês — tudo no app acompanha o mês escolhido.
         </p>
 
         <ul className="aviso-novidades-lista">
