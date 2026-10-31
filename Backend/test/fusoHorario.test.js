@@ -71,14 +71,7 @@ test('às 23h30 do último dia do mês a API ainda está no mês corrente', asyn
   const categorias = await jsonFetch(baseUrl, '/api/categorias', { headers: autenticado });
   const categoriaId = categorias.corpo[0].id;
 
-  // Em UTC já seria 01/11: a despesa entraria como "hoje" e cairia em novembro.
   let resultado = await jsonFetch(baseUrl, '/api/despesas', {
-    method: 'POST', headers: autenticado,
-    body: JSON.stringify({ descricao: 'Amanhã', valor: 10, categoria_id: categoriaId, data: '2026-11-01' }),
-  });
-  assert.equal(resultado.status, 400, 'data de amanhã (no horário de Brasília) é futura');
-
-  resultado = await jsonFetch(baseUrl, '/api/despesas', {
     method: 'POST', headers: autenticado,
     body: JSON.stringify({ descricao: 'Jantar', valor: 50, categoria_id: categoriaId, data: '2026-10-31' }),
   });
@@ -100,9 +93,40 @@ test('às 23h30 do último dia do mês a API ainda está no mês corrente', asyn
   resultado = await jsonFetch(baseUrl, '/api/relatorio/meses', { headers: autenticado });
   assert.equal(resultado.corpo[0], '2026-10');
 
+  // Com o seletor de mês, já dá para lançar novembro no dia 31/10 — e o
+  // lançamento cai em novembro, sem mexer nos números de outubro.
+  resultado = await jsonFetch(baseUrl, '/api/despesas', {
+    method: 'POST', headers: autenticado,
+    body: JSON.stringify({ descricao: 'Aluguel de novembro', valor: 10, categoria_id: categoriaId, data: '2026-11-01' }),
+  });
+  assert.equal(resultado.status, 201);
   resultado = await jsonFetch(baseUrl, '/api/entradas', {
     method: 'POST', headers: autenticado,
-    body: JSON.stringify({ origem: 'Salário', valor: 1000, data: '2026-11-01' }),
+    body: JSON.stringify({ origem: 'Salário', valor: 1000, data: '2026-11-05' }),
   });
-  assert.equal(resultado.status, 400, 'entrada com data de amanhã também é bloqueada');
+  assert.equal(resultado.status, 201);
+
+  resultado = await jsonFetch(baseUrl, '/api/resumo', { headers: autenticado });
+  assert.equal(resultado.corpo.mes, '2026-10');
+  assert.equal(resultado.corpo.totalGasto, 50, 'outubro não recebe o lançamento de novembro');
+
+  resultado = await jsonFetch(baseUrl, '/api/resumo?mes=2026-11', { headers: autenticado });
+  assert.equal(resultado.corpo.mes, '2026-11');
+  assert.equal(resultado.corpo.totalGasto, 10);
+  assert.equal(resultado.corpo.orcamentoTotal, 1000);
+  assert.equal(resultado.corpo.projecaoMes, 0, 'mês que ainda não começou não tem projeção');
+
+  // O limite é o fim do 12º mês à frente (outubro de 2027).
+  resultado = await jsonFetch(baseUrl, '/api/despesas', {
+    method: 'POST', headers: autenticado,
+    body: JSON.stringify({ descricao: 'Longe', valor: 10, categoria_id: categoriaId, data: '2027-10-31' }),
+  });
+  assert.equal(resultado.status, 201);
+  resultado = await jsonFetch(baseUrl, '/api/despesas', {
+    method: 'POST', headers: autenticado,
+    body: JSON.stringify({ descricao: 'Longe demais', valor: 10, categoria_id: categoriaId, data: '2027-11-01' }),
+  });
+  assert.equal(resultado.status, 400);
+  resultado = await jsonFetch(baseUrl, '/api/resumo?mes=2026-13', { headers: autenticado });
+  assert.equal(resultado.status, 400);
 });

@@ -4,6 +4,7 @@ import Layout from './components/Layout';
 import RotaProtegida from './components/RotaProtegida';
 import { useAuth } from './contexts/AuthContext';
 import { DespesaModalProvider } from './contexts/DespesaModalContext';
+import { MesProvider, useMes } from './contexts/MesContext';
 import api from './services/api';
 
 // Cada página vira um chunk JS separado, carregado só quando a rota é
@@ -30,13 +31,15 @@ const Historico = lazy(() => import('./pages/Historico'));
 function AreaLogada() {
   const [alertasCount, setAlertasCount] = useState(null);
   const [versao, setVersao] = useState(0);
+  const { mes } = useMes();
 
   const recarregarAlertas = useCallback(() => {
-    Promise.all([api.get('/resumo'), api.get('/recorrentes')]).then(([resumo, recorrentes]) => {
+    const params = { mes };
+    Promise.all([api.get('/resumo', { params }), api.get('/recorrentes', { params })]).then(([resumo, recorrentes]) => {
       const recorrentesComAlerta = recorrentes.data.itens.filter((item) => item.alerta_vencimento).length;
       setAlertasCount(resumo.data.categoriasComAlerta + recorrentesComAlerta);
     });
-  }, []);
+  }, [mes]);
 
   useEffect(() => {
     recarregarAlertas();
@@ -85,7 +88,9 @@ export default function App() {
           path="/*"
           element={
             <RotaProtegida>
-              <AreaLogada />
+              <MesProvider>
+                <AreaLogada />
+              </MesProvider>
             </RotaProtegida>
           }
         />

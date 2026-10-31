@@ -1,23 +1,25 @@
 const express = require('express');
 const db = require('../db');
 const { numeroMonetarioValido } = require('../utils/validacao');
-const { mesAtualISO } = require('../utils/datas');
+const { mesDaRequisicao } = require('../utils/datas');
 const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
 
 const router = express.Router();
 
-// Mês corrente no fuso do app (ver utils/datas.js), não em UTC.
-const mesAtual = mesAtualISO;
-
-// Garante que existe uma linha de orçamento pro usuário no mês atual.
-// Se o usuário ativou orcamento_recorrente, o mês novo começa copiando o
-// valor do último mês anterior que tinha orçamento > 0; caso contrário,
-// começa em 0 como antes.
-//
 // O valor guardado em orcamento_mensal já inclui as entradas lançadas no mês
-// (routes/entradas.js soma cada uma nele). O que se repete é só a base — o
-// valor menos essas entradas —, senão um bônus ou reembolso de um mês
-// passaria a fazer parte do orçamento de todos os meses seguintes.
+// (routes/entradas.js soma cada uma nele). A "base" é o valor menos essas
+// entradas: é ela que se copia de um mês para outro, senão um bônus ou
+// reembolso de um mês entraria no orçamento do mês seguinte.
+function entradasDoMesCentavos(usuarioId, mes) {
+  return db.prepare(`
+    SELECT COALESCE(SUM(COALESCE(valor_centavos, ROUND(valor * 100))), 0) AS total
+    FROM entradas
+    WHERE usuario_id = ? AND data >= ? || '-01' AND data < date(? || '-01', '+1 month')
+  `).get(usuarioId, mes, mes).total;
+}
+
+// Base do último mês anterior com orçamento > 0 — o valor que o botão
+// "Copiar orçamento do mês anterior" oferece.
 function ultimoOrcamentoAnterior(usuarioId, mes) {
   const linha = db.prepare(`
     SELECT base_centavos FROM (
@@ -39,21 +41,16 @@ function ultimoOrcamentoAnterior(usuarioId, mes) {
   return linha ? { valor: linha.base_centavos / 100, valor_centavos: linha.base_centavos } : null;
 }
 
+// Garante que existe uma linha de orçamento pro usuário no mês. O mês novo
+// sempre começa em 0: o orçamento de cada mês é diferente, então nada é
+// repetido sozinho — copiar o mês anterior é uma ação do usuário
+// (POST /api/orcamento/copiar-anterior). A antiga opção "repetir todo mês"
+// (usuarios.orcamento_recorrente) não é mais lida.
 function garantirOrcamentoDoMes(usuarioId, mes) {
-  const existente = db.prepare(
-    'SELECT 1 FROM orcamento_mensal WHERE usuario_id = ? AND mes = ?'
-  ).get(usuarioId, mes);
-  if (existente) return;
-
-  const usuario = db.prepare('SELECT orcamento_recorrente FROM usuarios WHERE id = ?').get(usuarioId);
-  const recorrente = Boolean(usuario?.orcamento_recorrente);
-  const anterior = recorrente ? ultimoOrcamentoAnterior(usuarioId, mes) : null;
-  const valorInicial = anterior ? comValorEmReais(anterior).valor : 0;
-
   db.prepare(`
     INSERT OR IGNORE INTO orcamento_mensal (usuario_id, mes, valor, valor_centavos)
-    VALUES (?, ?, ?, ?)
-  `).run(usuarioId, mes, valorInicial, paraCentavos(valorInicial));
+    VALUES (?, ?, 0, 0)
+  `).run(usuarioId, mes);
 }
 
 function obterOrcamentoDoMes(usuarioId, mes) {
@@ -61,44 +58,68 @@ function obterOrcamentoDoMes(usuarioId, mes) {
   const orcamento = db.prepare(
     'SELECT valor, valor_centavos FROM orcamento_mensal WHERE usuario_id = ? AND mes = ?'
   ).get(usuarioId, mes);
-  const usuario = db.prepare('SELECT orcamento_recorrente FROM usuarios WHERE id = ?').get(usuarioId);
+  const { valor } = comValorEmReais(orcamento);
   const anterior = ultimoOrcamentoAnterior(usuarioId, mes);
+  const baseCentavos = paraCentavos(valor) - entradasDoMesCentavos(usuarioId, mes);
 
   return {
-    ...comValorEmReais(orcamento),
+    valor,
     mes,
-    recorrente: Boolean(usuario?.orcamento_recorrente),
+    base: baseCentavos / 100,
     valorMesAnterior: anterior ? comValorEmReais(anterior).valor : 0,
   };
 }
 
-// GET /api/orcamento — sempre o mês corrente
+const ERRO_MES = 'parâmetro mes inválido, use o formato YYYY-MM';
+
+// GET /api/orcamento?mes=YYYY-MM — o mês pedido (padrão: o corrente)
 router.get('/', (req, res) => {
-  res.json(obterOrcamentoDoMes(req.usuarioId, mesAtual()));
+  const mes = mesDaRequisicao(req);
+  if (!mes) return res.status(400).json({ erro: ERRO_MES });
+  res.json(obterOrcamentoDoMes(req.usuarioId, mes));
 });
 
-// PUT /api/orcamento — define (substitui) o valor do orçamento do mês
-// corrente e, opcionalmente, ativa/desativa a repetição mensal automática.
+// PUT /api/orcamento?mes=YYYY-MM — define (substitui) o valor do orçamento
+// do mês pedido (padrão: o corrente).
 router.put('/', (req, res) => {
-  const { valor, recorrente } = req.body;
+  const { valor } = req.body;
+  const mes = mesDaRequisicao(req);
+  if (!mes) return res.status(400).json({ erro: ERRO_MES });
 
   if (!numeroMonetarioValido(valor, true)) {
     return res.status(400).json({ erro: 'valor inválido' });
   }
-  if (recorrente !== undefined && typeof recorrente !== 'boolean') {
-    return res.status(400).json({ erro: 'recorrente inválido' });
-  }
 
-  const mes = mesAtual();
   db.transaction(() => {
     garantirOrcamentoDoMes(req.usuarioId, mes);
     db.prepare(`
       UPDATE orcamento_mensal SET valor = ?, valor_centavos = ?, atualizado_em = datetime('now')
       WHERE usuario_id = ? AND mes = ?
     `).run(valor, paraCentavos(valor), req.usuarioId, mes);
-    if (recorrente !== undefined) {
-      db.prepare('UPDATE usuarios SET orcamento_recorrente = ? WHERE id = ?').run(recorrente ? 1 : 0, req.usuarioId);
-    }
+  })();
+
+  res.json(obterOrcamentoDoMes(req.usuarioId, mes));
+});
+
+// POST /api/orcamento/copiar-anterior?mes=YYYY-MM — copia para o mês pedido
+// a base do último mês anterior com orçamento. As entradas já lançadas no
+// mês continuam somadas por cima, como sempre.
+router.post('/copiar-anterior', (req, res) => {
+  const mes = mesDaRequisicao(req);
+  if (!mes) return res.status(400).json({ erro: ERRO_MES });
+
+  const anterior = ultimoOrcamentoAnterior(req.usuarioId, mes);
+  if (!anterior) {
+    return res.status(400).json({ erro: 'nenhum mês anterior com orçamento para copiar' });
+  }
+
+  db.transaction(() => {
+    garantirOrcamentoDoMes(req.usuarioId, mes);
+    const totalCentavos = anterior.valor_centavos + entradasDoMesCentavos(req.usuarioId, mes);
+    db.prepare(`
+      UPDATE orcamento_mensal SET valor = ?, valor_centavos = ?, atualizado_em = datetime('now')
+      WHERE usuario_id = ? AND mes = ?
+    `).run(totalCentavos / 100, totalCentavos, req.usuarioId, mes);
   })();
 
   res.json(obterOrcamentoDoMes(req.usuarioId, mes));

@@ -8,7 +8,7 @@ import './Novidades.css';
 
 const novidades = [
   ['Conta recorrente paga vira despesa', 'Ao marcar uma conta fixa ou parcela como paga, confirme categoria e forma de pagamento para já lançá-la nas despesas do mês. Se desmarcar, o lançamento é desfeito sozinho.', <Repeat size={18} />],
-  ['Orçamento recorrente todo mês', 'Ative "Repetir todo mês" no orçamento ou copie o valor do mês anterior com um clique quando o mês começar.', <Sparkles size={18} />],
+  ['Orçamento do mês anterior em um clique', 'Cada mês começa com o seu próprio orçamento; quando quiser, copie o valor do mês anterior com um clique.', <Sparkles size={18} />],
   ['Projeção do mês e fatura do cartão', 'Acompanhe na Visão Geral a projeção de fechamento do mês no ritmo atual e o total da fatura aberta do cartão de crédito com dia de fechamento configurável.', <CreditCard size={18} />],
   ['Gerenciar categorias e editar entradas', 'Crie novas categorias com escolha de ícone e cor, edite ou exclua categorias sem gastos e edite entradas com ajuste automático do orçamento.', <FolderKanban size={18} />],
   ['Busca, filtros e desfazer exclusão', 'Busque despesas por descrição, filtre por categoria e forma de pagamento e desfaça exclusões acidentais de despesas ou entradas com um clique — ou restaure depois pela tela Histórico, que mostra tudo o que foi criado, editado e excluído.', <Search size={18} />],

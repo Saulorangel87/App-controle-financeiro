@@ -13,7 +13,7 @@ process.env.RESEND_API_KEY = '';
 
 const app = require('../src/server');
 const db = require('../src/db');
-const { hojeISO } = require('../src/utils/datas');
+const { hojeISO, somarMeses } = require('../src/utils/datas');
 
 async function jsonFetch(baseUrl, rota, opcoes = {}) {
   const resposta = await fetch(`${baseUrl}${rota}`, {
@@ -129,6 +129,40 @@ test('marcar conta recorrente como paga lança a despesa e desmarcar a remove', 
   assert.equal(geladeiraAtual.despesa_paga_id, null);
   resultado = await pagar(geladeira.id, { pago: false });
   assert.equal(resultado.corpo.despesa_removida, false);
+
+  // Seletor de mês: cada mês tem o seu pagamento. Pagar o mês seguinte não
+  // desmarca o corrente, e a despesa lançada fica no mês seguinte.
+  const proximoMes = somarMeses(hoje.slice(0, 7), 1);
+  resultado = await jsonFetch(baseUrl, `/api/recorrentes/${luz.id}/pago?mes=${proximoMes}`, {
+    method: 'PATCH', headers: autenticado,
+    body: JSON.stringify({ pago: true, despesa: { valor: 150, categoria_id: moradia.id, data: `${proximoMes}-05` } }),
+  });
+  assert.equal(resultado.status, 200);
+  assert.equal(resultado.corpo.pago, true);
+  const doMes = async (mes) => (await jsonFetch(baseUrl, `/api/recorrentes?mes=${mes}`, { headers: autenticado })).corpo;
+  assert.equal((await doMes(hoje.slice(0, 7))).itens.find((i) => i.id === luz.id).pago, true, 'o mês corrente continua pago');
+  const listaProximo = await doMes(proximoMes);
+  assert.equal(listaProximo.itens.find((i) => i.id === luz.id).pago, true);
+  assert.equal(listaProximo.itens.find((i) => i.id === geladeira.id).parcela_atual, 2);
+  assert.equal((await despesasDoMes()).length, 0, 'a despesa do mês seguinte não entra no mês corrente');
+  const resumoProximo = (await jsonFetch(baseUrl, `/api/resumo?mes=${proximoMes}`, { headers: autenticado })).corpo;
+  assert.equal(resumoProximo.totalGasto, 150);
+
+  // Prestação criada com o seletor no mês seguinte começa nele (1/5) e não
+  // aparece no mês corrente.
+  const tv = (await jsonFetch(baseUrl, `/api/recorrentes?mes=${proximoMes}`, {
+    method: 'POST', headers: autenticado,
+    body: JSON.stringify({ descricao: 'TV', valor: 100, parcela_total: 5 }),
+  })).corpo;
+  assert.equal(tv.parcela_atual, 1);
+  assert.ok(!(await doMes(hoje.slice(0, 7))).itens.some((i) => i.id === tv.id));
+
+  // Desmarcar o mês seguinte remove só o pagamento e a despesa dele.
+  resultado = await jsonFetch(baseUrl, `/api/recorrentes/${luz.id}/pago?mes=${proximoMes}`, {
+    method: 'PATCH', headers: autenticado, body: JSON.stringify({ pago: false }),
+  });
+  assert.equal(resultado.corpo.despesa_removida, true);
+  assert.equal((await doMes(hoje.slice(0, 7))).itens.find((i) => i.id === luz.id).pago, true);
 });
 
 test('pagamento do mês anterior não é apagado ao desmarcar a conta deste mês', () => {

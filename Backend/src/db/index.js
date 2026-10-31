@@ -143,4 +143,22 @@ if (!colunasUsuariosCartao.some((c) => c.name === 'dia_fechamento_cartao')) {
   db.exec('ALTER TABLE usuarios ADD COLUMN dia_fechamento_cartao INTEGER');
 }
 
+// Migração idempotente: o pagamento das recorrentes saiu de pago_mes (um
+// mês só por conta) para recorrentes_pagamentos (um registro por mês), para
+// o seletor de mês poder marcar novembro como pago sem desmarcar outubro.
+// As colunas antigas são zeradas na mesma transação, então rodar de novo
+// não recria um pagamento que o usuário já desmarcou.
+db.transaction(() => {
+  db.exec(`
+    INSERT OR IGNORE INTO recorrentes_pagamentos (recorrente_id, usuario_id, mes, pago_em, despesa_id)
+    SELECT id, usuario_id, pago_mes, COALESCE(pago_em, datetime('now')), despesa_paga_id
+    FROM despesas_recorrentes
+    WHERE pago_mes IS NOT NULL
+  `);
+  db.exec(`
+    UPDATE despesas_recorrentes SET pago_mes = NULL, pago_em = NULL, despesa_paga_id = NULL
+    WHERE pago_mes IS NOT NULL OR despesa_paga_id IS NOT NULL
+  `);
+})();
+
 module.exports = db;

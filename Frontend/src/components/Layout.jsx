@@ -7,6 +7,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import "./Layout.css";
 import Footer from "./Footer";
 import AvisoNovidades from "./AvisoNovidades";
+import SeletorMes from "./SeletorMes";
 
 export default function Layout({ alertasCount }) {
   const { usuario, logout } = useAuth();
@@ -97,6 +98,7 @@ export default function Layout({ alertasCount }) {
       </header>
 
       <main className="content">
+        <SeletorMes />
         <Outlet />
       </main>
       <Footer />

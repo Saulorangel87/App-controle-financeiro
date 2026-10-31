@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import VisaoGeral from './VisaoGeral';
 import api from '../services/api';
+import { mesAtualISO } from '../utils/datas';
 
 vi.mock('../services/api', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -13,7 +14,7 @@ vi.mock('../contexts/DespesaModalContext', () => ({
 const resumoMock = {
   totalGasto: 100,
   orcamentoTotal: 500,
-  orcamentoRecorrente: false,
+  orcamentoBase: 500,
   orcamentoMesAnterior: 0,
   percentualUtilizado: 20,
   disponivel: 400,
@@ -55,11 +56,11 @@ test('renderiza o dashboard com os totais e a projeção do mês vindos da API, 
   expect(screen.getByRole('button', { name: /Configurar dia de fechamento do cartão/i })).toHaveTextContent('fecha dia 10');
 });
 
-test('permite repetir o orçamento do mês anterior com um clique quando o mês começa zerado', async () => {
+test('oferece copiar o orçamento do mês anterior quando o mês só tem entradas avulsas', async () => {
   api.get.mockImplementation((rota) => {
     if (rota === '/resumo') {
       return Promise.resolve({
-        data: { ...resumoMock, orcamentoTotal: 0, orcamentoMesAnterior: 4200 },
+        data: { ...resumoMock, orcamentoTotal: 300, orcamentoBase: 0, orcamentoMesAnterior: 4200 },
       });
     }
     if (rota === '/categorias') return Promise.resolve({ data: [] });
@@ -67,7 +68,7 @@ test('permite repetir o orçamento do mês anterior com um clique quando o mês 
     if (rota === '/entradas') return Promise.resolve({ data: [] });
     return Promise.resolve({ data: [] });
   });
-  api.put.mockResolvedValue({ data: {} });
+  api.post.mockResolvedValue({ data: {} });
 
   render(
     <MemoryRouter>
@@ -75,10 +76,12 @@ test('permite repetir o orçamento do mês anterior com um clique quando o mês 
     </MemoryRouter>
   );
 
-  const botaoRepetir = await screen.findByRole('button', { name: /Repetir mês anterior/i });
-  fireEvent.click(botaoRepetir);
+  const botaoCopiar = await screen.findByRole('button', { name: /Copiar mês anterior \(R\$\s4\.200,00\)/i });
+  expect(screen.queryByLabelText(/Repetir todo mês/i)).not.toBeInTheDocument();
+  fireEvent.click(botaoCopiar);
 
   await waitFor(() => {
-    expect(api.put).toHaveBeenCalledWith('/orcamento', { valor: 4200, recorrente: true });
+    expect(api.post).toHaveBeenCalledWith('/orcamento/copiar-anterior', null, { params: { mes: mesAtualISO() } });
   });
+  expect(api.put).not.toHaveBeenCalled();
 });

@@ -87,12 +87,11 @@ CREATE INDEX IF NOT EXISTS idx_entradas_usuario_data ON entradas(usuario_id, dat
 
 -- Despesas recorrentes/fixas (luz, água, internet...): funciona como uma
 -- anotação permanente pra não esquecer contas fixas — não fica presa a
--- nenhum mês e não é apagada sozinha. O campo pago_mes guarda em qual mês
--- (YYYY-MM) ela foi marcada como paga, então o checkbox "paga este mês"
--- reseta sozinho quando o mês vira, sem precisar de nenhum job/migração.
--- pago_mes guarda em qual mês (YYYY-MM) foi marcada como paga, então o
--- checkbox "paga este mês" reseta sozinho quando o mês vira, sem precisar
--- de nenhum job/migração.
+-- nenhum mês e não é apagada sozinha. Os pagamentos ficam em
+-- recorrentes_pagamentos (um por mês), então o checkbox "paga este mês"
+-- reseta sozinho quando o mês vira. pago_mes, pago_em e despesa_paga_id
+-- são colunas antigas: só guardavam o último mês pago e foram migradas
+-- para recorrentes_pagamentos (ver db/index.js).
 --
 -- parcela_total + parcela_mes_inicio controlam prestações (ex: geladeira em
 -- 12x): quando parcela_total é definido, "valor" é o valor de CADA parcela,
@@ -121,6 +120,20 @@ CREATE TABLE IF NOT EXISTS despesas_recorrentes (
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_recorrentes_usuario ON despesas_recorrentes(usuario_id);
+
+-- Pagamento de uma conta recorrente num mês (YYYY-MM). Um registro por mês
+-- permite marcar novembro como pago ainda em outubro sem desmarcar outubro.
+-- despesa_id aponta para a despesa lançada junto com o pagamento, se houver.
+CREATE TABLE IF NOT EXISTS recorrentes_pagamentos (
+  recorrente_id INTEGER NOT NULL REFERENCES despesas_recorrentes(id) ON DELETE CASCADE,
+  usuario_id INTEGER NOT NULL,
+  mes TEXT NOT NULL,
+  pago_em TEXT NOT NULL,
+  despesa_id INTEGER REFERENCES despesas(id) ON DELETE SET NULL,
+  PRIMARY KEY (recorrente_id, mes),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_recorrentes_pagamentos_usuario_mes ON recorrentes_pagamentos(usuario_id, mes);
 
 -- Metas de economia: o progresso é calculado automaticamente pelo saldo
 -- (entradas - despesas) dos meses do período, sem exigir nenhum lançamento

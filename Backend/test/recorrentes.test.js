@@ -56,3 +56,10 @@ test('gera alertas de vencimento em 3, 1 e 0 dias, mas ignora contas pagas', () 
   // Setembro tem 30 dias: vencimento no dia 31 cai no dia 30.
   assert.equal(alertaVencimento(31, false, false, new Date('2026-09-29T12:00:00.000Z')).texto, 'Vence amanhã');
 });
+
+test('alerta de vencimento segue o mês escolhido no seletor', () => {
+  const hoje = new Date('2026-10-31T12:00:00.000Z');
+  assert.equal(alertaVencimento(5, false, false, hoje, '2026-11'), null, 'novembro ainda não venceu');
+  assert.equal(alertaVencimento(5, false, false, hoje, '2026-09').texto, 'Vencida');
+  assert.equal(alertaVencimento(5, true, false, hoje, '2026-09'), null);
+});

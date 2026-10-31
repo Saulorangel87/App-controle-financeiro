@@ -3,20 +3,20 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, History, Pencil, Plus, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import ModalEntrada from '../components/ModalEntrada';
+import { useMes } from '../contexts/MesContext';
+import { rotuloMes } from '../utils/datas';
 import { formatarMoeda, formatarData } from '../utils/formatters';
 import './Despesas.css';
 
 const POR_PAGINA = 20;
 
-function rotuloMes(mes) {
-  return new Date(`${mes}-01T00:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-}
-
 export default function Entradas() {
+  const { mes, ehMesAtual } = useMes();
   const [dados, setDados] = useState(null);
   const [pagina, setPagina] = useState(1);
   const [carregando, setCarregando] = useState(true);
-  const [mesSelecionado, setMesSelecionado] = useState('');
+  // Mesma regra de Despesas: com outro mês no seletor, abre filtrada nele.
+  const [mesSelecionado, setMesSelecionado] = useState(ehMesAtual ? '' : mes);
   const [meses, setMeses] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [entradaEditando, setEntradaEditando] = useState(null);
@@ -42,6 +42,11 @@ export default function Entradas() {
   useEffect(() => {
     carregarMeses();
   }, [carregarMeses]);
+
+  useEffect(() => {
+    setMesSelecionado(ehMesAtual ? '' : mes);
+    setPagina(1);
+  }, [mes, ehMesAtual]);
 
   useEffect(() => {
     carregar(pagina);
@@ -85,6 +90,9 @@ export default function Entradas() {
   if (carregando || !dados) return <p className="label">Carregando...</p>;
 
   const { entradas, total, totalGeral, totalPaginas } = dados;
+  const opcoesMes = !mesSelecionado || meses.includes(mesSelecionado)
+    ? meses
+    : [...meses, mesSelecionado].sort().reverse();
 
   return (
     <div className="despesas-e-entradas">
@@ -103,7 +111,7 @@ export default function Entradas() {
             <label className="sr-only" htmlFor="filtro-mes-entradas">Filtrar entradas por mês</label>
             <select id="filtro-mes-entradas" className="filtro-mes" value={mesSelecionado} onChange={(evento) => { setMesSelecionado(evento.target.value); setPagina(1); }}>
               <option value="">Todos os meses</option>
-              {meses.map((mes) => <option key={mes} value={mes}>{rotuloMes(mes)}</option>)}
+              {opcoesMes.map((opcao) => <option key={opcao} value={opcao}>{rotuloMes(opcao)}</option>)}
             </select>
           </div>
           <div className="despesas-header-acoes">

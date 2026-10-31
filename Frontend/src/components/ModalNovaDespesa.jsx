@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import { hojeISO as hoje } from '../utils/datas';
+import { useMes } from '../contexts/MesContext';
+import { dataMaximaDoMes, dataPadraoDoMes } from '../utils/datas';
+import { formatarData } from '../utils/formatters';
 import { FORMAS_PAGAMENTO } from '../utils/formasPagamento';
 import './ModalNovaDespesa.css';
 
@@ -9,12 +11,19 @@ const LIMITE_DIVIDIDA_COM = 40;
 
 export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, onSalvo }) {
   const editando = Boolean(despesaEditando);
+  const { mes } = useMes();
+  // Despesa nova vem com uma data do mês escolhido no seletor. Uma despesa
+  // de mês futuro sendo editada continua podendo ir até o fim do mês dela.
+  const mesDoLimite = editando && despesaEditando.data.slice(0, 7) > mes
+    ? despesaEditando.data.slice(0, 7)
+    : mes;
+  const dataMaxima = dataMaximaDoMes(mesDoLimite);
 
   const [categorias, setCategorias] = useState([]);
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
-  const [data, setData] = useState(hoje());
+  const [data, setData] = useState(() => dataPadraoDoMes(mes));
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
   const [categoriaTocada, setCategoriaTocada] = useState(false);
@@ -24,7 +33,7 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
   const [divisaoValor, setDivisaoValor] = useState('');
   const [formaPagamento, setFormaPagamento] = useState('');
 
-  const dataEhFutura = data > hoje();
+  const dataEhFutura = data > dataMaxima;
 
   useEffect(() => {
     if (!aberto) return;
@@ -48,7 +57,7 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
     } else {
       setDescricao('');
       setValor('');
-      setData(hoje());
+      setData(dataPadraoDoMes(mes));
       setDividirDespesa(false);
       setDivididaCom('');
       setDivisaoValor('');
@@ -57,7 +66,7 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
     setCategoriaTocada(false);
     setSugestaoAtiva(false);
     setErro('');
-  }, [aberto, despesaEditando]);
+  }, [aberto, despesaEditando, mes]);
 
   // Sugere categoria pelo histórico de descrições parecidas, só em despesa
   // nova e enquanto o usuário não tiver escolhido a categoria manualmente.
@@ -110,8 +119,8 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
       setErro('Preencha todos os campos.');
       return;
     }
-    if (data > hoje()) {
-      setErro('Não é possível cadastrar uma despesa com data futura.');
+    if (data > dataMaxima) {
+      setErro(`A data não pode passar de ${formatarData(dataMaxima)}.`);
       return;
     }
     if (dividirDespesa && (!divididaCom.trim() || !divisaoValor)) {
@@ -206,14 +215,14 @@ export default function ModalNovaDespesa({ aberto, despesaEditando, onFechar, on
               id="campo-data-despesa"
               type="date"
               value={data}
-              max={hoje()}
+              max={dataMaxima}
               aria-invalid={dataEhFutura}
               aria-describedby={dataEhFutura ? 'aviso-data-futura' : undefined}
               onChange={(e) => setData(e.target.value)}
             />
             {dataEhFutura && (
               <p className="erro-form" id="aviso-data-futura" role="alert">
-                ⚠ Data futura não é permitida — despesas só podem ser cadastradas até hoje.
+                ⚠ Data futura não é permitida — use até {formatarData(dataMaxima)}. Para lançar num mês à frente, escolha o mês no topo da tela.
               </p>
             )}
           </div>

@@ -9,8 +9,8 @@ import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
 import ModalEntrada from '../components/ModalEntrada';
 import { useDespesaModal } from '../contexts/DespesaModalContext';
+import { useMes } from '../contexts/MesContext';
 import { formatarMoeda, formatarData } from '../utils/formatters';
-import { useRecarregarAoVirarMes } from '../utils/useRecarregarAoVirarMes';
 import './VisaoGeral.css';
 
 // Mesmo corte usado no resto do app pra "tela de celular" (Alertas.css usa o
@@ -47,7 +47,6 @@ export default function VisaoGeral() {
   const [carregando, setCarregando] = useState(true);
   const [editandoOrcamento, setEditandoOrcamento] = useState(false);
   const [novoOrcamento, setNovoOrcamento] = useState('');
-  const [orcamentoRecorrente, setOrcamentoRecorrente] = useState(false);
   const [editandoFechamento, setEditandoFechamento] = useState(false);
   const [novoDiaFechamento, setNovoDiaFechamento] = useState('');
   const [modalEntradaAberto, setModalEntradaAberto] = useState(false);
@@ -55,31 +54,36 @@ export default function VisaoGeral() {
   const [paginaEntradas, setPaginaEntradas] = useState(1);
   const [itemExcluido, setItemExcluido] = useState(null);
   const { abrirEdicao } = useDespesaModal();
+  const { mes } = useMes();
   const ehMobile = useEhMobile();
 
   async function carregarResumo() {
-    const res = await api.get('/resumo');
+    const res = await api.get('/resumo', { params: { mes } });
     setResumo(res.data);
   }
 
   async function carregarEntradas() {
-    const res = await api.get('/entradas');
+    const res = await api.get('/entradas', { params: { mes } });
     setEntradas(res.data);
   }
 
+  // Tudo vem do mês escolhido no seletor: trocar o mês (ou a virada real do
+  // mês, com o seletor no mês corrente) recarrega o dashboard.
   const carregarTudo = useCallback(async () => {
     const [resResumo, resCategorias, resDespesas, resEntradas] = await Promise.all([
-      api.get('/resumo'),
-      api.get('/categorias'),
-      api.get('/despesas', { params: { pagina: 1, porPagina: 4 } }),
-      api.get('/entradas'),
+      api.get('/resumo', { params: { mes } }),
+      api.get('/categorias', { params: { mes } }),
+      api.get('/despesas', { params: { mes, pagina: 1, porPagina: 4 } }),
+      api.get('/entradas', { params: { mes } }),
     ]);
     setResumo(resResumo.data);
     setCategorias(resCategorias.data);
     setDespesas(resDespesas.data.despesas);
     setEntradas(resEntradas.data);
+    setPaginaEntradas(1);
+    setEditandoOrcamento(false);
     setCarregando(false);
-  }, []);
+  }, [mes]);
 
   async function excluirEntrada(id) {
     const entrada = entradas.find((e) => e.id === id);
@@ -113,24 +117,22 @@ export default function VisaoGeral() {
     carregarTudo();
   }, [carregarTudo]);
 
-  // Se o mês virar com a aba aberta, recarrega tudo — o dashboard não fica
-  // "preso" mostrando os totais do mês que já passou.
-  useRecarregarAoVirarMes(carregarTudo);
-
   function abrirEdicaoOrcamento() {
     setNovoOrcamento(String(resumo.orcamentoTotal));
-    setOrcamentoRecorrente(Boolean(resumo.orcamentoRecorrente));
     setEditandoOrcamento(true);
   }
 
   async function salvarOrcamento() {
-    await api.put('/orcamento', { valor: Number(novoOrcamento), recorrente: orcamentoRecorrente });
+    await api.put('/orcamento', { valor: Number(novoOrcamento) }, { params: { mes } });
     setEditandoOrcamento(false);
     carregarResumo();
   }
 
-  async function repetirOrcamentoAnterior() {
-    await api.put('/orcamento', { valor: resumo.orcamentoMesAnterior, recorrente: true });
+  // O orçamento de cada mês é diferente, então nada se repete sozinho:
+  // copiar o do mês anterior é sempre um clique do usuário. As entradas já
+  // lançadas no mês continuam somadas por cima.
+  async function copiarOrcamentoAnterior() {
+    await api.post('/orcamento/copiar-anterior', null, { params: { mes } });
     carregarResumo();
   }
 
@@ -220,31 +222,19 @@ export default function VisaoGeral() {
                 />
                 <button className="btn-primary" onClick={salvarOrcamento}>Salvar</button>
               </div>
-              <label className="checkbox-orcamento-recorrente" htmlFor="check-orcamento-recorrente">
-                <input
-                  id="check-orcamento-recorrente"
-                  type="checkbox"
-                  checked={orcamentoRecorrente}
-                  onChange={(e) => setOrcamentoRecorrente(e.target.checked)}
-                />
-                Repetir todo mês
-              </label>
             </div>
           ) : (
             <>
               <strong className="valor" style={{ color: 'var(--ok)' }}>
                 {formatarMoeda(resumo.orcamentoTotal)}
               </strong>
-              {resumo.orcamentoRecorrente && (
-                <span className="label legenda-orcamento">repete todo mês</span>
-              )}
-              {resumo.orcamentoTotal === 0 && resumo.orcamentoMesAnterior > 0 && (
+              {(resumo.orcamentoBase ?? resumo.orcamentoTotal) === 0 && resumo.orcamentoMesAnterior > 0 && (
                 <button
                   type="button"
                   className="botao-editar-inline botao-repetir-orcamento"
-                  onClick={repetirOrcamentoAnterior}
+                  onClick={copiarOrcamentoAnterior}
                 >
-                  Repetir mês anterior ({formatarMoeda(resumo.orcamentoMesAnterior)})
+                  Copiar mês anterior ({formatarMoeda(resumo.orcamentoMesAnterior)})
                 </button>
               )}
             </>

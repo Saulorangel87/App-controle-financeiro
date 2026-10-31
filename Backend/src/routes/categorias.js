@@ -2,7 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { paraCentavos, comValorEmReais, somaEmReaisSQL } = require('../utils/dinheiro');
 const { numeroMonetarioValido, textoValido } = require('../utils/validacao');
-const { mesAtualISO, intervaloDosMeses } = require('../utils/datas');
+const { intervaloDosMeses, mesDaRequisicao } = require('../utils/datas');
 
 const router = express.Router();
 
@@ -23,12 +23,15 @@ function erroDosCampos({ nome, icone, cor, limite }) {
   return null;
 }
 
-// GET /api/categorias
+// GET /api/categorias?mes=YYYY-MM
 // Lista todas as categorias do usuário, já com total gasto, disponível e status.
-// O "gasto" considera apenas despesas do mês corrente (o filtro vai dentro do
+// O "gasto" considera apenas despesas do mês pedido, ou do corrente sem o
+// parâmetro (o filtro vai dentro do
 // ON do LEFT JOIN, não no WHERE, pra categoria sem despesa no mês continuar
 // aparecendo com gasto = 0 em vez de sumir da lista).
 router.get('/', (req, res) => {
+  const mes = mesDaRequisicao(req);
+  if (!mes) return res.status(400).json({ erro: 'parâmetro mes inválido, use o formato YYYY-MM' });
   const categorias = db.prepare(`
     SELECT
       c.id,
@@ -45,7 +48,7 @@ router.get('/', (req, res) => {
     WHERE c.usuario_id = ?
     GROUP BY c.id
     ORDER BY c.id
-  `).all(...intervaloDosMeses(mesAtualISO()), req.usuarioId);
+  `).all(...intervaloDosMeses(mes), req.usuarioId);
 
   const resultado = categorias.map((linha) => {
     const c = comValorEmReais(linha, 'limite');

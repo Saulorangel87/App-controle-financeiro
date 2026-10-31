@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import { hojeISO as hoje } from '../utils/datas';
+import { useMes } from '../contexts/MesContext';
+import { dataMaximaDoMes, dataPadraoDoMes } from '../utils/datas';
 import { formatarMoeda } from '../utils/formatters';
 import { FORMAS_PAGAMENTO } from '../utils/formasPagamento';
 import './ModalEntrada.css';
@@ -13,16 +14,18 @@ function categoriaPadrao(item, categorias) {
 }
 
 export default function ModalPagarRecorrente({ item, onFechar, onPago }) {
+  const { mes } = useMes();
+  const dataMaxima = dataMaximaDoMes(mes);
   const [categorias, setCategorias] = useState([]);
   const [lancarDespesa, setLancarDespesa] = useState(true);
   const [valor, setValor] = useState(item.valor != null ? String(item.valor) : '');
   const [categoriaId, setCategoriaId] = useState('');
-  const [data, setData] = useState(hoje());
+  const [data, setData] = useState(() => dataPadraoDoMes(mes));
   const [formaPagamento, setFormaPagamento] = useState(item.forma_pagamento || '');
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
 
-  const dataEhFutura = data > hoje();
+  const dataEhFutura = data > dataMaxima;
 
   useEffect(() => {
     api.get('/categorias')
@@ -68,7 +71,7 @@ export default function ModalPagarRecorrente({ item, onFechar, onPago }) {
             forma_pagamento: formaPagamento || null,
           },
         } : {}),
-      });
+      }, { params: { mes } });
       onPago(res.data);
     } catch (err) {
       setErro(err.response?.data?.erro || 'Não foi possível registrar o pagamento. Tente novamente.');
@@ -135,7 +138,7 @@ export default function ModalPagarRecorrente({ item, onFechar, onPago }) {
                   id="pagar-data"
                   type="date"
                   value={data}
-                  max={hoje()}
+                  max={dataMaxima}
                   aria-invalid={dataEhFutura}
                   onChange={(e) => setData(e.target.value)}
                 />

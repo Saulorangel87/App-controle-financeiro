@@ -2,10 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
+import { useMes } from '../contexts/MesContext';
 import { formatarMoeda } from '../utils/formatters';
-import { useRecarregarAoVirarMes } from '../utils/useRecarregarAoVirarMes';
 import { ativarNotificacoes, desativarNotificacoes, estadoNotificacoes, pushDisponivel } from '../services/notificacoes';
-import { mesAtualISO } from '../utils/datas';
 import './Alertas.css';
 
 export default function Alertas() {
@@ -15,6 +14,7 @@ export default function Alertas() {
   const [carregando, setCarregando] = useState(true);
   const [push, setPush] = useState({ suportado: false, habilitado: false, inscrito: false });
   const [mensagemPush, setMensagemPush] = useState('');
+  const { mes } = useMes();
 
   useEffect(() => {
     if (!pushDisponivel()) return;
@@ -35,25 +35,23 @@ export default function Alertas() {
 
   const carregar = useCallback(async () => {
     const [resCategorias, resDespesas, resRecorrentes] = await Promise.all([
-      api.get('/categorias'),
-      // "gasto" da categoria já é só do mês corrente, então a lista de despesas
-      // mostrada aqui embaixo também precisa ser só do mês corrente — senão os
+      api.get('/categorias', { params: { mes } }),
+      // "gasto" da categoria é só do mês escolhido, então a lista de despesas
+      // mostrada aqui embaixo também precisa ser só desse mês — senão os
       // números não batem. Filtra direto no banco (?mes=), em vez de baixar
       // a tabela inteira e filtrar no navegador.
-      api.get('/despesas', { params: { mes: mesAtualISO() } }),
-      api.get('/recorrentes'),
+      api.get('/despesas', { params: { mes } }),
+      api.get('/recorrentes', { params: { mes } }),
     ]);
     setCategorias(resCategorias.data.filter((c) => c.status === 'EXCEDIDO'));
     setDespesas(resDespesas.data);
     setRecorrentes(resRecorrentes.data.itens.filter((item) => item.alerta_vencimento));
     setCarregando(false);
-  }, []);
+  }, [mes]);
 
   useEffect(() => {
     carregar();
   }, [carregar]);
-
-  useRecarregarAoVirarMes(carregar);
 
   if (carregando) return <p className="label">Carregando...</p>;
 

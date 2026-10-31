@@ -61,9 +61,17 @@ test('envia avisos de 3 e 1 dia, inclusive na virada de mês, sem duplicar', asy
   const inscricao = db.prepare(`
     INSERT INTO push_subscriptions (usuario_id, endpoint, p256dh, auth) VALUES (?, 'https://push.example.com/abc', 'k', 'a')
   `).run(usuario).lastInsertRowid;
-  const criar = (descricao, dia, pagoMes = null) => db.prepare(`
-    INSERT INTO despesas_recorrentes (usuario_id, descricao, valor, dia_vencimento, pago_mes) VALUES (?, ?, 10, ?, ?)
-  `).run(usuario, descricao, dia, pagoMes).lastInsertRowid;
+  const criar = (descricao, dia, pagoMes = null) => {
+    const id = db.prepare(`
+      INSERT INTO despesas_recorrentes (usuario_id, descricao, valor, dia_vencimento) VALUES (?, ?, 10, ?)
+    `).run(usuario, descricao, dia).lastInsertRowid;
+    if (pagoMes) {
+      db.prepare(`
+        INSERT INTO recorrentes_pagamentos (recorrente_id, usuario_id, mes, pago_em) VALUES (?, ?, ?, datetime('now'))
+      `).run(id, usuario, pagoMes);
+    }
+    return id;
+  };
 
   const aluguel = criar('Aluguel', 1);
   const internet = criar('Internet', 1);

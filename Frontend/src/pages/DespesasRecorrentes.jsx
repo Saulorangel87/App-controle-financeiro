@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Check, Pencil, Trash2, Plus } from 'lucide-react';
 import api from '../services/api';
 import ModalPagarRecorrente from '../components/ModalPagarRecorrente';
+import { useMes } from '../contexts/MesContext';
+import { rotuloMes } from '../utils/datas';
 import { formatarMoeda } from '../utils/formatters';
 import './DespesasRecorrentes.css';
 
@@ -19,15 +21,17 @@ export default function DespesasRecorrentes() {
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [pagandoItem, setPagandoItem] = useState(null);
+  const { mes } = useMes();
 
+  // "Pago" e a parcela atual são do mês escolhido no seletor.
   const carregar = useCallback(async () => {
-    const res = await api.get('/recorrentes');
+    const res = await api.get('/recorrentes', { params: { mes } });
     setItens(res.data.itens);
     setTotal(res.data.total);
     setTotalCheio(res.data.totalCheio ?? res.data.total);
     setTotalPago(res.data.totalPago ?? 0);
     setCarregando(false);
-  }, []);
+  }, [mes]);
 
   useEffect(() => {
     carregar();
@@ -90,9 +94,9 @@ export default function DespesasRecorrentes() {
     setEnviando(true);
     try {
       if (editandoId) {
-        await api.put(`/recorrentes/${editandoId}`, payload);
+        await api.put(`/recorrentes/${editandoId}`, payload, { params: { mes } });
       } else {
-        await api.post('/recorrentes', payload);
+        await api.post('/recorrentes', payload, { params: { mes } });
       }
       fecharForm();
       carregar();
@@ -113,7 +117,7 @@ export default function DespesasRecorrentes() {
       setPagandoItem(item);
       return;
     }
-    await api.patch(`/recorrentes/${item.id}/pago`, { pago: false });
+    await api.patch(`/recorrentes/${item.id}/pago`, { pago: false }, { params: { mes } });
     carregar();
   }
 
@@ -202,7 +206,7 @@ export default function DespesasRecorrentes() {
                     onChange={(e) => setForm((f) => ({ ...f, parcela_total: e.target.value }))}
                   />
                   <span className="contador-caracteres">
-                    Começa em 1/{form.parcela_total || '?'} este mês e avança sozinha todo mês.
+                    Começa em 1/{form.parcela_total || '?'} em {rotuloMes(mes)} e avança sozinha todo mês.
                   </span>
                 </div>
               )}

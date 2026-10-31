@@ -4,21 +4,22 @@ import { Pencil, Trash2, ChevronLeft, ChevronRight, Upload, History } from 'luci
 import api from '../services/api';
 import IconeCategoria from '../components/IconeCategoria';
 import { useDespesaModal } from '../contexts/DespesaModalContext';
+import { useMes } from '../contexts/MesContext';
+import { rotuloMes } from '../utils/datas';
 import { formatarMoeda, formatarData } from '../utils/formatters';
 import { FORMAS_PAGAMENTO, rotuloFormaPagamento } from '../utils/formasPagamento';
 import './Despesas.css';
 
 const POR_PAGINA = 20;
 
-function rotuloMes(mes) {
-  return new Date(`${mes}-01T00:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-}
-
 export default function Despesas() {
+  const { mes, ehMesAtual } = useMes();
   const [dados, setDados] = useState(null);
   const [pagina, setPagina] = useState(1);
   const [carregando, setCarregando] = useState(true);
-  const [mesSelecionado, setMesSelecionado] = useState('');
+  // No mês corrente a lista mostra todos os meses, como sempre; com outro
+  // mês escolhido no seletor, já abre filtrada nele.
+  const [mesSelecionado, setMesSelecionado] = useState(ehMesAtual ? '' : mes);
   const [categoriaSelecionada, setCategoriaSelecionada] = useState('');
   const [formaSelecionada, setFormaSelecionada] = useState('');
   const [busca, setBusca] = useState('');
@@ -49,6 +50,11 @@ export default function Despesas() {
   }, []);
 
   useEffect(() => {
+    setMesSelecionado(ehMesAtual ? '' : mes);
+    setPagina(1);
+  }, [mes, ehMesAtual]);
+
+  useEffect(() => {
     carregar(pagina);
   }, [carregar, pagina]);
 
@@ -75,6 +81,10 @@ export default function Despesas() {
   if (carregando && !dados) return <p className="label">Carregando...</p>;
 
   const { despesas, total, totalGeral, totalPaginas } = dados;
+  // O mês escolhido no seletor aparece no filtro mesmo sem nenhuma despesa.
+  const opcoesMes = !mesSelecionado || meses.includes(mesSelecionado)
+    ? meses
+    : [...meses, mesSelecionado].sort().reverse();
 
   return (
     <div className="despesas-e-entradas">
@@ -123,7 +133,7 @@ export default function Despesas() {
             onChange={(evento) => { setMesSelecionado(evento.target.value); setPagina(1); }}
           >
             <option value="">Todos os meses</option>
-            {meses.map((mes) => <option key={mes} value={mes}>{rotuloMes(mes)}</option>)}
+            {opcoesMes.map((opcao) => <option key={opcao} value={opcao}>{rotuloMes(opcao)}</option>)}
           </select>
 
           <label className="sr-only" htmlFor="filtro-categoria-despesas">Filtrar despesas por categoria</label>

@@ -48,12 +48,15 @@ async function executar(agora = new Date()) {
   }
   const contexto = contextoHoje(agora);
   const recorrentes = db.prepare(`
-    SELECT id, usuario_id, descricao, dia_vencimento, pago_mes,
+    SELECT id, usuario_id, descricao, dia_vencimento,
            parcela_total, parcela_mes_inicio
     FROM despesas_recorrentes
     WHERE dia_vencimento IS NOT NULL
   `).all();
   const inscricoes = db.prepare('SELECT * FROM push_subscriptions').all();
+  const pagaNoMes = db.prepare(
+    'SELECT 1 FROM recorrentes_pagamentos WHERE recorrente_id = ? AND mes = ?'
+  );
   const jaEnviado = db.prepare(`
     SELECT 1 FROM push_notificacoes_enviadas
     WHERE usuario_id = ? AND recorrente_id = ? AND inscricao_id = ? AND mes = ? AND dias_antes = ?
@@ -69,7 +72,7 @@ async function executar(agora = new Date()) {
     const { dias } = vencimento;
     // O "mes" do aviso é o mês do vencimento (não o de hoje), tanto pra checar
     // se já foi pago quanto pra evitar aviso duplicado.
-    if (![3, 1].includes(dias) || item.pago_mes === vencimento.mes) continue;
+    if (![3, 1].includes(dias) || pagaNoMes.get(item.id, vencimento.mes)) continue;
     if (item.parcela_total && item.parcela_mes_inicio) {
       const [anoInicio, mesInicio] = item.parcela_mes_inicio.split('-').map(Number);
       const parcelaAtual = (vencimento.ano - anoInicio) * 12 + vencimento.mesNumero - mesInicio + 1;

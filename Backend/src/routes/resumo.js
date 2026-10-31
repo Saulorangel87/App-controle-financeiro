@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { comValorEmReais, somaEmReaisSQL } = require('../utils/dinheiro');
-const { hojeISO, mesAtualISO, intervaloDosMeses } = require('../utils/datas');
+const { mesAtualISO, intervaloDosMeses, dataReferenciaDoMes, mesDaRequisicao, hojeISO } = require('../utils/datas');
 const { obterOrcamentoDoMes } = require('./orcamento');
 
 const router = express.Router();
@@ -24,8 +24,8 @@ function gastoFixoDoMes(usuarioId, mes) {
   return db.prepare(`
     SELECT ${somaEmReaisSQL('d')} AS total
     FROM despesas d
-    JOIN despesas_recorrentes r ON r.despesa_paga_id = d.id AND r.usuario_id = d.usuario_id
-    WHERE d.usuario_id = ? AND r.pago_mes = ? AND d.data >= ? AND d.data < ?
+    JOIN recorrentes_pagamentos p ON p.despesa_id = d.id AND p.usuario_id = d.usuario_id
+    WHERE d.usuario_id = ? AND p.mes = ? AND d.data >= ? AND d.data < ?
   `).get(usuarioId, mes, ...intervaloDosMeses(mes)).total;
 }
 
@@ -95,13 +95,16 @@ function obterFaturaCartao(usuarioId, dataHoje = hojeISO()) {
   };
 }
 
-// GET /api/resumo
+// GET /api/resumo?mes=YYYY-MM
 // Retorna os totais usados na tela de Visão Geral: total gasto, orçamento
 // total, disponível e quantidade de categorias em alerta.
-// Assim como em /categorias, o gasto considera só o mês corrente — o
-// dashboard reflete o mês em andamento, não a soma histórica de tudo.
+// Assim como em /categorias, o gasto considera só o mês pedido (padrão: o
+// corrente) — o dashboard reflete um mês, não a soma histórica de tudo.
 router.get('/', (req, res) => {
-  const mesAtual = mesAtualISO();
+  const mesAtual = mesDaRequisicao(req);
+  if (!mesAtual) return res.status(400).json({ erro: 'parâmetro mes inválido, use o formato YYYY-MM' });
+  const ehMesCorrente = mesAtual === mesAtualISO();
+  const dataReferencia = dataReferenciaDoMes(mesAtual);
   const categorias = db.prepare(`
     SELECT
       c.id,
@@ -121,24 +124,28 @@ router.get('/', (req, res) => {
   const totalGasto = categoriasComValores.reduce((soma, c) => soma + c.gasto, 0);
 
   // Orçamento total é definido manualmente pelo usuário, por mês (tabela
-  // orcamento_mensal). Quando orcamento_recorrente está ativo no usuário,
-  // um mês novo herda automaticamente o valor do último mês positivo.
+  // orcamento_mensal). Mês novo começa em 0 (mais as entradas dele); o
+  // frontend oferece copiar o orçamento do mês anterior.
   const orcamento = obterOrcamentoDoMes(req.usuarioId, mesAtual);
   const orcamentoTotal = orcamento.valor;
 
   const disponivel = orcamentoTotal - totalGasto;
   const categoriasComAlerta = categoriasComValores.filter((c) => c.gasto > c.limite).length;
   const percentualUtilizado = orcamentoTotal > 0 ? (totalGasto / orcamentoTotal) * 100 : 0;
-  const { projecaoMes, diaAtual, diasNoMes } = calcularProjecaoMes(
-    totalGasto, hojeISO(), gastoFixoDoMes(req.usuarioId, mesAtual),
+  // Projeção só faz sentido no mês em andamento: um mês passado já fechou e
+  // um mês futuro ainda não tem ritmo de gasto para extrapolar.
+  const projecao = calcularProjecaoMes(
+    totalGasto, dataReferencia, gastoFixoDoMes(req.usuarioId, mesAtual),
   );
-  const faturaCartao = obterFaturaCartao(req.usuarioId);
+  const projecaoMes = ehMesCorrente ? projecao.projecaoMes : 0;
+  const { diaAtual, diasNoMes } = projecao;
+  const faturaCartao = obterFaturaCartao(req.usuarioId, dataReferencia);
 
   res.json({
     mes: mesAtual,
     totalGasto,
     orcamentoTotal,
-    orcamentoRecorrente: orcamento.recorrente,
+    orcamentoBase: orcamento.base,
     orcamentoMesAnterior: orcamento.valorMesAnterior,
     disponivel,
     categoriasComAlerta,

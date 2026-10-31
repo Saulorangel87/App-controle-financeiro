@@ -102,25 +102,6 @@
   font-size: 16px;
 }
 
-.checkbox-orcamento-recorrente {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.checkbox-orcamento-recorrente input {
-  width: 14px;
-  height: 14px;
-  accent-color: var(--accent);
-}
-
-.legenda-orcamento {
-  font-size: 10px;
-}
-
 .botao-repetir-orcamento {
   align-self: flex-start;
   text-align: left;

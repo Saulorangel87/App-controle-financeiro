@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import DespesasRecorrentes from './DespesasRecorrentes';
 import api from '../services/api';
+import { mesAtualISO } from '../utils/datas';
 
 vi.mock('../services/api', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -55,12 +56,12 @@ test('marcar conta recorrente como paga abre modal de despesa e desmarcar envia 
         categoria_id: 20,
         forma_pagamento: 'pix',
       }),
-    });
+    }, { params: { mes: mesAtualISO() } });
   });
 
   // Clicar numa conta já paga desmarca direto
   fireEvent.click(screen.getByRole('button', { name: 'Marcar Internet como não paga' }));
   await waitFor(() => {
-    expect(api.patch).toHaveBeenCalledWith('/recorrentes/2/pago', { pago: false });
+    expect(api.patch).toHaveBeenCalledWith('/recorrentes/2/pago', { pago: false }, { params: { mes: mesAtualISO() } });
   });
 });

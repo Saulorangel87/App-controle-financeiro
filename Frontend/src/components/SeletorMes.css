@@ -1,0 +1,75 @@
+.seletor-mes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-bottom: 20px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.seletor-mes.fora-do-mes-atual {
+  border-color: var(--accent);
+}
+
+.seletor-mes-controles {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.seletor-mes-controles .botao-icone {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.seletor-mes-controles .botao-icone:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.seletor-mes-rotulo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 150px;
+}
+
+.seletor-mes-rotulo strong {
+  font-size: 14px;
+  text-transform: capitalize;
+}
+
+.seletor-mes-aviso {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.seletor-mes-voltar {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border: none;
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 600px) {
+  .seletor-mes {
+    justify-content: center;
+  }
+
+  .seletor-mes-aviso {
+    justify-content: center;
+    text-align: center;
+  }
+}

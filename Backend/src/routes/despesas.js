@@ -10,7 +10,7 @@ const {
 } = require('../utils/validacao');
 const { paraCentavos, comValorEmReais, centavosOuNulo, somaEmReaisSQL } = require('../utils/dinheiro');
 const { registrar: registrarHistorico } = require('../utils/historico');
-const { hojeISO, intervaloDosMeses } = require('../utils/datas');
+const { dataLimiteLancamento, intervaloDosMeses } = require('../utils/datas');
 
 const router = express.Router();
 
@@ -216,8 +216,10 @@ router.post('/', (req, res) => {
   if (descricao.length > LIMITE_DESCRICAO) {
     return res.status(400).json({ erro: `descrição muito longa (máximo ${LIMITE_DESCRICAO} caracteres)` });
   }
-  if (data > hojeISO()) {
-    return res.status(400).json({ erro: 'não é possível cadastrar uma despesa com data futura' });
+  // Datas futuras são aceitas (lançar as contas do mês seguinte antes de ele
+  // começar), até o limite do seletor de mês.
+  if (data > dataLimiteLancamento()) {
+    return res.status(400).json({ erro: 'data muito distante no futuro' });
   }
   if (!formaPagamentoValida(forma_pagamento)) {
     return res.status(400).json({ erro: `forma_pagamento inválida (use: ${FORMAS_PAGAMENTO_VALIDAS.join(', ')})` });
@@ -268,8 +270,11 @@ router.put('/:id', (req, res) => {
   if (descricao !== undefined && !textoValido(descricao, LIMITE_DESCRICAO)) {
     return res.status(400).json({ erro: `descrição inválida (máximo ${LIMITE_DESCRICAO} caracteres)` });
   }
-  if (data !== undefined && (!dataISOValida(data) || data > hojeISO())) {
-    return res.status(400).json({ erro: 'não é possível cadastrar uma despesa com data futura' });
+  if (data !== undefined && !dataISOValida(data)) {
+    return res.status(400).json({ erro: 'data inválida' });
+  }
+  if (data !== undefined && data > dataLimiteLancamento()) {
+    return res.status(400).json({ erro: 'data muito distante no futuro' });
   }
   if (!formaPagamentoValida(forma_pagamento)) {
     return res.status(400).json({ erro: `forma_pagamento inválida (use: ${FORMAS_PAGAMENTO_VALIDAS.join(', ')})` });

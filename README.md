@@ -46,11 +46,12 @@ autorizar as notificações.
 - 🔐 **Cadastro e login** com senha criptografada (bcrypt, mínimo de 8 caracteres), access token JWT curto com refresh token seguro, verificação de email obrigatória, recuperação de senha por email, **troca de senha logado** e opção de **sair de todos os dispositivos**
 - 📊 **Dashboard** com total gasto, orçamento, disponível, **projeção de fechamento do mês** (gastos do dia a dia no ritmo atual + contas fixas pagas contadas uma vez só), **fatura aberta do cartão de crédito** (com dia de fechamento configurável) e gráfico de gastos por categoria (pizza no mobile, barra no desktop)
 - 🏷️ **Gerenciamento completo de categorias** — criar, renomear, escolher ícone e cor, editar limite mensal e excluir categorias sem lançamentos, com indicador visual de status (OK / Excedido)
-- 💸 **CRUD completo de despesas** — criar, editar e excluir (sem pop-up de confirmação: a exclusão mostra **Desfazer** na hora), **tela de histórico** em `/historico` com tudo o que foi criado, editado e excluído e opção de restaurar exclusões, busca por descrição, filtros por mês/categoria/forma de pagamento, paginação e bloqueio de data futura
+- 💸 **CRUD completo de despesas** — criar, editar e excluir (sem pop-up de confirmação: a exclusão mostra **Desfazer** na hora), **tela de histórico** em `/historico` com tudo o que foi criado, editado e excluído e opção de restaurar exclusões, busca por descrição, filtros por mês/categoria/forma de pagamento, paginação e bloqueio de data futura (exceto ao lançar num mês à frente escolhido no seletor)
 - 🚨 **Alertas automáticos** para categorias que ultrapassaram o limite
 - 📅 **Relatório mensal** com filtro por período/categoria, comparação de gastos, entradas, saldo, paginação e opção de **imprimir**
 - 📤 **Exportação Excel** do relatório mensal, com resumo financeiro, totais, despesas, entradas e formatação profissional
-- 💰 **Orçamento total editável**, com opção de **repetir automaticamente todo mês** (repete o valor-base; entradas avulsas como bônus ficam só no mês delas) ou copiar com um clique o orçamento do mês anterior
+- 💰 **Orçamento total editável por mês** — cada mês começa com o seu próprio orçamento (nada se repete sozinho) e o botão **Copiar mês anterior** traz o valor-base do mês anterior com um clique (entradas avulsas como bônus ficam só no mês delas)
+- 📆 **Seletor de mês** no topo de todas as telas: escolha outro mês (até 12 meses à frente ou qualquer mês passado) e tudo passa a mostrar esse mês, como se ele tivesse virado — Visão Geral, orçamento, categorias, alertas, recorrentes (pago/parcela de cada mês) e os formulários de lançamento. Dá, por exemplo, para lançar as contas de novembro no dia 31 de outubro. O app sempre abre no mês atual, e o orçamento de um mês novo começa zerado
 - 🔄 **Dashboard sempre atualizado** ao mês corrente, mesmo com a aba aberta na virada do mês
 - 📱 **Totalmente responsivo e instalável (PWA)**, com menu hambúrguer e gráficos adaptados para telas menores
 - ⬇️ **Instalação pelo rodapé** quando o navegador oferecer a instalação e o app ainda não estiver instalado
@@ -112,7 +113,7 @@ Alguns cuidados aplicados antes de colocar o app em produção:
 - Todas as queries SQL parametrizadas (proteção contra SQL Injection)
 - Validação de tipo e tamanho em todos os campos recebidos pela API e tratamento central de erros: um payload malformado recebe `400` em JSON, nunca derruba o servidor
 - Isolamento de dados por usuário em todas as rotas autenticadas
-- Validação de data futura em despesas e entradas (frontend + backend), sempre no horário de Brasília (`APP_TIMEZONE`) — o servidor roda em UTC, mas "hoje" e "mês atual" nunca viram às 21h
+- Validação de data futura em despesas e entradas (frontend + backend), sempre no horário de Brasília (`APP_TIMEZONE`) — o servidor roda em UTC, mas "hoje" e "mês atual" nunca viram às 21h. Com um mês futuro escolhido no seletor, o formulário aceita datas até o fim daquele mês; o backend aceita até o fim do 12º mês à frente
 
 ### Backup do banco
 

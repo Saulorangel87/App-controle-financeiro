@@ -9,7 +9,7 @@ const {
 } = require('../utils/validacao');
 const { paraCentavos, comValorEmReais, somaEmReaisSQL } = require('../utils/dinheiro');
 const { registrar: registrarHistorico } = require('../utils/historico');
-const { hojeISO, mesAtualISO, intervaloDosMeses } = require('../utils/datas');
+const { dataLimiteLancamento, mesAtualISO, intervaloDosMeses } = require('../utils/datas');
 const { garantirOrcamentoDoMes } = require('./orcamento');
 
 const router = express.Router();
@@ -119,8 +119,8 @@ router.post('/', (req, res) => {
   if (!origem || !String(origem).trim() || !numeroMonetarioValido(valor) || !dataISOValida(data)) {
     return res.status(400).json({ erro: 'origem, valor e data são obrigatórios' });
   }
-  if (data > hojeISO()) {
-    return res.status(400).json({ erro: 'não é possível registrar uma entrada com data futura' });
+  if (data > dataLimiteLancamento()) {
+    return res.status(400).json({ erro: 'data muito distante no futuro' });
   }
 
   const registrar = db.transaction(() => {
@@ -169,8 +169,8 @@ router.put('/:id', (req, res) => {
   if (!dataISOValida(dataFinal)) {
     return res.status(400).json({ erro: 'data inválida' });
   }
-  if (dataFinal > hojeISO()) {
-    return res.status(400).json({ erro: 'não é possível registrar uma entrada com data futura' });
+  if (dataFinal > dataLimiteLancamento()) {
+    return res.status(400).json({ erro: 'data muito distante no futuro' });
   }
 
   const descricaoLimpa = descricaoFinal && String(descricaoFinal).trim()

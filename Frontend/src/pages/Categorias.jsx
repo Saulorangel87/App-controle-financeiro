@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import IconeCategoria, { OPCOES_ICONES, OPCOES_CORES } from '../components/IconeCategoria';
+import { useMes } from '../contexts/MesContext';
 import { formatarMoeda } from '../utils/formatters';
-import { useRecarregarAoVirarMes } from '../utils/useRecarregarAoVirarMes';
 import './Categorias.css';
 
 const FORM_VAZIO = {
@@ -24,17 +24,17 @@ export default function Categorias() {
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
 
+  const { mes } = useMes();
+
   const carregar = useCallback(async () => {
-    const res = await api.get('/categorias');
+    const res = await api.get('/categorias', { params: { mes } });
     setCategorias(res.data);
     setCarregando(false);
-  }, []);
+  }, [mes]);
 
   useEffect(() => {
     carregar();
   }, [carregar]);
-
-  useRecarregarAoVirarMes(carregar);
 
   function abrirEdicao(cat) {
     setEditandoId(cat.id);

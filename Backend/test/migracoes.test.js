@@ -49,6 +49,8 @@ function criarBancoAntigo(caminho) {
     );
     INSERT INTO usuarios (nome, email, senha_hash) VALUES ('Migração Teste', 'migracao@example.com', 'hash-qualquer');
     INSERT INTO despesas_recorrentes (usuario_id, descricao, valor, dia_vencimento) VALUES (1, 'Luz', 120, 10);
+    INSERT INTO despesas_recorrentes (usuario_id, descricao, valor, dia_vencimento, pago_mes, pago_em)
+      VALUES (1, 'Água', 60, 5, '2026-09', '2026-09-05T12:00:00.000Z');
     INSERT INTO orcamento (usuario_id, valor) VALUES (1, 100);
     INSERT INTO sessoes (usuario_id, token_hash, expira_em) VALUES (1, 'hash-sessao', '2099-01-01T00:00:00.000Z');
   `);
@@ -92,6 +94,14 @@ test('migrações de schema são idempotentes e preservam dados pré-existentes'
       assert.ok(colunas('despesas_recorrentes').includes('despesa_paga_id'));
       const recorrente = db.prepare('SELECT descricao, categoria_id, despesa_paga_id FROM despesas_recorrentes').get();
       assert.deepEqual({ ...recorrente }, { descricao: 'Luz', categoria_id: null, despesa_paga_id: null });
+
+      // O pagamento guardado em pago_mes vira um registro por mês, uma vez só.
+      const pagamentos = db.prepare('SELECT recorrente_id, mes, pago_em FROM recorrentes_pagamentos').all();
+      assert.deepEqual(pagamentos.map((p) => ({ ...p })), [
+        { recorrente_id: 2, mes: '2026-09', pago_em: '2026-09-05T12:00:00.000Z' },
+      ]);
+      const agua = db.prepare('SELECT pago_mes, pago_em FROM despesas_recorrentes WHERE id = 2').get();
+      assert.deepEqual({ ...agua }, { pago_mes: null, pago_em: null });
       assert.ok(colunas('despesas').includes('dividida_com'));
       assert.ok(colunas('despesas').includes('divisao_valor_centavos'));
       assert.ok(colunas('sessoes').includes('rotacionada_em'));

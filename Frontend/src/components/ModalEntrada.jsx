@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import { hojeISO as hoje } from '../utils/datas';
+import { useMes } from '../contexts/MesContext';
+import { dataMaximaDoMes, dataPadraoDoMes } from '../utils/datas';
+import { formatarData } from '../utils/formatters';
 import './ModalEntrada.css';
 
 const LIMITE_DESCRICAO = 80;
@@ -8,14 +10,21 @@ const LIMITE_ORIGEM = 40;
 
 export default function ModalEntrada({ aberto, entradaEditando = null, onFechar, onSalvo }) {
   const editando = Boolean(entradaEditando);
+  const { mes } = useMes();
+  // Mesma regra do formulário de despesa: entrada nova vem no mês escolhido
+  // no seletor; uma de mês futuro sendo editada vai até o fim do mês dela.
+  const mesDoLimite = editando && entradaEditando.data?.slice(0, 7) > mes
+    ? entradaEditando.data.slice(0, 7)
+    : mes;
+  const dataMaxima = dataMaximaDoMes(mesDoLimite);
   const [origem, setOrigem] = useState('');
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
-  const [data, setData] = useState(hoje());
+  const [data, setData] = useState(() => dataPadraoDoMes(mes));
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
 
-  const dataEhFutura = data > hoje();
+  const dataEhFutura = data > dataMaxima;
 
   useEffect(() => {
     if (!aberto) return;
@@ -23,15 +32,15 @@ export default function ModalEntrada({ aberto, entradaEditando = null, onFechar,
       setOrigem(entradaEditando.origem || '');
       setDescricao(entradaEditando.descricao || '');
       setValor(entradaEditando.valor != null ? String(entradaEditando.valor) : '');
-      setData(entradaEditando.data || hoje());
+      setData(entradaEditando.data || dataPadraoDoMes(mes));
     } else {
       setOrigem('');
       setDescricao('');
       setValor('');
-      setData(hoje());
+      setData(dataPadraoDoMes(mes));
     }
     setErro('');
-  }, [aberto, entradaEditando]);
+  }, [aberto, entradaEditando, mes]);
 
   useEffect(() => {
     if (!aberto) return;
@@ -52,8 +61,8 @@ export default function ModalEntrada({ aberto, entradaEditando = null, onFechar,
       setErro('Preencha origem, valor e data.');
       return;
     }
-    if (data > hoje()) {
-      setErro('Não é possível registrar uma entrada com data futura.');
+    if (data > dataMaxima) {
+      setErro(`A data não pode passar de ${formatarData(dataMaxima)}.`);
       return;
     }
 
@@ -133,7 +142,7 @@ export default function ModalEntrada({ aberto, entradaEditando = null, onFechar,
               id="campo-data-entrada"
               type="date"
               value={data}
-              max={hoje()}
+              max={dataMaxima}
               aria-invalid={dataEhFutura}
               onChange={(e) => setData(e.target.value)}
             />
