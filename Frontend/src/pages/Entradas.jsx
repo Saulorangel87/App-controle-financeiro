@@ -11,12 +11,13 @@ import './Despesas.css';
 const POR_PAGINA = 20;
 
 export default function Entradas() {
-  const { mes, ehMesAtual } = useMes();
+  const { mes } = useMes();
   const [dados, setDados] = useState(null);
   const [pagina, setPagina] = useState(1);
   const [carregando, setCarregando] = useState(true);
-  // Mesma regra de Despesas: com outro mês no seletor, abre filtrada nele.
-  const [mesSelecionado, setMesSelecionado] = useState(ehMesAtual ? '' : mes);
+  // Mesma regra de Despesas: abre sempre filtrada no mês do seletor (o
+  // atual, por padrão). "Todos os meses" continua no filtro.
+  const [mesSelecionado, setMesSelecionado] = useState(mes);
   const [meses, setMeses] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [entradaEditando, setEntradaEditando] = useState(null);
@@ -44,9 +45,9 @@ export default function Entradas() {
   }, [carregarMeses]);
 
   useEffect(() => {
-    setMesSelecionado(ehMesAtual ? '' : mes);
+    setMesSelecionado(mes);
     setPagina(1);
-  }, [mes, ehMesAtual]);
+  }, [mes]);
 
   useEffect(() => {
     carregar(pagina);

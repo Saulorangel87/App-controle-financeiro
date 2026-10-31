@@ -41,7 +41,12 @@
 
 .seletor-mes-rotulo strong {
   font-size: 14px;
-  text-transform: capitalize;
+}
+
+/* "Outubro de 2026": só a primeira letra maiúscula (capitalize deixava
+   "Outubro De 2026"). */
+.seletor-mes-rotulo strong::first-letter {
+  text-transform: uppercase;
 }
 
 .seletor-mes-aviso {

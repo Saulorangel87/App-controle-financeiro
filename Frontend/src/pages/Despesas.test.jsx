@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Despesas from './Despesas';
 import api from '../services/api';
+import { mesAtualISO } from '../utils/datas';
 
 vi.mock('../services/api', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -38,6 +39,10 @@ test('renderiza a lista de despesas vinda da API e filtra por busca, categoria e
   );
 
   expect(await screen.findByText('Supermercado')).toBeInTheDocument();
+  // Abre filtrada no mês atual, não em "Todos os meses".
+  expect(api.get).toHaveBeenCalledWith('/despesas', {
+    params: { pagina: 1, porPagina: 20, mes: mesAtualISO() },
+  });
 
   fireEvent.change(screen.getByLabelText('Buscar despesas por descrição'), { target: { value: 'mercado' } });
   fireEvent.change(screen.getByLabelText('Filtrar despesas por categoria'), { target: { value: '1' } });
@@ -48,6 +53,7 @@ test('renderiza a lista de despesas vinda da API e filtra por busca, categoria e
       params: {
         pagina: 1,
         porPagina: 20,
+        mes: mesAtualISO(),
         busca: 'mercado',
         categoria_id: '1',
         forma_pagamento: 'pix',

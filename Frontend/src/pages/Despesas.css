@@ -51,6 +51,7 @@
   border-radius: var(--radius);
   font-family: var(--font-mono);
   font-size: 12px;
+  white-space: nowrap;
   transition: border-color 0.15s ease, color 0.15s ease;
 }
 
@@ -210,6 +211,9 @@
   .despesas-header { align-items:flex-start; gap:10px; flex-direction:column; }
   .despesas-header-titulo { width:100%; justify-content:space-between; gap:10px; }
   .despesas-header-titulo .label { min-width:0; }
-  .despesas-header-acoes { width:100%; justify-content:space-between; }
+  /* Sem quebra de linha, botões + total não cabiam e o total vazava para
+     fora do painel. O total vai para uma linha própria, abaixo dos botões. */
+  .despesas-header-acoes { width:100%; flex-wrap:wrap; gap:10px; }
+  .despesas-header-acoes > .label { flex-basis:100%; }
   .filtro-mes { min-width:132px; max-width:45%; }
 }

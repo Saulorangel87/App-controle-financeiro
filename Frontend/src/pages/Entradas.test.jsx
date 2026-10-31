@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Entradas from './Entradas';
 import api from '../services/api';
+import { mesAtualISO } from '../utils/datas';
 
 vi.mock('../services/api', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -29,6 +30,10 @@ test('permite editar uma entrada existente pela tela de entradas', async () => {
   render(<MemoryRouter><Entradas /></MemoryRouter>);
 
   expect(await screen.findByText('Freelance')).toBeInTheDocument();
+  // Abre filtrada no mês atual, não em "Todos os meses".
+  expect(api.get).toHaveBeenCalledWith('/entradas', {
+    params: { pagina: 1, porPagina: 20, mes: mesAtualISO() },
+  });
 
   fireEvent.click(screen.getByRole('button', { name: 'Editar entrada Freelance' }));
   expect(await screen.findByText('Editar Entrada')).toBeInTheDocument();

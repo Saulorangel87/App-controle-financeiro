@@ -46,7 +46,7 @@ autorizar as notificações.
 - 🔐 **Cadastro e login** com senha criptografada (bcrypt, mínimo de 8 caracteres), access token JWT curto com refresh token seguro, verificação de email obrigatória, recuperação de senha por email, **troca de senha logado** e opção de **sair de todos os dispositivos**
 - 📊 **Dashboard** com total gasto, orçamento, disponível, **projeção de fechamento do mês** (gastos do dia a dia no ritmo atual + contas fixas pagas contadas uma vez só), **fatura aberta do cartão de crédito** (com dia de fechamento configurável) e gráfico de gastos por categoria (pizza no mobile, barra no desktop)
 - 🏷️ **Gerenciamento completo de categorias** — criar, renomear, escolher ícone e cor, editar limite mensal e excluir categorias sem lançamentos, com indicador visual de status (OK / Excedido)
-- 💸 **CRUD completo de despesas** — criar, editar e excluir (sem pop-up de confirmação: a exclusão mostra **Desfazer** na hora), **tela de histórico** em `/historico` com tudo o que foi criado, editado e excluído e opção de restaurar exclusões, busca por descrição, filtros por mês/categoria/forma de pagamento, paginação e bloqueio de data futura (exceto ao lançar num mês à frente escolhido no seletor)
+- 💸 **CRUD completo de despesas** — criar, editar e excluir (sem pop-up de confirmação: a exclusão mostra **Desfazer** na hora), **tela de histórico** em `/historico` com tudo o que foi criado, editado e excluído e opção de restaurar exclusões, busca por descrição, filtros por mês (abre no mês do seletor, com opção "Todos os meses")/categoria/forma de pagamento, paginação e bloqueio de data futura (exceto ao lançar num mês à frente escolhido no seletor)
 - 🚨 **Alertas automáticos** para categorias que ultrapassaram o limite
 - 📅 **Relatório mensal** com filtro por período/categoria, comparação de gastos, entradas, saldo, paginação e opção de **imprimir**
 - 📤 **Exportação Excel** do relatório mensal, com resumo financeiro, totais, despesas, entradas e formatação profissional
@@ -58,7 +58,7 @@ autorizar as notificações.
 - 🔔 **Notificações push opcionais** para despesas recorrentes próximas do vencimento
 - 🔁 **Despesas recorrentes integradas aos gastos do mês** — ao marcar uma conta fixa ou prestação como paga, o app abre a confirmação para já lançá-la como despesa do mês (lembrando categoria e forma de pagamento para o próximo mês), e desmarcar desfaz o lançamento
 - 🆕 **Notas da versão** em `/novidades`, com as novidades da v2.1.0 (seletor de mês) e o resumo das entregas de arquitetura e segurança
-- 💵 **CRUD completo de entradas em aba própria**, com criação, edição, exclusão, filtro mensal, total do período e ajuste automático do orçamento do mês
+- 💵 **CRUD completo de entradas em aba própria**, com criação, edição, exclusão, filtro mensal (abre no mês do seletor), total do período e ajuste automático do orçamento do mês
 - 📥 **Importação de extrato bancário (.csv e .ofx)** com pré-visualização, classificação automática entre despesas e entradas e detecção automática de lançamentos duplicados (já importados ou repetidos no próprio arquivo)
 - 🌗 **Tema claro e escuro**, com detecção automática da preferência do sistema e alternância manual salva por dispositivo, com transição suave de cores
 - 🧠 **Categoria sugerida automaticamente** ao repetir uma descrição já usada antes, com base no próprio histórico do usuário

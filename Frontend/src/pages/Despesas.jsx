@@ -13,13 +13,13 @@ import './Despesas.css';
 const POR_PAGINA = 20;
 
 export default function Despesas() {
-  const { mes, ehMesAtual } = useMes();
+  const { mes } = useMes();
   const [dados, setDados] = useState(null);
   const [pagina, setPagina] = useState(1);
   const [carregando, setCarregando] = useState(true);
-  // No mês corrente a lista mostra todos os meses, como sempre; com outro
-  // mês escolhido no seletor, já abre filtrada nele.
-  const [mesSelecionado, setMesSelecionado] = useState(ehMesAtual ? '' : mes);
+  // A lista abre sempre filtrada no mês do seletor (o atual, por padrão), e
+  // o total do topo é o desse mês. "Todos os meses" continua no filtro.
+  const [mesSelecionado, setMesSelecionado] = useState(mes);
   const [categoriaSelecionada, setCategoriaSelecionada] = useState('');
   const [formaSelecionada, setFormaSelecionada] = useState('');
   const [busca, setBusca] = useState('');
@@ -50,9 +50,9 @@ export default function Despesas() {
   }, []);
 
   useEffect(() => {
-    setMesSelecionado(ehMesAtual ? '' : mes);
+    setMesSelecionado(mes);
     setPagina(1);
-  }, [mes, ehMesAtual]);
+  }, [mes]);
 
   useEffect(() => {
     carregar(pagina);
