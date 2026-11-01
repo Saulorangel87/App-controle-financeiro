@@ -29,21 +29,24 @@ beforeEach(() => {
 });
 
 test('explica as regras do saldo e mostra o saldo do usuário para conferir', async () => {
-  api.get.mockResolvedValue({ data: { orcamentoTotal: 4669.39, saldoAnterior: 1000 } });
+  api.get.mockResolvedValue({
+    data: { orcamentoTotal: 4949.31, saldoAnterior: 1279.92, disponivel: 3237.88, gastoAgendado: 100 },
+  });
   renderizar();
 
   expect(screen.getByRole('dialog')).toHaveTextContent('Seu saldo agora passa de um mês para o outro.');
   expect(screen.getByRole('dialog')).toHaveTextContent('Se faltar, o negativo também passa');
-  expect(await screen.findByText(/4\.669,39/)).toBeInTheDocument();
-  expect(screen.getByRole('dialog')).toHaveTextContent(/inclui\s*R\$\s1\.000,00 de saldo de/);
+  // Saldo na conta = Disponível + contas agendadas, que ainda não saíram.
+  expect(await screen.findByText(/3\.337,88/)).toBeInTheDocument();
+  expect(screen.getByRole('dialog')).toHaveTextContent(/inclui\s*R\$\s1\.279,92 de saldo de/);
 
   fireEvent.click(screen.getByRole('button', { name: 'Corrigir saldo' }));
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-  expect(screen.getByTestId('rota')).toHaveTextContent('/?editarOrcamento=1');
+  expect(screen.getByTestId('rota')).toHaveTextContent('/?corrigirSaldo=1');
 });
 
 test('aparece uma vez só por navegador', async () => {
-  api.get.mockResolvedValue({ data: { orcamentoTotal: 3000, saldoAnterior: 0 } });
+  api.get.mockResolvedValue({ data: { orcamentoTotal: 3000, saldoAnterior: 0, disponivel: 3000, gastoAgendado: 0 } });
   const { unmount } = renderizar();
   fireEvent.click(await screen.findByRole('button', { name: /Está certo/ }));
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

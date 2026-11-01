@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { numeroMonetarioValido } = require('../utils/validacao');
-const { mesDaRequisicao } = require('../utils/datas');
+const { mesDaRequisicao, dataReferenciaDoMes } = require('../utils/datas');
 const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
 
 const router = express.Router();
@@ -75,6 +75,16 @@ function obterOrcamentoDoMes(usuarioId, mes) {
   };
 }
 
+// Gastos do mês com data até `ate` (inclusive), em centavos. Despesas com
+// data depois disso estão agendadas: ainda não saíram da conta.
+function gastosDoMesAteCentavos(usuarioId, mes, ate) {
+  return db.prepare(`
+    SELECT COALESCE(SUM(COALESCE(valor_centavos, ROUND(valor * 100))), 0) AS total
+    FROM despesas
+    WHERE usuario_id = ? AND data >= ? AND data <= ?
+  `).get(usuarioId, `${mes}-01`, ate).total;
+}
+
 const ERRO_MES = 'parâmetro mes inválido, use o formato YYYY-MM';
 
 // GET /api/orcamento?mes=YYYY-MM — o mês pedido (padrão: o corrente)
@@ -109,6 +119,35 @@ router.put('/', (req, res) => {
   res.json(obterOrcamentoDoMes(req.usuarioId, mes));
 });
 
+// PUT /api/orcamento/saldo-atual?mes=YYYY-MM — "Corrigir saldo": o usuário
+// informa quanto tem HOJE na conta (já descontado o que gastou) e o app
+// acerta o orçamento do mês para que o saldo bata:
+//   total do mês = saldo na conta + gastos do mês até hoje
+// Despesas agendadas para depois de hoje ainda não saíram da conta, então
+// continuam sendo descontadas do "Disponível". Pode ser negativo (conta no
+// vermelho). O "hoje" de um mês passado é o último dia dele.
+router.put('/saldo-atual', (req, res) => {
+  const { valor } = req.body;
+  const mes = mesDaRequisicao(req);
+  if (!mes) return res.status(400).json({ erro: ERRO_MES });
+  if (typeof valor !== 'number' || !Number.isFinite(valor)) {
+    return res.status(400).json({ erro: 'valor inválido' });
+  }
+
+  db.transaction(() => {
+    garantirOrcamentoDoMes(req.usuarioId, mes);
+    const totalCentavos = paraCentavos(valor)
+      + gastosDoMesAteCentavos(req.usuarioId, mes, dataReferenciaDoMes(mes));
+    const doMesCentavos = totalCentavos - saldoAnteriorCentavos(req.usuarioId, mes);
+    db.prepare(`
+      UPDATE orcamento_mensal SET valor = ?, valor_centavos = ?, atualizado_em = datetime('now')
+      WHERE usuario_id = ? AND mes = ?
+    `).run(doMesCentavos / 100, doMesCentavos, req.usuarioId, mes);
+  })();
+
+  res.json(obterOrcamentoDoMes(req.usuarioId, mes));
+});
+
 // PUT /api/orcamento/cartao — define ou limpa o dia de fechamento da fatura
 // do cartão de crédito (1 a 31, ou null para usar o mês-calendário).
 router.put('/cartao', (req, res) => {
@@ -132,4 +171,5 @@ router.put('/cartao', (req, res) => {
 module.exports = router;
 module.exports.garantirOrcamentoDoMes = garantirOrcamentoDoMes;
 module.exports.obterOrcamentoDoMes = obterOrcamentoDoMes;
+module.exports.gastosDoMesAteCentavos = gastosDoMesAteCentavos;
 module.exports.MES_INICIO_SALDO_ACUMULADO = MES_INICIO_SALDO_ACUMULADO;

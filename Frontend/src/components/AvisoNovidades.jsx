@@ -7,7 +7,7 @@ import { formatarMoeda } from '../utils/formatters';
 import { rotuloMes, somarMeses } from '../utils/datas';
 import './AvisoNovidades.css';
 
-const VERSAO_ATUAL = 'v2.1.3';
+const VERSAO_ATUAL = 'v2.1.4';
 const CHAVE_VISTA = `controle-despesas:novidades:${VERSAO_ATUAL}`;
 
 // Regras do saldo acumulado (v2.1.3). Quem já usava o app precisa saber que
@@ -73,10 +73,12 @@ export default function AvisoNovidades() {
   function corrigirSaldo() {
     setAberto(false);
     selecionarMes(mesAtual);
-    navigate('/?editarOrcamento=1');
+    navigate('/?corrigirSaldo=1');
   }
 
   const temOrcamento = resumo && (resumo.orcamentoTotal !== 0 || resumo.saldoAnterior !== 0);
+  // Saldo na conta hoje = Disponível + contas agendadas (ainda não saíram).
+  const saldoHoje = resumo ? resumo.disponivel + (resumo.gastoAgendado || 0) : 0;
 
   return (
     <div className="novidades-overlay" role="presentation" onClick={() => setAberto(false)}>
@@ -106,14 +108,14 @@ export default function AvisoNovidades() {
 
         {temOrcamento && (
           <div className="aviso-saldo">
-            <span className="label">Seu orçamento de {rotuloMes(mesAtual)}</span>
-            <strong>{formatarMoeda(resumo.orcamentoTotal)}</strong>
+            <span className="label">Pelo app, você tem hoje</span>
+            <strong>{formatarMoeda(saldoHoje)}</strong>
             {resumo.saldoAnterior !== 0 && (
               <span className="aviso-saldo-detalhe">
                 inclui {formatarMoeda(resumo.saldoAnterior)} de saldo de {rotuloMes(somarMeses(mesAtual, -1))}
               </span>
             )}
-            <p>Confira com o seu banco. Se não bater, corrija o valor — o app ajusta o resto sozinho.</p>
+            <p>Confira com o saldo da sua conta no banco. Se não bater, clique em Corrigir saldo e digite quanto você tem hoje — o app ajusta o resto sozinho.</p>
           </div>
         )}
 

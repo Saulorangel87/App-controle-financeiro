@@ -4,7 +4,7 @@ const { comValorEmReais, somaEmReaisSQL } = require('../utils/dinheiro');
 const {
   mesAtualISO, intervaloDosMeses, dataReferenciaDoMes, mesDaRequisicao, hojeISO,
 } = require('../utils/datas');
-const { obterOrcamentoDoMes } = require('./orcamento');
+const { obterOrcamentoDoMes, gastosDoMesAteCentavos } = require('./orcamento');
 
 const router = express.Router();
 
@@ -182,6 +182,9 @@ router.get('/', (req, res) => {
     totalGasto,
     orcamentoTotal,
     orcamentoDoMes: orcamento.valorDoMes,
+    // Despesas do mês com data depois de hoje: já descontadas do
+    // "Disponível", mas ainda não saíram da conta.
+    gastoAgendado: Number((totalGasto - gastosDoMesAteCentavos(req.usuarioId, mesAtual, dataReferencia) / 100).toFixed(2)),
     saldoAnterior: orcamento.saldoAnterior,
     disponivel,
     categoriasComAlerta,

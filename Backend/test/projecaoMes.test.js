@@ -57,6 +57,7 @@ test('projeção do mês usa só o mês corrente e não multiplica despesas futu
     });
     assert.equal(resultado.status, 201);
   };
+  const idDoUsuario = () => db.prepare('SELECT id FROM usuarios WHERE email = ?').get(email).id;
   const resumo = async () => (await jsonFetch(baseUrl, '/api/resumo', { headers: autenticado })).corpo;
 
   // Só uma conta agendada para o dia 20: nada a extrapolar, entra uma vez só.
@@ -82,4 +83,27 @@ test('projeção do mês usa só o mês corrente e não multiplica despesas futu
   corpo = await resumo();
   assert.equal(corpo.projecaoPendente, false);
   assert.equal(corpo.projecaoMes, 900 + 1000 + 100 * 20);
+  assert.equal(corpo.gastoAgendado, 900, 'a escola do dia 20 ainda não saiu da conta');
+
+  // "Corrigir saldo": o usuário informa quanto tem hoje no banco. Outubro
+  // teve orçamento de 3000 e gastos de 3100, então chega um saldo de −100.
+  db.prepare('INSERT INTO orcamento_mensal (usuario_id, mes, valor, valor_centavos) VALUES (?, ?, ?, ?)')
+    .run(idDoUsuario(), '2026-10', 3000, 300000);
+  assert.equal((await resumo()).saldoAnterior, -100);
+
+  const correcao = await jsonFetch(baseUrl, '/api/orcamento/saldo-atual', {
+    method: 'PUT', headers: autenticado, body: JSON.stringify({ valor: 1957.75 }),
+  });
+  assert.equal(correcao.status, 200);
+  corpo = await resumo();
+  // Total = 1957,75 na conta + 1000 já gastos até hoje; o saldo anterior
+  // não muda o resultado. Disponível = conta − a escola agendada.
+  assert.equal(corpo.orcamentoTotal, 2957.75);
+  assert.equal(corpo.disponivel, 1057.75);
+  assert.equal(Number((corpo.disponivel + corpo.gastoAgendado).toFixed(2)), 1957.75, 'bate com o banco');
+
+  const invalido = await jsonFetch(baseUrl, '/api/orcamento/saldo-atual', {
+    method: 'PUT', headers: autenticado, body: JSON.stringify({ valor: 'mil' }),
+  });
+  assert.equal(invalido.status, 400);
 });

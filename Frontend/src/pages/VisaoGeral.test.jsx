@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import VisaoGeral from './VisaoGeral';
 import api from '../services/api';
+import { mesAtualISO } from '../utils/datas';
 
 vi.mock('../services/api', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -121,22 +122,49 @@ test('saldo negativo do mês anterior aparece como negativo', async () => {
   expect(document.body.textContent).toContain('Inclui saldo negativo do mês anterior');
 });
 
-test('com ?editarOrcamento=1 (aviso "Corrigir saldo") abre a edição do orçamento total', async () => {
+test('com ?corrigirSaldo=1 (aviso "Corrigir saldo") pede o saldo do banco e acerta pelo saldo-atual', async () => {
   api.get.mockImplementation((rota) => {
     if (rota === '/resumo') {
-      return Promise.resolve({ data: { ...resumoMock, orcamentoTotal: 3000, orcamentoDoMes: 2000, saldoAnterior: 1000 } });
+      return Promise.resolve({
+        data: {
+          ...resumoMock, totalGasto: 1711.43, orcamentoTotal: 1957.75, disponivel: 246.32, gastoAgendado: 0,
+        },
+      });
     }
+    if (rota === '/despesas') return Promise.resolve({ data: { despesas: [] } });
+    return Promise.resolve({ data: [] });
+  });
+  api.put.mockResolvedValue({ data: {} });
+
+  render(
+    <MemoryRouter initialEntries={['/?corrigirSaldo=1']}>
+      <VisaoGeral />
+    </MemoryRouter>
+  );
+
+  const campo = await screen.findByLabelText('Quanto você tem hoje na conta');
+  expect(campo).toHaveValue(246.32);
+  fireEvent.change(campo, { target: { value: '1957.75' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+  await waitFor(() => {
+    expect(api.put).toHaveBeenCalledWith('/orcamento/saldo-atual', { valor: 1957.75 }, { params: { mes: mesAtualISO() } });
+  });
+});
+
+test('mostra quanto do Disponível já está reservado para contas agendadas', async () => {
+  api.get.mockImplementation((rota) => {
+    if (rota === '/resumo') return Promise.resolve({ data: { ...resumoMock, gastoAgendado: 900 } });
     if (rota === '/despesas') return Promise.resolve({ data: { despesas: [] } });
     return Promise.resolve({ data: [] });
   });
 
   render(
-    <MemoryRouter initialEntries={['/?editarOrcamento=1']}>
+    <MemoryRouter>
       <VisaoGeral />
     </MemoryRouter>
   );
 
-  const campo = await screen.findByLabelText('Novo orçamento total');
-  expect(campo).toHaveValue(3000);
-  expect(document.body.textContent).toContain('Digite o total que você tem para o mês');
+  expect(await screen.findByText('Total Gasto')).toBeInTheDocument();
+  expect(document.body.textContent).toMatch(/Já descontadas\s*R\$\s900,00 de contas agendadas/);
 });

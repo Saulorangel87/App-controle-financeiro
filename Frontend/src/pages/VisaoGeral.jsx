@@ -57,7 +57,9 @@ export default function VisaoGeral() {
   const { mes } = useMes();
   const ehMobile = useEhMobile();
   const [searchParams, setSearchParams] = useSearchParams();
-  const pediuEditarOrcamento = searchParams.get('editarOrcamento') === '1';
+  const pediuCorrigirSaldo = searchParams.get('corrigirSaldo') === '1';
+  const [corrigindoSaldo, setCorrigindoSaldo] = useState(false);
+  const [saldoBanco, setSaldoBanco] = useState('');
 
   async function carregarResumo() {
     const res = await api.get('/resumo', { params: { mes } });
@@ -124,14 +126,31 @@ export default function VisaoGeral() {
     setEditandoOrcamento(true);
   }
 
-  // "Corrigir saldo" no aviso da v2.1.3 abre a Visão Geral já editando o
-  // orçamento total do mês (/?editarOrcamento=1).
+  // "Corrigir saldo": o usuário digita quanto tem hoje na conta e o app
+  // acerta o orçamento para o saldo bater (PUT /orcamento/saldo-atual). O
+  // campo começa com o saldo que o app calcula hoje: Disponível + contas
+  // agendadas, que ainda não saíram da conta.
+  function abrirCorrecaoSaldo() {
+    const saldoHoje = resumo.disponivel + (resumo.gastoAgendado || 0);
+    setSaldoBanco(String(Number(saldoHoje.toFixed(2))));
+    setCorrigindoSaldo(true);
+  }
+
+  async function salvarSaldoBanco() {
+    await api.put('/orcamento/saldo-atual', { valor: Number(saldoBanco) }, { params: { mes } });
+    setCorrigindoSaldo(false);
+    carregarResumo();
+  }
+
+  // O botão "Corrigir saldo" do aviso da v2.1.3 abre a Visão Geral já com a
+  // correção aberta (/?corrigirSaldo=1).
   useEffect(() => {
-    if (!pediuEditarOrcamento || !resumo || carregando) return;
-    setNovoOrcamento(String(resumo.orcamentoTotal));
-    setEditandoOrcamento(true);
+    if (!pediuCorrigirSaldo || !resumo || carregando) return;
+    const saldoHoje = resumo.disponivel + (resumo.gastoAgendado || 0);
+    setSaldoBanco(String(Number(saldoHoje.toFixed(2))));
+    setCorrigindoSaldo(true);
     setSearchParams({}, { replace: true });
-  }, [pediuEditarOrcamento, resumo, carregando, setSearchParams]);
+  }, [pediuCorrigirSaldo, resumo, carregando, setSearchParams]);
 
   async function salvarOrcamento() {
     await api.put('/orcamento', { valor: Number(novoOrcamento) }, { params: { mes } });
@@ -226,7 +245,7 @@ export default function VisaoGeral() {
                 <button className="btn-primary" onClick={salvarOrcamento}>Salvar</button>
               </div>
               <span className="label saldo-anterior">
-                Digite o total que você tem para o mês (saldo anterior + o que entrou).
+                Orçamento do mês = saldo anterior + o que entrou. Para acertar com o banco, use "corrigir" em Disponível.
               </span>
             </div>
           ) : (
@@ -247,10 +266,45 @@ export default function VisaoGeral() {
           )}
         </div>
         <div className="panel card-resumo">
-          <span className="label">Disponível</span>
-          <strong className="valor" style={{ color: 'var(--warning)' }}>
-            {formatarMoeda(resumo.disponivel)}
-          </strong>
+          <div className="card-resumo-header">
+            <span className="label">Disponível</span>
+            {!corrigindoSaldo && (
+              <button className="botao-editar-inline" onClick={abrirCorrecaoSaldo} aria-label="Corrigir saldo com o valor do banco">
+                corrigir
+              </button>
+            )}
+          </div>
+          {corrigindoSaldo ? (
+            <div className="edicao-orcamento-bloco">
+              <div className="edicao-orcamento">
+                <label className="sr-only" htmlFor="input-saldo-banco">Quanto você tem hoje na conta</label>
+                <input
+                  id="input-saldo-banco"
+                  type="number"
+                  step="0.01"
+                  value={saldoBanco}
+                  onChange={(e) => setSaldoBanco(e.target.value)}
+                  className="input-limite"
+                  autoFocus
+                />
+                <button className="btn-primary" onClick={salvarSaldoBanco}>Salvar</button>
+              </div>
+              <span className="label saldo-anterior">
+                Quanto você tem hoje na conta? O app desconta só os gastos que ainda vão sair.
+              </span>
+            </div>
+          ) : (
+            <>
+              <strong className="valor" style={{ color: 'var(--warning)' }}>
+                {formatarMoeda(resumo.disponivel)}
+              </strong>
+              {resumo.gastoAgendado > 0 && (
+                <span className="label saldo-anterior">
+                  Já descontadas {formatarMoeda(resumo.gastoAgendado)} de contas agendadas
+                </span>
+              )}
+            </>
+          )}
         </div>
         <div className="panel card-resumo">
           <span className="label">Categorias c/ Alerta</span>
