@@ -20,7 +20,7 @@ const novidadesAnteriores = [
   ['Tema claro e escuro', 'Alterne o visual do app pelo ícone no cabeçalho. A escolha fica salva neste dispositivo e, na primeira vez, respeita a preferência do seu sistema.', <SunMoon size={18} />],
   ['Categoria sugerida automaticamente', 'Ao repetir uma descrição já usada antes (ex: "Uber"), a categoria certa é sugerida sozinha — só confirme ou troque se quiser.', <Wand2 size={18} />],
   ['Comparativo ano a ano no relatório', 'Veja como o mês atual se compara ao mesmo mês do ano passado, além de um gráfico de tendência dos últimos 6 meses.', <TrendingUp size={18} />],
-  ['Metas de economia', 'Defina um valor e um período — o progresso é calculado sozinho pelo saldo (entradas menos despesas) de cada mês, sem lançamento manual extra.', <PiggyBank size={18} />],
+  ['Metas de economia', 'Defina um valor e um período — o progresso é calculado sozinho pelo que sobrou de cada mês (orçamento menos despesas), sem lançamento manual extra.', <PiggyBank size={18} />],
   ['Dividir despesa com alguém', 'Marque que uma despesa foi dividida com outra pessoa (sem precisar que ela tenha conta) e acompanhe sua parte separada do valor total.', <Users size={18} />],
   ['Importar extrato bancário', 'Envie o extrato do seu banco, revise os lançamentos detectados e importe despesas e entradas de uma vez, com categoria já sugerida.', <FileUp size={18} />],
 ];
@@ -38,7 +38,7 @@ export default function Novidades() {
       <section className="novidades-hero">
         <span className="label">Notas da versão</span>
         <h2>Confiabilidade profissional e controle completo.</h2>
-        <p>A versão <strong>v2.1.2</strong> deixa a projeção do mês realista desde o dia 1º e traz o seletor de mês: lance e acompanhe qualquer mês, sem esperar a virada. A base da v2.0 integra contas recorrentes às despesas, traz projeção mensal, fatura do cartão, gerenciamento completo de categorias, opção de desfazer exclusões e segurança reforçada.</p>
+        <p>A versão <strong>v2.1.3</strong> mantém o saldo de um mês para o outro, corrige o progresso das metas e deixa a projeção do mês realista; a v2.1 trouxe o seletor de mês: lance e acompanhe qualquer mês, sem esperar a virada. A base da v2.0 integra contas recorrentes às despesas, traz projeção mensal, fatura do cartão, gerenciamento completo de categorias, opção de desfazer exclusões e segurança reforçada.</p>
         <span className="novidades-status"><span /> Versão atual em produção</span>
       </section>
 
