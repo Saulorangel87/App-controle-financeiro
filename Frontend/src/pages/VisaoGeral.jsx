@@ -275,7 +275,8 @@ export default function VisaoGeral() {
                 : 'var(--text-secondary)',
             }}
           >
-            No ritmo atual ({resumo.diaAtual}/{resumo.diasNoMes} dias), você deve gastar{' '}
+            No ritmo atual ({resumo.diaAtual}/{resumo.diasNoMes} dias
+            {resumo.projecaoUsaMesAnterior ? ', combinado com o mês anterior' : ''}), você deve gastar{' '}
             <strong>{formatarMoeda(resumo.projecaoMes)}</strong> até o fim do mês
             {resumo.orcamentoTotal > 0
               ? resumo.projecaoMes > resumo.orcamentoTotal

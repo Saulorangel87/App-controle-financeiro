@@ -56,6 +56,25 @@ test('renderiza o dashboard com os totais e a projeção do mês vindos da API, 
   expect(screen.getByRole('button', { name: /Configurar dia de fechamento do cartão/i })).toHaveTextContent('fecha dia 10');
 });
 
+test('avisa quando a projeção do começo do mês usa o ritmo do mês anterior', async () => {
+  api.get.mockImplementation((rota) => {
+    if (rota === '/resumo') {
+      return Promise.resolve({ data: { ...resumoMock, diaAtual: 1, diasNoMes: 30, projecaoUsaMesAnterior: true } });
+    }
+    if (rota === '/despesas') return Promise.resolve({ data: { despesas: [] } });
+    return Promise.resolve({ data: [] });
+  });
+
+  render(
+    <MemoryRouter>
+      <VisaoGeral />
+    </MemoryRouter>
+  );
+
+  expect(await screen.findByText('Total Gasto')).toBeInTheDocument();
+  expect(document.body.textContent).toContain('No ritmo atual (1/30 dias, combinado com o mês anterior), você deve gastar');
+});
+
 test('oferece copiar o orçamento do mês anterior quando o mês só tem entradas avulsas', async () => {
   api.get.mockImplementation((rota) => {
     if (rota === '/resumo') {

@@ -1,32 +1,81 @@
 const express = require('express');
 const db = require('../db');
 const { comValorEmReais, somaEmReaisSQL } = require('../utils/dinheiro');
-const { mesAtualISO, intervaloDosMeses, dataReferenciaDoMes, mesDaRequisicao, hojeISO } = require('../utils/datas');
+const {
+  mesAtualISO, intervaloDosMeses, dataReferenciaDoMes, mesDaRequisicao, hojeISO, somarMeses, ultimoDiaDoMes,
+} = require('../utils/datas');
 const { obterOrcamentoDoMes } = require('./orcamento');
 
 const router = express.Router();
 
-// Projeção = gasto fixo + gasto variável no ritmo diário até o fim do mês.
-// "Fixo" são as despesas lançadas ao pagar uma conta recorrente: acontecem
-// uma vez por mês, então não podem ser multiplicadas pelo ritmo — um aluguel
-// pago no dia 2 projetaria quinze aluguéis.
-function calcularProjecaoMes(totalGasto, dataHoje = hojeISO(), gastoFixo = 0) {
+// Nos primeiros dias do mês, poucos lançamentos viram um "ritmo" absurdo
+// (R$ 750 no dia 1 × 30 dias = R$ 22 mil). Até este dia, o ritmo do mês é
+// combinado com o ritmo do mês anterior; sem mês anterior, não há projeção.
+const DIAS_MINIMOS_RITMO = 7;
+
+// Projeção = gasto fixo + gasto já agendado + gasto variável no ritmo diário
+// até o fim do mês.
+// - "Fixo" são as despesas lançadas ao pagar uma conta recorrente: acontecem
+//   uma vez por mês, então não podem ser multiplicadas pelo ritmo — um
+//   aluguel pago no dia 2 projetaria quinze aluguéis.
+// - "Futuro" são despesas com data depois de hoje (ex: contas de novembro
+//   lançadas em 31/10). Ainda não aconteceram, então entram uma vez só e não
+//   contam como gasto dos dias que já passaram.
+// - ritmoReferencia é o gasto variável por dia do mês anterior (ou null se
+//   não houver), usado para amortecer o ritmo nos primeiros dias.
+function calcularProjecaoMes(totalGasto, dataHoje = hojeISO(), gastoFixo = 0, opcoes = {}) {
+  const { gastoFuturo = 0, ritmoReferencia = null } = opcoes;
   const [ano, mes, diaAtual] = dataHoje.split('-').map(Number);
   const diasNoMes = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
-  const variavel = Math.max(0, totalGasto - gastoFixo);
-  const projecaoMes = totalGasto > 0 && diaAtual > 0
-    ? Number((gastoFixo + (variavel / diaAtual) * diasNoMes).toFixed(2))
-    : 0;
-  return { projecaoMes, diaAtual, diasNoMes };
+  const variavel = Math.max(0, totalGasto - gastoFixo - gastoFuturo);
+  const pesoReferencia = ritmoReferencia === null ? 0 : Math.max(0, DIAS_MINIMOS_RITMO - diaAtual);
+  const semDadosSuficientes = variavel > 0 && ritmoReferencia === null && diaAtual < DIAS_MINIMOS_RITMO;
+
+  if (totalGasto <= 0 || diaAtual <= 0 || semDadosSuficientes) {
+    return { projecaoMes: 0, diaAtual, diasNoMes, usaMesAnterior: false };
+  }
+
+  // Ritmo = média ponderada entre os dias já vividos no mês e
+  // (DIAS_MINIMOS_RITMO - diaAtual) dias "emprestados" do mês anterior. A
+  // partir do dia DIAS_MINIMOS_RITMO, vale só o ritmo do próprio mês.
+  const ritmoDiario = (variavel + (ritmoReferencia ?? 0) * pesoReferencia) / (diaAtual + pesoReferencia);
+  const diasRestantes = diasNoMes - diaAtual;
+  const projecaoMes = Number(
+    (gastoFixo + gastoFuturo + variavel + ritmoDiario * diasRestantes).toFixed(2)
+  );
+  return { projecaoMes, diaAtual, diasNoMes, usaMesAnterior: pesoReferencia > 0 };
 }
 
-function gastoFixoDoMes(usuarioId, mes) {
-  return db.prepare(`
-    SELECT ${somaEmReaisSQL('d')} AS total
+// Separa o gasto do mês em fixo (contas recorrentes pagas), futuro (despesas
+// avulsas com data depois de hoje) e a quantidade de lançamentos.
+function composicaoGastoDoMes(usuarioId, mes, dataHoje) {
+  const centavos = 'COALESCE(d.valor_centavos, ROUND(d.valor * 100))';
+  const linha = db.prepare(`
+    SELECT
+      COALESCE(SUM(CASE WHEN p.despesa_id IS NOT NULL THEN ${centavos} END), 0) / 100.0 AS fixo,
+      COALESCE(SUM(CASE WHEN p.despesa_id IS NULL AND d.data > ? THEN ${centavos} END), 0) / 100.0 AS futuro,
+      ${somaEmReaisSQL('d')} AS total,
+      COUNT(*) AS quantidade
     FROM despesas d
-    JOIN recorrentes_pagamentos p ON p.despesa_id = d.id AND p.usuario_id = d.usuario_id
-    WHERE d.usuario_id = ? AND p.mes = ? AND d.data >= ? AND d.data < ?
-  `).get(usuarioId, mes, ...intervaloDosMeses(mes)).total;
+    LEFT JOIN recorrentes_pagamentos p ON p.despesa_id = d.id AND p.usuario_id = d.usuario_id
+    WHERE d.usuario_id = ? AND d.data >= ? AND d.data < ?
+  `).get(dataHoje, usuarioId, ...intervaloDosMeses(mes));
+  return {
+    fixo: Number(linha.fixo),
+    futuro: Number(linha.futuro),
+    total: Number(linha.total),
+    quantidade: Number(linha.quantidade),
+  };
+}
+
+// Gasto variável por dia do mês anterior (sem as contas recorrentes), ou
+// null quando o usuário não lançou nada nele.
+function ritmoDoMesAnterior(usuarioId, mes) {
+  const anterior = somarMeses(mes, -1);
+  const gasto = composicaoGastoDoMes(usuarioId, anterior, ultimoDiaDoMes(anterior));
+  if (gasto.quantidade === 0) return null;
+  const diasNoMes = Number(ultimoDiaDoMes(anterior).slice(8));
+  return Math.max(0, gasto.total - gasto.fixo) / diasNoMes;
 }
 
 function dataFechamentoDoMes(ano, mes, diaFechamento) {
@@ -134,10 +183,13 @@ router.get('/', (req, res) => {
   const percentualUtilizado = orcamentoTotal > 0 ? (totalGasto / orcamentoTotal) * 100 : 0;
   // Projeção só faz sentido no mês em andamento: um mês passado já fechou e
   // um mês futuro ainda não tem ritmo de gasto para extrapolar.
-  const projecao = calcularProjecaoMes(
-    totalGasto, dataReferencia, gastoFixoDoMes(req.usuarioId, mesAtual),
-  );
+  const composicao = composicaoGastoDoMes(req.usuarioId, mesAtual, dataReferencia);
+  const projecao = calcularProjecaoMes(totalGasto, dataReferencia, composicao.fixo, {
+    gastoFuturo: composicao.futuro,
+    ritmoReferencia: ehMesCorrente ? ritmoDoMesAnterior(req.usuarioId, mesAtual) : null,
+  });
   const projecaoMes = ehMesCorrente ? projecao.projecaoMes : 0;
+  const projecaoUsaMesAnterior = ehMesCorrente && projecao.usaMesAnterior;
   const { diaAtual, diasNoMes } = projecao;
   const faturaCartao = obterFaturaCartao(req.usuarioId, dataReferencia);
 
@@ -151,6 +203,7 @@ router.get('/', (req, res) => {
     categoriasComAlerta,
     percentualUtilizado: Number(percentualUtilizado.toFixed(1)),
     projecaoMes,
+    projecaoUsaMesAnterior,
     diaAtual,
     diasNoMes,
     faturaCartao,
