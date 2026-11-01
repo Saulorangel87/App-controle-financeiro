@@ -38,7 +38,7 @@ export default function Novidades() {
       <section className="novidades-hero">
         <span className="label">Notas da versão</span>
         <h2>Confiabilidade profissional e controle completo.</h2>
-        <p>A versão <strong>v2.1.3</strong> mantém o saldo de um mês para o outro, corrige o progresso das metas e deixa a projeção do mês realista; a v2.1 trouxe o seletor de mês: lance e acompanhe qualquer mês, sem esperar a virada. A base da v2.0 integra contas recorrentes às despesas, traz projeção mensal, fatura do cartão, gerenciamento completo de categorias, opção de desfazer exclusões e segurança reforçada.</p>
+        <p>A versão <strong>v2.1.4</strong> deixa você corrigir o saldo com o valor que tem hoje no banco; a v2.1.3 passou a manter o saldo de um mês para o outro, corrigiu o progresso das metas e deixa a projeção do mês realista; a v2.1 trouxe o seletor de mês: lance e acompanhe qualquer mês, sem esperar a virada. A base da v2.0 integra contas recorrentes às despesas, traz projeção mensal, fatura do cartão, gerenciamento completo de categorias, opção de desfazer exclusões e segurança reforçada.</p>
         <span className="novidades-status"><span /> Versão atual em produção</span>
       </section>
 
