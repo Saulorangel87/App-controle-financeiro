@@ -1,8 +1,7 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import VisaoGeral from './VisaoGeral';
 import api from '../services/api';
-import { mesAtualISO } from '../utils/datas';
 
 vi.mock('../services/api', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -14,8 +13,8 @@ vi.mock('../contexts/DespesaModalContext', () => ({
 const resumoMock = {
   totalGasto: 100,
   orcamentoTotal: 500,
-  orcamentoBase: 500,
-  orcamentoMesAnterior: 0,
+  orcamentoDoMes: 500,
+  saldoAnterior: 0,
   percentualUtilizado: 20,
   disponivel: 400,
   projecaoMes: 310,
@@ -56,10 +55,14 @@ test('renderiza o dashboard com os totais e a projeção do mês vindos da API, 
   expect(screen.getByRole('button', { name: /Configurar dia de fechamento do cartão/i })).toHaveTextContent('fecha dia 10');
 });
 
-test('avisa quando a projeção do começo do mês usa o ritmo do mês anterior', async () => {
+test('nos primeiros dias do mês mostra aviso em vez de projetar um valor', async () => {
   api.get.mockImplementation((rota) => {
     if (rota === '/resumo') {
-      return Promise.resolve({ data: { ...resumoMock, diaAtual: 1, diasNoMes: 30, projecaoUsaMesAnterior: true } });
+      return Promise.resolve({
+        data: {
+          ...resumoMock, diaAtual: 1, diasNoMes: 30, projecaoMes: 0, projecaoPendente: true, diaInicioProjecao: 7,
+        },
+      });
     }
     if (rota === '/despesas') return Promise.resolve({ data: { despesas: [] } });
     return Promise.resolve({ data: [] });
@@ -72,22 +75,20 @@ test('avisa quando a projeção do começo do mês usa o ritmo do mês anterior'
   );
 
   expect(await screen.findByText('Total Gasto')).toBeInTheDocument();
-  expect(document.body.textContent).toContain('No ritmo atual (1/30 dias, combinado com o mês anterior), você deve gastar');
+  expect(document.body.textContent).toContain('Projeção do mês a partir do dia 7: com só 1 dia de gastos');
+  expect(document.body.textContent).not.toContain('você deve gastar');
 });
 
-test('oferece copiar o orçamento do mês anterior quando o mês só tem entradas avulsas', async () => {
+test('mostra o saldo do mês anterior incluído no orçamento e não oferece mais copiar', async () => {
   api.get.mockImplementation((rota) => {
     if (rota === '/resumo') {
       return Promise.resolve({
-        data: { ...resumoMock, orcamentoTotal: 300, orcamentoBase: 0, orcamentoMesAnterior: 4200 },
+        data: { ...resumoMock, orcamentoTotal: 3000, orcamentoDoMes: 2000, saldoAnterior: 1000 },
       });
     }
-    if (rota === '/categorias') return Promise.resolve({ data: [] });
     if (rota === '/despesas') return Promise.resolve({ data: { despesas: [] } });
-    if (rota === '/entradas') return Promise.resolve({ data: [] });
     return Promise.resolve({ data: [] });
   });
-  api.post.mockResolvedValue({ data: {} });
 
   render(
     <MemoryRouter>
@@ -95,12 +96,47 @@ test('oferece copiar o orçamento do mês anterior quando o mês só tem entrada
     </MemoryRouter>
   );
 
-  const botaoCopiar = await screen.findByRole('button', { name: /Copiar mês anterior \(R\$\s4\.200,00\)/i });
-  expect(screen.queryByLabelText(/Repetir todo mês/i)).not.toBeInTheDocument();
-  fireEvent.click(botaoCopiar);
+  expect(await screen.findByText('Total Gasto')).toBeInTheDocument();
+  expect(document.body.textContent).toContain('3.000,00');
+  expect(document.body.textContent).toMatch(/Inclui saldo do mês anterior:\s*R\$\s1\.000,00/);
+  expect(screen.queryByRole('button', { name: /Copiar mês anterior/i })).not.toBeInTheDocument();
+});
 
-  await waitFor(() => {
-    expect(api.post).toHaveBeenCalledWith('/orcamento/copiar-anterior', null, { params: { mes: mesAtualISO() } });
+test('saldo negativo do mês anterior aparece como negativo', async () => {
+  api.get.mockImplementation((rota) => {
+    if (rota === '/resumo') {
+      return Promise.resolve({ data: { ...resumoMock, orcamentoTotal: 1500, orcamentoDoMes: 2000, saldoAnterior: -500 } });
+    }
+    if (rota === '/despesas') return Promise.resolve({ data: { despesas: [] } });
+    return Promise.resolve({ data: [] });
   });
-  expect(api.put).not.toHaveBeenCalled();
+
+  render(
+    <MemoryRouter>
+      <VisaoGeral />
+    </MemoryRouter>
+  );
+
+  expect(await screen.findByText('Total Gasto')).toBeInTheDocument();
+  expect(document.body.textContent).toContain('Inclui saldo negativo do mês anterior');
+});
+
+test('com ?editarOrcamento=1 (aviso "Corrigir saldo") abre a edição do orçamento total', async () => {
+  api.get.mockImplementation((rota) => {
+    if (rota === '/resumo') {
+      return Promise.resolve({ data: { ...resumoMock, orcamentoTotal: 3000, orcamentoDoMes: 2000, saldoAnterior: 1000 } });
+    }
+    if (rota === '/despesas') return Promise.resolve({ data: { despesas: [] } });
+    return Promise.resolve({ data: [] });
+  });
+
+  render(
+    <MemoryRouter initialEntries={['/?editarOrcamento=1']}>
+      <VisaoGeral />
+    </MemoryRouter>
+  );
+
+  const campo = await screen.findByLabelText('Novo orçamento total');
+  expect(campo).toHaveValue(3000);
+  expect(document.body.textContent).toContain('Digite o total que você tem para o mês');
 });

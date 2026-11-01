@@ -44,13 +44,13 @@ autorizar as notificações.
 ## ✨ Funcionalidades
 
 - 🔐 **Cadastro e login** com senha criptografada (bcrypt, mínimo de 8 caracteres), access token JWT curto com refresh token seguro, verificação de email obrigatória, recuperação de senha por email, **troca de senha logado** e opção de **sair de todos os dispositivos**
-- 📊 **Dashboard** com total gasto, orçamento, disponível, **projeção de fechamento do mês** (gastos do dia a dia no ritmo atual + contas fixas pagas e despesas agendadas contadas uma vez só; nos 6 primeiros dias o ritmo é combinado com o do mês anterior), **fatura aberta do cartão de crédito** (com dia de fechamento configurável) e gráfico de gastos por categoria (pizza no mobile, barra no desktop)
+- 📊 **Dashboard** com total gasto, orçamento, disponível, **projeção de fechamento do mês** (gastos do dia a dia no ritmo atual + contas fixas pagas e despesas agendadas contadas uma vez só; só com dados do mês corrente, a partir do dia 7), **fatura aberta do cartão de crédito** (com dia de fechamento configurável) e gráfico de gastos por categoria (pizza no mobile, barra no desktop)
 - 🏷️ **Gerenciamento completo de categorias** — criar, renomear, escolher ícone e cor, editar limite mensal e excluir categorias sem lançamentos, com indicador visual de status (OK / Excedido)
 - 💸 **CRUD completo de despesas** — criar, editar e excluir (sem pop-up de confirmação: a exclusão mostra **Desfazer** na hora), **tela de histórico** em `/historico` com tudo o que foi criado, editado e excluído e opção de restaurar exclusões, busca por descrição, filtros por mês (abre no mês do seletor, com opção "Todos os meses")/categoria/forma de pagamento, paginação e bloqueio de data futura (exceto ao lançar num mês à frente escolhido no seletor)
 - 🚨 **Alertas automáticos** para categorias que ultrapassaram o limite
 - 📅 **Relatório mensal** com filtro por período/categoria, comparação de gastos, entradas, saldo, paginação e opção de **imprimir**
 - 📤 **Exportação Excel** do relatório mensal, com resumo financeiro, totais, despesas, entradas e formatação profissional
-- 💰 **Orçamento total editável por mês** — cada mês começa com o seu próprio orçamento (nada se repete sozinho) e o botão **Copiar mês anterior** traz o valor-base do mês anterior com um clique (entradas avulsas como bônus ficam só no mês delas)
+- 💰 **Orçamento com saldo acumulado** — o que sobra (ou falta) num mês passa para o seguinte, como numa conta corrente: o mês novo já começa com o saldo anterior e você só soma o que recebeu com o **+**. O **editar** ajusta o total do mês quando precisar corrigir; o saldo começa a contar em outubro de 2026 (meses anteriores não entram) e, na primeira entrada após a atualização, um aviso explica as regras e mostra o saldo para o usuário conferir ou corrigir
 - 📆 **Seletor de mês** no topo de todas as telas: escolha outro mês (até 12 meses à frente ou qualquer mês passado) e tudo passa a mostrar esse mês, como se ele tivesse virado — Visão Geral, orçamento, categorias, alertas, recorrentes (pago/parcela de cada mês) e os formulários de lançamento. Dá, por exemplo, para lançar as contas de novembro no dia 31 de outubro. O app sempre abre no mês atual, e o orçamento de um mês novo começa zerado
 - 🔄 **Dashboard sempre atualizado** ao mês corrente, mesmo com a aba aberta na virada do mês
 - 📱 **Totalmente responsivo e instalável (PWA)**, com menu hambúrguer e gráficos adaptados para telas menores
@@ -63,7 +63,7 @@ autorizar as notificações.
 - 🌗 **Tema claro e escuro**, com detecção automática da preferência do sistema e alternância manual salva por dispositivo, com transição suave de cores
 - 🧠 **Categoria sugerida automaticamente** ao repetir uma descrição já usada antes, com base no próprio histórico do usuário
 - 📈 **Comparativo ano a ano e gráfico de tendência** dos últimos 6 meses no Relatório
-- 🐷 **Metas de economia por período**, com progresso calculado automaticamente pelo saldo (entradas − despesas)
+- 🐷 **Metas de economia por período**, com progresso calculado automaticamente pelo que sobrou em cada mês do período (orçamento do mês − despesas)
 - 🤝 **Divisão de despesa com outra pessoa** (sem precisar que ela tenha conta), mostrando "sua parte" separada do valor total
 - 📥 **Importação de extrato bancário em CSV**, com revisão dos lançamentos antes de confirmar e categoria já sugerida
 - 🗑️ **Exclusão da própria conta** (tela `/conta`, acessível pelo nome do usuário ou pelo menu "Minha conta" no celular) e aviso por email antes da remoção automática de contas inativas

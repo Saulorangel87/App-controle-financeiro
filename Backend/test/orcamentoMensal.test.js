@@ -24,7 +24,7 @@ async function jsonFetch(baseUrl, rota, opcoes = {}) {
   return { status: resposta.status, corpo: texto ? JSON.parse(texto) : null };
 }
 
-test('mês novo começa zerado e o orçamento anterior só é copiado a pedido', async (t) => {
+test('saldo do mês passa para o mês seguinte, inclusive negativo', async (t) => {
   const servidor = http.createServer(app);
   await new Promise((resolve) => servidor.listen(0, '127.0.0.1', resolve));
   t.after(() => {
@@ -44,53 +44,77 @@ test('mês novo começa zerado e o orçamento anterior só é copiado a pedido',
   });
   const autenticado = { Authorization: `Bearer ${login.corpo.token}` };
   const usuario = db.prepare('SELECT id FROM usuarios WHERE email = ?').get(email);
+  const categoriaId = (await jsonFetch(baseUrl, '/api/categorias', { headers: autenticado })).corpo[0].id;
+  const lancarDespesa = (valor, data) => jsonFetch(baseUrl, '/api/despesas', {
+    method: 'POST', headers: autenticado,
+    body: JSON.stringify({ descricao: 'Gasto', valor, categoria_id: categoriaId, data }),
+  });
+  const lancarEntrada = (valor, data) => jsonFetch(baseUrl, '/api/entradas', {
+    method: 'POST', headers: autenticado,
+    body: JSON.stringify({ origem: 'Salário', valor, data }),
+  });
+  const resumo = async (mes) => (await jsonFetch(baseUrl, `/api/resumo?mes=${mes}`, { headers: autenticado })).corpo;
 
+  // Gastos de antes do primeiro orçamento não viram saldo negativo.
+  await lancarDespesa(999, '2026-09-10');
+  // Sobras de antes de outubro/2026 (quando o saldo acumulado começou) não
+  // contam: agosto teve 5000 de orçamento e nenhum gasto.
   db.prepare('INSERT INTO orcamento_mensal (usuario_id, mes, valor, valor_centavos) VALUES (?, ?, ?, ?)').run(
-    usuario.id, '2026-08', 4500, 450000
+    usuario.id, '2026-08', 5000, 500000
   );
 
-  // Nem quem tinha ligado a antiga opção "repetir todo mês" herda sozinho.
-  db.prepare('UPDATE usuarios SET orcamento_recorrente = 1 WHERE id = ?').run(usuario.id);
-  const setembro = obterOrcamentoDoMes(usuario.id, '2026-09');
-  assert.equal(setembro.valor, 0);
-  assert.equal(setembro.base, 0);
-  assert.equal(setembro.valorMesAnterior, 4500, 'o valor anterior fica disponível para copiar');
+  // Outubro: entrou 3000, gastou 2000 → sobram 1000.
+  await lancarEntrada(3000, '2026-10-05');
+  await lancarDespesa(2000, '2026-10-10');
+  let corpo = await resumo('2026-10');
+  assert.equal(corpo.saldoAnterior, 0);
+  assert.equal(corpo.orcamentoTotal, 3000);
+  assert.equal(corpo.disponivel, 1000);
 
-  // Um bônus lançado em setembro entra no orçamento dele, mas a base continua 0.
-  await jsonFetch(baseUrl, '/api/entradas', {
-    method: 'POST', headers: autenticado,
-    body: JSON.stringify({ origem: 'Bônus', valor: 300, data: '2026-09-10' }),
-  });
-  let resultado = await jsonFetch(baseUrl, '/api/orcamento?mes=2026-09', { headers: autenticado });
-  assert.equal(resultado.corpo.valor, 300);
-  assert.equal(resultado.corpo.base, 0);
+  // Novembro: o saldo de 1000 continua; o salário de 2000 soma por cima.
+  corpo = await resumo('2026-11');
+  assert.equal(corpo.saldoAnterior, 1000);
+  assert.equal(corpo.orcamentoTotal, 1000, 'o mês novo não zera');
+  await lancarEntrada(2000, '2026-11-05');
+  corpo = await resumo('2026-11');
+  assert.equal(corpo.orcamentoDoMes, 2000);
+  assert.equal(corpo.orcamentoTotal, 3000);
 
-  // Copiar soma a base anterior às entradas do mês, sem perder o bônus.
-  resultado = await jsonFetch(baseUrl, '/api/orcamento/copiar-anterior?mes=2026-09', {
-    method: 'POST', headers: autenticado,
-  });
-  assert.equal(resultado.status, 200);
-  assert.equal(resultado.corpo.valor, 4800);
-  assert.equal(resultado.corpo.base, 4500);
+  // Novembro gasta 3500 → fecha em −500, e dezembro começa devendo.
+  await lancarDespesa(3500, '2026-11-20');
+  corpo = await resumo('2026-12');
+  assert.equal(corpo.saldoAnterior, -500);
+  await lancarEntrada(2000, '2026-12-05');
+  corpo = await resumo('2026-12');
+  assert.equal(corpo.orcamentoTotal, 1500);
+  assert.equal(obterOrcamentoDoMes(usuario.id, '2026-12').valor, 1500);
 
-  // Outubro também não herda nada sozinho; a base copiável é a de setembro
-  // (sem o bônus).
-  resultado = await jsonFetch(baseUrl, '/api/resumo?mes=2026-10', { headers: autenticado });
-  assert.equal(resultado.corpo.orcamentoTotal, 0);
-  assert.equal(resultado.corpo.orcamentoBase, 0);
-  assert.equal(resultado.corpo.orcamentoMesAnterior, 4500);
-
-  // PUT define o valor do mês pedido; "recorrente" no corpo é ignorado.
-  resultado = await jsonFetch(baseUrl, '/api/orcamento?mes=2026-10', {
-    method: 'PUT', headers: autenticado, body: JSON.stringify({ valor: 3200, recorrente: true }),
+  // Corrigir uma despesa de outubro corrige o saldo dos meses seguintes.
+  const despesaOutubro = db.prepare("SELECT id FROM despesas WHERE usuario_id = ? AND data = '2026-10-10'").get(usuario.id);
+  let resultado = await jsonFetch(baseUrl, `/api/despesas/${despesaOutubro.id}`, {
+    method: 'PUT', headers: autenticado,
+    body: JSON.stringify({ descricao: 'Gasto', valor: 1800, categoria_id: categoriaId, data: '2026-10-10' }),
   });
   assert.equal(resultado.status, 200);
-  assert.equal(resultado.corpo.valor, 3200);
-  assert.equal(obterOrcamentoDoMes(usuario.id, '2026-11').valor, 0);
+  assert.equal((await resumo('2026-12')).orcamentoTotal, 1700);
 
-  // Sem nenhum mês anterior com orçamento, não há o que copiar.
-  resultado = await jsonFetch(baseUrl, '/api/orcamento/copiar-anterior?mes=2026-01', {
+  // "Editar" define o total do mês; o que fica guardado é total − saldo.
+  resultado = await jsonFetch(baseUrl, '/api/orcamento?mes=2026-12', {
+    method: 'PUT', headers: autenticado, body: JSON.stringify({ valor: 1600 }),
+  });
+  assert.equal(resultado.status, 200);
+  assert.equal(resultado.corpo.valor, 1600);
+  assert.equal(resultado.corpo.saldoAnterior, -300);
+  assert.equal(resultado.corpo.valorDoMes, 1900);
+
+  // Janeiro herda o saldo de dezembro (1600, sem gastos).
+  corpo = await resumo('2027-01');
+  assert.equal(corpo.saldoAnterior, 1600);
+  assert.equal(corpo.orcamentoTotal, 1600);
+
+  // O "copiar mês anterior" não existe mais.
+  const copiar = await fetch(`${baseUrl}/api/orcamento/copiar-anterior?mes=2027-01`, {
     method: 'POST', headers: autenticado,
   });
-  assert.equal(resultado.status, 400);
+  assert.equal(copiar.status, 404);
 });

@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS recorrentes_pagamentos (
 CREATE INDEX IF NOT EXISTS idx_recorrentes_pagamentos_usuario_mes ON recorrentes_pagamentos(usuario_id, mes);
 
 -- Metas de economia: o progresso é calculado automaticamente pelo saldo
--- (entradas - despesas) dos meses do período, sem exigir nenhum lançamento
+-- (orçamento do mês - despesas) dos meses do período, sem exigir nenhum lançamento
 -- manual à parte — basta criar a meta com valor alvo e período.
 CREATE TABLE IF NOT EXISTS metas (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -39,24 +39,23 @@ test('calcularProjecaoMes não multiplica despesas agendadas para depois de hoje
 test('calcularProjecaoMes não extrapola o dia 1 sozinho', () => {
   // Cenário do bug: dia 1/11, 956,04 de contas fixas + 755,39 variáveis
   // projetava R$ 23.617,74 (755,39 × 30).
-  const semHistorico = calcularProjecaoMes(1711.43, '2026-11-01', 956.04);
-  assert.equal(semHistorico.projecaoMes, 0, 'sem mês anterior, espera ter dias suficientes');
+  const dia1 = calcularProjecaoMes(1711.43, '2026-11-01', 956.04);
+  assert.equal(dia1.projecaoMes, 0);
+  assert.equal(dia1.pendente, true, 'só o mês corrente: espera ter dias suficientes');
 
-  // Com o mês anterior gastando 60/dia: ritmo = (755,39 + 60 × 6) / 7.
-  const comHistorico = calcularProjecaoMes(1711.43, '2026-11-01', 956.04, { ritmoReferencia: 60 });
-  assert.equal(comHistorico.usaMesAnterior, true);
-  assert.equal(comHistorico.projecaoMes, Number((1711.43 + ((755.39 + 360) / 7) * 29).toFixed(2)));
-  assert.ok(comHistorico.projecaoMes < 7000);
+  const dia6 = calcularProjecaoMes(600, '2026-11-06');
+  assert.equal(dia6.pendente, true);
 
-  // A partir do dia 7 vale só o ritmo do próprio mês.
-  const dia7 = calcularProjecaoMes(700, '2026-11-07', 0, { ritmoReferencia: 60 });
-  assert.equal(dia7.usaMesAnterior, false);
+  // A partir do dia 7 projeta com o ritmo do próprio mês.
+  const dia7 = calcularProjecaoMes(700, '2026-11-07');
+  assert.equal(dia7.pendente, false);
   assert.equal(dia7.projecaoMes, 3000);
 });
 
 test('calcularProjecaoMes só com contas fixas projeta o próprio valor', () => {
   const projecao = calcularProjecaoMes(500, '2026-11-01', 500);
   assert.equal(projecao.projecaoMes, 500);
+  assert.equal(projecao.pendente, false);
 });
 
 async function jsonFetch(baseUrl, rota, opcoes = {}) {

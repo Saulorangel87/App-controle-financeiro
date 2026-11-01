@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Pencil, Trash2, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip,
@@ -56,6 +56,8 @@ export default function VisaoGeral() {
   const { abrirEdicao } = useDespesaModal();
   const { mes } = useMes();
   const ehMobile = useEhMobile();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pediuEditarOrcamento = searchParams.get('editarOrcamento') === '1';
 
   async function carregarResumo() {
     const res = await api.get('/resumo', { params: { mes } });
@@ -122,17 +124,18 @@ export default function VisaoGeral() {
     setEditandoOrcamento(true);
   }
 
+  // "Corrigir saldo" no aviso da v2.1.3 abre a Visão Geral já editando o
+  // orçamento total do mês (/?editarOrcamento=1).
+  useEffect(() => {
+    if (!pediuEditarOrcamento || !resumo || carregando) return;
+    setNovoOrcamento(String(resumo.orcamentoTotal));
+    setEditandoOrcamento(true);
+    setSearchParams({}, { replace: true });
+  }, [pediuEditarOrcamento, resumo, carregando, setSearchParams]);
+
   async function salvarOrcamento() {
     await api.put('/orcamento', { valor: Number(novoOrcamento) }, { params: { mes } });
     setEditandoOrcamento(false);
-    carregarResumo();
-  }
-
-  // O orçamento de cada mês é diferente, então nada se repete sozinho:
-  // copiar o do mês anterior é sempre um clique do usuário. As entradas já
-  // lançadas no mês continuam somadas por cima.
-  async function copiarOrcamentoAnterior() {
-    await api.post('/orcamento/copiar-anterior', null, { params: { mes } });
     carregarResumo();
   }
 
@@ -222,20 +225,23 @@ export default function VisaoGeral() {
                 />
                 <button className="btn-primary" onClick={salvarOrcamento}>Salvar</button>
               </div>
+              <span className="label saldo-anterior">
+                Digite o total que você tem para o mês (saldo anterior + o que entrou).
+              </span>
             </div>
           ) : (
             <>
               <strong className="valor" style={{ color: 'var(--ok)' }}>
                 {formatarMoeda(resumo.orcamentoTotal)}
               </strong>
-              {(resumo.orcamentoBase ?? resumo.orcamentoTotal) === 0 && resumo.orcamentoMesAnterior > 0 && (
-                <button
-                  type="button"
-                  className="botao-editar-inline botao-repetir-orcamento"
-                  onClick={copiarOrcamentoAnterior}
+              {Boolean(resumo.saldoAnterior) && (
+                <span
+                  className="label saldo-anterior"
+                  style={{ color: resumo.saldoAnterior < 0 ? 'var(--danger)' : 'var(--text-secondary)' }}
                 >
-                  Copiar mês anterior ({formatarMoeda(resumo.orcamentoMesAnterior)})
-                </button>
+                  {resumo.saldoAnterior < 0 ? 'Inclui saldo negativo' : 'Inclui saldo'} do mês anterior:{' '}
+                  {formatarMoeda(resumo.saldoAnterior)}
+                </span>
               )}
             </>
           )}
@@ -275,14 +281,19 @@ export default function VisaoGeral() {
                 : 'var(--text-secondary)',
             }}
           >
-            No ritmo atual ({resumo.diaAtual}/{resumo.diasNoMes} dias
-            {resumo.projecaoUsaMesAnterior ? ', combinado com o mês anterior' : ''}), você deve gastar{' '}
+            No ritmo atual ({resumo.diaAtual}/{resumo.diasNoMes} dias), você deve gastar{' '}
             <strong>{formatarMoeda(resumo.projecaoMes)}</strong> até o fim do mês
             {resumo.orcamentoTotal > 0
               ? resumo.projecaoMes > resumo.orcamentoTotal
                 ? ` (${formatarMoeda(resumo.projecaoMes - resumo.orcamentoTotal)} acima do orçamento)`
                 : ` (${formatarMoeda(resumo.orcamentoTotal - resumo.projecaoMes)} abaixo do orçamento)`
               : ''}
+          </p>
+        )}
+        {resumo.projecaoPendente && (
+          <p className="label projecao-mes" style={{ color: 'var(--text-secondary)' }}>
+            Projeção do mês a partir do dia {resumo.diaInicioProjecao}: com só {resumo.diaAtual}{' '}
+            {resumo.diaAtual === 1 ? 'dia' : 'dias'} de gastos, o ritmo ainda não é confiável.
           </p>
         )}
       </div>

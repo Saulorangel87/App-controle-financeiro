@@ -24,7 +24,7 @@ async function jsonFetch(baseUrl, rota, opcoes = {}) {
   return { status: resposta.status, corpo: texto ? JSON.parse(texto) : null };
 }
 
-test('projeção do mês ignora despesas futuras no ritmo e usa o mês anterior no começo do mês', async (t) => {
+test('projeção do mês usa só o mês corrente e não multiplica despesas futuras', async (t) => {
   // 02/11/2026 às 12h em Brasília.
   t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-11-02T15:00:00Z') });
 
@@ -42,10 +42,13 @@ test('projeção do mês ignora despesas futuras no ritmo e usa o mês anterior 
     method: 'POST', body: JSON.stringify({ nome: 'Projeção', email, senha: 'senha123' }),
   });
   db.prepare('UPDATE usuarios SET email_verificado = 1 WHERE email = ?').run(email);
-  const login = await jsonFetch(baseUrl, '/api/auth/login', {
-    method: 'POST', body: JSON.stringify({ email, senha: 'senha123' }),
-  });
-  const autenticado = { Authorization: `Bearer ${login.corpo.token}` };
+  const entrar = async () => {
+    const login = await jsonFetch(baseUrl, '/api/auth/login', {
+      method: 'POST', body: JSON.stringify({ email, senha: 'senha123' }),
+    });
+    return { Authorization: `Bearer ${login.corpo.token}` };
+  };
+  let autenticado = await entrar();
   const categoriaId = (await jsonFetch(baseUrl, '/api/categorias', { headers: autenticado })).corpo[0].id;
   const lancar = async (descricao, valor, data) => {
     const resultado = await jsonFetch(baseUrl, '/api/despesas', {
@@ -54,21 +57,29 @@ test('projeção do mês ignora despesas futuras no ritmo e usa o mês anterior 
     });
     assert.equal(resultado.status, 201);
   };
+  const resumo = async () => (await jsonFetch(baseUrl, '/api/resumo', { headers: autenticado })).corpo;
 
-  // Novembro: 100 gastos até hoje + 900 de conta agendada para o dia 20.
-  await lancar('Mercado', 100, '2026-11-01');
+  // Só uma conta agendada para o dia 20: nada a extrapolar, entra uma vez só.
   await lancar('Escola', 900, '2026-11-20');
+  let corpo = await resumo();
+  assert.equal(corpo.projecaoMes, 900);
+  assert.equal(corpo.projecaoPendente, false);
 
-  // Sem outubro, dia 2 ainda não tem ritmo confiável: sem projeção.
-  let resumo = (await jsonFetch(baseUrl, '/api/resumo', { headers: autenticado })).corpo;
-  assert.equal(resumo.totalGasto, 1000);
-  assert.equal(resumo.projecaoMes, 0);
-  assert.equal(resumo.projecaoUsaMesAnterior, false);
+  // Gasto do dia a dia no dia 2: ainda não há dias suficientes para o ritmo.
+  // Um mês anterior cheio de gastos não muda nada — vale só o mês corrente.
+  await lancar('Outubro', 3100, '2026-10-15');
+  await lancar('Mercado', 100, '2026-11-01');
+  corpo = await resumo();
+  assert.equal(corpo.totalGasto, 1000);
+  assert.equal(corpo.projecaoMes, 0);
+  assert.equal(corpo.projecaoPendente, true);
+  assert.equal(corpo.diaInicioProjecao, 7);
 
-  // Outubro com 310 de gastos variáveis = 10 por dia.
-  await lancar('Outubro', 310, '2026-10-15');
-  resumo = (await jsonFetch(baseUrl, '/api/resumo', { headers: autenticado })).corpo;
-  // Ritmo = (100 + 10 × 5) / 7; projeção = 1000 + ritmo × 28 dias restantes.
-  assert.equal(resumo.projecaoMes, Number((1000 + (150 / 7) * 28).toFixed(2)));
-  assert.equal(resumo.projecaoUsaMesAnterior, true);
+  // Dia 10: 100 por dia no ritmo + a conta do dia 20 uma vez só.
+  t.mock.timers.setTime(new Date('2026-11-10T15:00:00Z').getTime());
+  autenticado = await entrar();
+  await lancar('Feira', 900, '2026-11-09');
+  corpo = await resumo();
+  assert.equal(corpo.projecaoPendente, false);
+  assert.equal(corpo.projecaoMes, 900 + 1000 + 100 * 20);
 });

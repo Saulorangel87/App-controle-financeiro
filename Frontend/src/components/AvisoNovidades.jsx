@@ -1,15 +1,23 @@
 import { ArrowRight, Check, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import api from '../services/api';
+import { useMes } from '../contexts/MesContext';
+import { formatarMoeda } from '../utils/formatters';
+import { rotuloMes, somarMeses } from '../utils/datas';
 import './AvisoNovidades.css';
 
-const VERSAO_ATUAL = 'v2.1.0';
+const VERSAO_ATUAL = 'v2.1.3';
 const CHAVE_VISTA = `controle-despesas:novidades:${VERSAO_ATUAL}`;
 
-const destaques = [
-  'Seletor de mês no topo: escolha novembro e lance as contas antes de o mês virar',
-  'Recorrentes com pagamento por mês — pagar o mês seguinte não desmarca o atual',
-  'Cada mês começa com o seu orçamento; copie o do mês anterior quando quiser',
+// Regras do saldo acumulado (v2.1.3). Quem já usava o app precisa saber que
+// o orçamento do mês mudou de significado e conferir o próprio saldo.
+const regras = [
+  'O que sobra no mês (orçamento − gastos) passa para o mês seguinte. Se faltar, o negativo também passa.',
+  'No mês novo, lance só o que você recebeu com o + — o app soma ao saldo que veio do mês anterior.',
+  'O saldo começa a contar a partir de outubro de 2026; meses anteriores não entram na conta.',
+  'O botão "Copiar mês anterior" saiu: o saldo já vem sozinho.',
+  'Metas de economia agora contam também o orçamento definido no "editar".',
 ];
 
 function jaFoiVista() {
@@ -30,6 +38,9 @@ function registrarVista() {
 
 export default function AvisoNovidades() {
   const [aberto, setAberto] = useState(false);
+  const [resumo, setResumo] = useState(null);
+  const { mesAtual, selecionarMes } = useMes();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!jaFoiVista()) {
@@ -37,6 +48,16 @@ export default function AvisoNovidades() {
       setAberto(true);
     }
   }, []);
+
+  // O saldo do próprio usuário, para ele conferir com o banco.
+  useEffect(() => {
+    if (!aberto) return;
+    let ativo = true;
+    api.get('/resumo', { params: { mes: mesAtual } })
+      .then((res) => { if (ativo) setResumo(res.data); })
+      .catch(() => {});
+    return () => { ativo = false; };
+  }, [aberto, mesAtual]);
 
   useEffect(() => {
     if (!aberto) return undefined;
@@ -48,6 +69,14 @@ export default function AvisoNovidades() {
   }, [aberto]);
 
   if (!aberto) return null;
+
+  function corrigirSaldo() {
+    setAberto(false);
+    selecionarMes(mesAtual);
+    navigate('/?editarOrcamento=1');
+  }
+
+  const temOrcamento = resumo && (resumo.orcamentoTotal !== 0 || resumo.saldoAnterior !== 0);
 
   return (
     <div className="novidades-overlay" role="presentation" onClick={() => setAberto(false)}>
@@ -64,22 +93,46 @@ export default function AvisoNovidades() {
 
         <span className="aviso-novidades-selo">Nova versão</span>
         <span className="label">Controle de Despesas · {VERSAO_ATUAL}</span>
-        <h2 id="titulo-aviso-novidades">Escolha o mês e lance antes da virada.</h2>
+        <h2 id="titulo-aviso-novidades">Seu saldo agora passa de um mês para o outro.</h2>
         <p className="aviso-novidades-intro">
-          A v2.1.0 deixa você trabalhar em qualquer mês — tudo no app acompanha o mês escolhido.
+          O orçamento do mês não zera mais na virada: ele funciona como uma conta corrente.
         </p>
 
         <ul className="aviso-novidades-lista">
-          {destaques.map((destaque) => (
-            <li key={destaque}><Check size={15} /> {destaque}</li>
+          {regras.map((regra) => (
+            <li key={regra}><Check size={15} /> {regra}</li>
           ))}
         </ul>
 
+        {temOrcamento && (
+          <div className="aviso-saldo">
+            <span className="label">Seu orçamento de {rotuloMes(mesAtual)}</span>
+            <strong>{formatarMoeda(resumo.orcamentoTotal)}</strong>
+            {resumo.saldoAnterior !== 0 && (
+              <span className="aviso-saldo-detalhe">
+                inclui {formatarMoeda(resumo.saldoAnterior)} de saldo de {rotuloMes(somarMeses(mesAtual, -1))}
+              </span>
+            )}
+            <p>Confira com o seu banco. Se não bater, corrija o valor — o app ajusta o resto sozinho.</p>
+          </div>
+        )}
+
         <div className="aviso-novidades-acoes">
-          <button className="botao-adiar-novidades" onClick={() => setAberto(false)}>Agora não</button>
-          <Link to="/novidades" className="btn-primary aviso-novidades-link" onClick={() => setAberto(false)}>
-            Ver novidades <ArrowRight size={14} />
-          </Link>
+          {temOrcamento ? (
+            <>
+              <button className="botao-adiar-novidades" onClick={corrigirSaldo}>Corrigir saldo</button>
+              <button className="btn-primary aviso-novidades-link" onClick={() => setAberto(false)}>
+                Está certo <Check size={14} />
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="botao-adiar-novidades" onClick={() => setAberto(false)}>Agora não</button>
+              <Link to="/novidades" className="btn-primary aviso-novidades-link" onClick={() => setAberto(false)}>
+                Ver novidades <ArrowRight size={14} />
+              </Link>
+            </>
+          )}
         </div>
       </section>
     </div>

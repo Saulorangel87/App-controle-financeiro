@@ -77,6 +77,12 @@ test('filtros por mês incluem o último dia e excluem o primeiro dia do mês se
   `);
   entrada.run(usuarioId, 'Bônus', 100, 10000, '2026-12-31');
   entrada.run(usuarioId, 'Salário', 1000, 100000, '2027-01-01');
+  // A API soma cada entrada no orçamento do mês; aqui o teste faz o mesmo.
+  const orcamento = db.prepare(`
+    INSERT INTO orcamento_mensal (usuario_id, mes, valor, valor_centavos) VALUES (?, ?, ?, ?)
+  `);
+  orcamento.run(usuarioId, '2026-12', 100, 10000);
+  orcamento.run(usuarioId, '2027-01', 1000, 100000);
 
   let resultado = await jsonFetch(baseUrl, '/api/despesas?mes=2026-12', { headers: autenticado });
   assert.deepEqual(resultado.corpo.map((d) => d.descricao), ['Réveillon', 'Primeiro dia']);
@@ -110,4 +116,14 @@ test('filtros por mês incluem o último dia e excluem o primeiro dia do mês se
   `).run(usuarioId, 'Reserva', 1000, '2026-11', '2026-12');
   resultado = await jsonFetch(baseUrl, '/api/metas', { headers: autenticado });
   assert.equal(resultado.corpo[0].progresso, 64.9);
+
+  // Orçamento definido no "editar" (sem nenhuma entrada) também conta. Antes
+  // só a tabela de entradas entrava e novembro somava só os gastos.
+  resultado = await jsonFetch(baseUrl, '/api/orcamento?mes=2026-11', {
+    method: 'PUT', headers: autenticado, body: JSON.stringify({ valor: 500 }),
+  });
+  assert.equal(resultado.status, 200);
+  resultado = await jsonFetch(baseUrl, '/api/metas', { headers: autenticado });
+  assert.equal(resultado.corpo[0].progresso, 564.9);
+  assert.equal(resultado.corpo[0].percentual, 56.5);
 });

@@ -6,46 +6,51 @@ const { paraCentavos, comValorEmReais } = require('../utils/dinheiro');
 
 const router = express.Router();
 
-// O valor guardado em orcamento_mensal já inclui as entradas lançadas no mês
-// (routes/entradas.js soma cada uma nele). A "base" é o valor menos essas
-// entradas: é ela que se copia de um mês para outro, senão um bônus ou
-// reembolso de um mês entraria no orçamento do mês seguinte.
-function entradasDoMesCentavos(usuarioId, mes) {
-  return db.prepare(`
-    SELECT COALESCE(SUM(COALESCE(valor_centavos, ROUND(valor * 100))), 0) AS total
-    FROM entradas
-    WHERE usuario_id = ? AND data >= ? || '-01' AND data < date(? || '-01', '+1 month')
-  `).get(usuarioId, mes, mes).total;
-}
+// O valor guardado em orcamento_mensal é o dinheiro que entrou NO mês: as
+// entradas lançadas nele (routes/entradas.js soma cada uma) mais ajustes
+// feitos pelo "editar". O orçamento total de um mês é esse valor somado ao
+// saldo que sobrou (ou faltou) nos meses anteriores — o saldo não zera na
+// virada, funciona como uma conta corrente.
+//
+// Saldo anterior de M = Σ (orçamento do mês − gasto do mês) de cada mês
+// antes de M, a partir do primeiro mês em que o usuário teve orçamento.
+// Meses anteriores a esse não contam: os gastos de antes de a pessoa usar o
+// orçamento virariam um negativo que ninguém reconhece. A soma é calculada a
+// cada leitura, então corrigir uma despesa de outubro já corrige novembro.
+//
+// O saldo acumulado chegou na v2.1.3 (novembro de 2026): a primeira sobra
+// carregada é a de outubro de 2026. Meses antes disso eram tratados como
+// independentes (o orçamento muitas vezes era um limite copiado, não dinheiro
+// que entrou), então somar as sobras deles inflaria o saldo de quem já usava
+// o app.
+const MES_INICIO_SALDO_ACUMULADO = '2026-10';
 
-// Base do último mês anterior com orçamento > 0 — o valor que o botão
-// "Copiar orçamento do mês anterior" oferece.
-function ultimoOrcamentoAnterior(usuarioId, mes) {
-  const linha = db.prepare(`
-    SELECT base_centavos FROM (
-      SELECT o.mes,
-             COALESCE(o.valor_centavos, ROUND(o.valor * 100)) - COALESCE((
-               SELECT SUM(COALESCE(e.valor_centavos, ROUND(e.valor * 100)))
-               FROM entradas e
-               WHERE e.usuario_id = o.usuario_id
-                 AND e.data >= o.mes || '-01'
-                 AND e.data < date(o.mes || '-01', '+1 month')
-             ), 0) AS base_centavos
-      FROM orcamento_mensal o
-      WHERE o.usuario_id = ? AND o.mes < ?
-    )
-    WHERE base_centavos > 0
-    ORDER BY mes DESC
-    LIMIT 1
-  `).get(usuarioId, mes);
-  return linha ? { valor: linha.base_centavos / 100, valor_centavos: linha.base_centavos } : null;
+function saldoAnteriorCentavos(usuarioId, mes) {
+  const primeiroOrcamento = db.prepare(`
+    SELECT MIN(mes) AS mes FROM orcamento_mensal
+    WHERE usuario_id = ? AND COALESCE(valor_centavos, ROUND(valor * 100)) > 0
+  `).get(usuarioId).mes;
+  if (!primeiroOrcamento) return 0;
+  const inicio = primeiroOrcamento > MES_INICIO_SALDO_ACUMULADO ? primeiroOrcamento : MES_INICIO_SALDO_ACUMULADO;
+  if (inicio >= mes) return 0;
+
+  const entradas = db.prepare(`
+    SELECT COALESCE(SUM(COALESCE(valor_centavos, ROUND(valor * 100))), 0) AS total
+    FROM orcamento_mensal
+    WHERE usuario_id = ? AND mes >= ? AND mes < ?
+  `).get(usuarioId, inicio, mes).total;
+  const gastos = db.prepare(`
+    SELECT COALESCE(SUM(COALESCE(valor_centavos, ROUND(valor * 100))), 0) AS total
+    FROM despesas
+    WHERE usuario_id = ? AND data >= ? AND data < ?
+  `).get(usuarioId, `${inicio}-01`, `${mes}-01`).total;
+  return entradas - gastos;
 }
 
 // Garante que existe uma linha de orçamento pro usuário no mês. O mês novo
-// sempre começa em 0: o orçamento de cada mês é diferente, então nada é
-// repetido sozinho — copiar o mês anterior é uma ação do usuário
-// (POST /api/orcamento/copiar-anterior). A antiga opção "repetir todo mês"
-// (usuarios.orcamento_recorrente) não é mais lida.
+// começa com 0 entrado — o total dele já vem com o saldo anterior, e o
+// usuário só soma o que receber (+). A antiga opção "repetir todo mês"
+// (usuarios.orcamento_recorrente) e o "copiar mês anterior" não existem mais.
 function garantirOrcamentoDoMes(usuarioId, mes) {
   db.prepare(`
     INSERT OR IGNORE INTO orcamento_mensal (usuario_id, mes, valor, valor_centavos)
@@ -53,20 +58,20 @@ function garantirOrcamentoDoMes(usuarioId, mes) {
   `).run(usuarioId, mes);
 }
 
+// valor = orçamento total do mês (saldo anterior + o que entrou no mês).
 function obterOrcamentoDoMes(usuarioId, mes) {
   garantirOrcamentoDoMes(usuarioId, mes);
   const orcamento = db.prepare(
     'SELECT valor, valor_centavos FROM orcamento_mensal WHERE usuario_id = ? AND mes = ?'
   ).get(usuarioId, mes);
-  const { valor } = comValorEmReais(orcamento);
-  const anterior = ultimoOrcamentoAnterior(usuarioId, mes);
-  const baseCentavos = paraCentavos(valor) - entradasDoMesCentavos(usuarioId, mes);
+  const doMesCentavos = paraCentavos(comValorEmReais(orcamento).valor);
+  const saldoCentavos = saldoAnteriorCentavos(usuarioId, mes);
 
   return {
-    valor,
+    valor: (doMesCentavos + saldoCentavos) / 100,
     mes,
-    base: baseCentavos / 100,
-    valorMesAnterior: anterior ? comValorEmReais(anterior).valor : 0,
+    valorDoMes: doMesCentavos / 100,
+    saldoAnterior: saldoCentavos / 100,
   };
 }
 
@@ -79,8 +84,10 @@ router.get('/', (req, res) => {
   res.json(obterOrcamentoDoMes(req.usuarioId, mes));
 });
 
-// PUT /api/orcamento?mes=YYYY-MM — define (substitui) o valor do orçamento
-// do mês pedido (padrão: o corrente).
+// PUT /api/orcamento?mes=YYYY-MM — define (substitui) o orçamento total do
+// mês pedido (padrão: o corrente). O saldo anterior é calculado, então o que
+// fica guardado é a diferença: total desejado − saldo anterior (pode ser
+// negativo, ex: para corrigir um saldo que não bate com o banco).
 router.put('/', (req, res) => {
   const { valor } = req.body;
   const mes = mesDaRequisicao(req);
@@ -92,34 +99,11 @@ router.put('/', (req, res) => {
 
   db.transaction(() => {
     garantirOrcamentoDoMes(req.usuarioId, mes);
+    const doMesCentavos = paraCentavos(valor) - saldoAnteriorCentavos(req.usuarioId, mes);
     db.prepare(`
       UPDATE orcamento_mensal SET valor = ?, valor_centavos = ?, atualizado_em = datetime('now')
       WHERE usuario_id = ? AND mes = ?
-    `).run(valor, paraCentavos(valor), req.usuarioId, mes);
-  })();
-
-  res.json(obterOrcamentoDoMes(req.usuarioId, mes));
-});
-
-// POST /api/orcamento/copiar-anterior?mes=YYYY-MM — copia para o mês pedido
-// a base do último mês anterior com orçamento. As entradas já lançadas no
-// mês continuam somadas por cima, como sempre.
-router.post('/copiar-anterior', (req, res) => {
-  const mes = mesDaRequisicao(req);
-  if (!mes) return res.status(400).json({ erro: ERRO_MES });
-
-  const anterior = ultimoOrcamentoAnterior(req.usuarioId, mes);
-  if (!anterior) {
-    return res.status(400).json({ erro: 'nenhum mês anterior com orçamento para copiar' });
-  }
-
-  db.transaction(() => {
-    garantirOrcamentoDoMes(req.usuarioId, mes);
-    const totalCentavos = anterior.valor_centavos + entradasDoMesCentavos(req.usuarioId, mes);
-    db.prepare(`
-      UPDATE orcamento_mensal SET valor = ?, valor_centavos = ?, atualizado_em = datetime('now')
-      WHERE usuario_id = ? AND mes = ?
-    `).run(totalCentavos / 100, totalCentavos, req.usuarioId, mes);
+    `).run(doMesCentavos / 100, doMesCentavos, req.usuarioId, mes);
   })();
 
   res.json(obterOrcamentoDoMes(req.usuarioId, mes));
@@ -148,3 +132,4 @@ router.put('/cartao', (req, res) => {
 module.exports = router;
 module.exports.garantirOrcamentoDoMes = garantirOrcamentoDoMes;
 module.exports.obterOrcamentoDoMes = obterOrcamentoDoMes;
+module.exports.MES_INICIO_SALDO_ACUMULADO = MES_INICIO_SALDO_ACUMULADO;

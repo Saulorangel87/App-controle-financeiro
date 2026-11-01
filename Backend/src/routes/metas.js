@@ -11,16 +11,21 @@ const LIMITE_NOME = 60;
 // Mês corrente no fuso do app (ver utils/datas.js), não em UTC.
 const mesAtual = mesAtualISO;
 
-// Progresso = entradas menos despesas dos meses do período (inclusive nas
-// duas pontas). É a mesma ideia de "sobrou" usada no saldo do Relatório,
-// só que somada ao longo de vários meses em vez de um só.
+// Progresso = o que sobrou nos meses do período (inclusive nas duas
+// pontas): orçamento de cada mês menos as despesas dele — o mesmo
+// "Disponível" da Visão Geral, somado ao longo do período. O orçamento do
+// mês (orcamento_mensal) é o que entrou nele: as entradas mais os ajustes
+// feitos pelo "editar". Antes só a tabela de entradas contava, então um mês
+// com orçamento definido no "editar" (ou copiado do mês anterior) entrava
+// só com os gastos e a meta andava para trás. O saldo trazido de antes do
+// início da meta não conta: a meta mede o que se juntou no período.
 function saldoDoPeriodo(usuarioId, mesInicio, mesFim) {
   const intervalo = intervaloDosMeses(mesInicio, mesFim);
-  const totalEntradas = db.prepare(`
+  const totalOrcamento = db.prepare(`
     SELECT ${somaEmReaisSQL()} AS total
-    FROM entradas
-    WHERE usuario_id = ? AND data >= ? AND data < ?
-  `).get(usuarioId, ...intervalo).total;
+    FROM orcamento_mensal
+    WHERE usuario_id = ? AND mes >= ? AND mes <= ?
+  `).get(usuarioId, mesInicio, mesFim).total;
 
   const totalDespesas = db.prepare(`
     SELECT ${somaEmReaisSQL()} AS total
@@ -28,7 +33,7 @@ function saldoDoPeriodo(usuarioId, mesInicio, mesFim) {
     WHERE usuario_id = ? AND data >= ? AND data < ?
   `).get(usuarioId, ...intervalo).total;
 
-  return totalEntradas - totalDespesas;
+  return Number((totalOrcamento - totalDespesas).toFixed(2));
 }
 
 function comProgresso(meta) {
